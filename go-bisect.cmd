@@ -21,6 +21,8 @@ if errorlevel 1 exit 1
 call git bisect run cmd /c "%CD%\..\_bisect-run-test.cmd %TESTER%"
 if errorlevel 1 exit 1
 
+goto :eof
+
 :testrev
 echo ########## Sanity-check, testing %1 revision %2 ...
 cd repo
