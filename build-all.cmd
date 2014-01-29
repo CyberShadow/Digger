@@ -9,7 +9,7 @@ mkdir out\windows\lib
 mkdir out\import
 mkdir out\import\phobos
 
-sed "s#OUTDIR#%CD:\=/%/out#g" < sc.ini > out/windows/bin/sc.ini
+sed "s#OUTDIR#%CD:\=/%/out#g" < sc.ini.tpl > out/windows/bin/sc.ini
 
 cd repo
 
