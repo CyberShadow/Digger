@@ -1,5 +1,7 @@
 @echo off
 
+echo ------------------------------ BUILDING DRUNTIME -----------------------------
+
 if "%BRANCH%"=="" set BRANCH=master
 
 if exist import rmdir /S /Q import

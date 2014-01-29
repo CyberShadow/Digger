@@ -1,4 +1,7 @@
 @echo off
+
+echo -------------------------------- BUILDING DMD --------------------------------
+
 set PATH=\dm\bin;%WINDIR%\System32;C:\Soft\Tools
 set PATH=%PATH%;C:\Windows\Microsoft.NET\Framework64\v4.0.30319
 call "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\vcvars32.bat"
@@ -20,6 +23,7 @@ goto install
 
 :dmc
 :: MSVC build failed, try DMC
+echo -------------------------- BUILDING DMD (using DMC) --------------------------
 set PATH=\dm\bin;%WINDIR%\System32;C:\Soft\Tools
 
 if exist dmd.exe del dmd.exe

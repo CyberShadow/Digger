@@ -1,4 +1,6 @@
 @echo off
+
+echo ------------------------------- BUILDING TOOLS -------------------------------
 ::if exist rdmd.exe del rdmd.exe
 ::dmd -g -debug rdmd.d
 ::call dbuildd rdmd.d

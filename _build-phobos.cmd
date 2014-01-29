@@ -1,15 +1,17 @@
 @echo off
 
+echo ------------------------------- BUILDING PHOBOS ------------------------------
+
 set PATH=C:\Soft\dm\bin;..\..\out\windows\bin;C:\Soft\UnxUtils\usr\local\wbin;%WINDIR%\System32
 set MAKEOPTS=DOC=doc DOCSRC=../dlang.org DIR=..\..\out
 
 call :buildmodel
 
-::@echo ################ DOCUMENTATION ################
+::@echo ---------------- DOCUMENTATION ----------------
 ::make -f win32.mak html    %MAKEOPTS% %*
 ::if errorlevel 1 exit
 
-@echo ################ INSTALLATION #################
+::@echo ---------------- INSTALLATION -----------------
 
 ::move ..\..\out\windows\lib\phobos.lib
 ::move ..\..\out\windows\lib\phobos64.lib
@@ -31,7 +33,7 @@ goto :eof
 
 :buildmodel
 
-@echo ################### %DMODEL%-BIT ####################
+::@echo ------------------- %DMODEL%-BIT --------------------
 
 if exist *.obj del *.obj
 if exist etc\c\zlib\*.obj del etc\c\zlib\*.obj
@@ -52,7 +54,7 @@ goto :eof
 
 :buildconfig
 
-@echo ---------------- %CONFIGNAME% BUILD ----------------
+::@echo ---------------- %CONFIGNAME% BUILD ----------------
 if exist *.lib del *.lib
 make -f win%DMODEL%.mak phobos%DMODELSUFFIX%.lib %MAKEOPTS% %CONFIGOPTS% %*
 if not exist phobos%DMODELSUFFIX%.lib exit
