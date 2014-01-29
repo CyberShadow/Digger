@@ -14,18 +14,8 @@ if exist doc rmdir /S /Q doc
 if exist lib rmdir /S /Q lib
 del *.obj
 
-make -f win32.mak %* lib\druntime.lib lib\gcstub.obj                                                                                  %MAKEOPTS%
-if not exist lib\druntime.lib exit 1
-
-make -f win32.mak %* lib\druntime_debug.lib   "DFLAGS=-m32 -g -nofloat -w -d -Isrc -Iimport -property" DRUNTIME_BASE=druntime_debug   %MAKEOPTS%
-if not exist lib\druntime_debug.lib exit 1
-
-del *.obj
-make -f win64.mak %* lib\druntime64.lib lib\gcstub64.obj                                                                              %MAKEOPTS%
-if not exist lib\druntime64.lib exit 1
-
-make -f win64.mak %* lib\druntime64_debug.lib "DFLAGS=-m64 -g -nofloat -w -d -Isrc -Iimport -property" DRUNTIME_BASE=druntime64_debug %MAKEOPTS%
-if not exist lib\druntime64_debug.lib exit 1
+make -f win%DMODEL%.mak %* lib\druntime%DMODELSUFFIX%.lib lib\gcstub%DMODELSUFFIX%.obj %MAKEOPTS%
+if not exist lib\druntime%DMODELSUFFIX%.lib exit 1
 
 make -f win32.mak %* import
 if errorlevel 1 exit 1
