@@ -1,6 +1,7 @@
 @echo off
 
-rm -rf out
+call _clean.cmd
+
 mkdir out
 mkdir out\windows
 mkdir out\windows\bin
