@@ -3,12 +3,6 @@
 set PATH=C:\Soft\dm\bin;..\..\out\windows\bin;C:\Soft\UnxUtils\usr\local\wbin;%WINDIR%\System32
 set MAKEOPTS=DOC=doc DOCSRC=../dlang.org DIR=..\..\out
 
-set MODEL=32
-set MODELSUFFIX=
-call :buildmodel
-
-set MODEL=64
-set MODELSUFFIX=64
 call :buildmodel
 
 ::@echo ################ DOCUMENTATION ################
@@ -37,7 +31,7 @@ goto :eof
 
 :buildmodel
 
-@echo ################### %MODEL%-BIT ####################
+@echo ################### %DMODEL%-BIT ####################
 
 if exist *.obj del *.obj
 if exist etc\c\zlib\*.obj del etc\c\zlib\*.obj
@@ -47,10 +41,10 @@ set CONFIGSUFFIX=
 set CONFIGOPTS=
 call :buildconfig
 
-set CONFIGNAME=DEBUG
-set CONFIGSUFFIX=_debug
-set CONFIGOPTS="DFLAGS=-m%MODEL% -g -nofloat -d" "DRUNTIMELIB=$(DRUNTIME)\lib\druntime%MODELSUFFIX%%CONFIGSUFFIX%.lib"
-call :buildconfig
+::set CONFIGNAME=DEBUG
+::set CONFIGSUFFIX=_debug
+::set CONFIGOPTS="DFLAGS=-m%DMODEL% -g -nofloat -d" "DRUNTIMELIB=$(DRUNTIME)\lib\druntime%DMODELSUFFIX%%CONFIGSUFFIX%.lib"
+::call :buildconfig
 
 goto :eof
 
@@ -60,9 +54,9 @@ goto :eof
 
 @echo ---------------- %CONFIGNAME% BUILD ----------------
 if exist *.lib del *.lib
-make -f win%MODEL%.mak phobos%MODELSUFFIX%.lib %MAKEOPTS% %CONFIGOPTS% %*
-if not exist phobos%MODELSUFFIX%.lib exit
-if exist ..\..\out\windows\lib\phobos%MODELSUFFIX%%CONFIGSUFFIX%.lib del ..\..\out\windows\lib\phobos%MODELSUFFIX%%CONFIGSUFFIX%.lib
-move phobos%MODELSUFFIX%.lib ..\..\out\windows\lib\phobos%MODELSUFFIX%%CONFIGSUFFIX%.lib
+make -f win%DMODEL%.mak phobos%DMODELSUFFIX%.lib %MAKEOPTS% %CONFIGOPTS% %*
+if not exist phobos%DMODELSUFFIX%.lib exit
+if exist ..\..\out\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib del ..\..\out\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib
+move phobos%DMODELSUFFIX%.lib ..\..\out\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib
 
 goto :eof
