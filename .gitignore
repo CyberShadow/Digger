@@ -1,3 +1,4 @@
 /go-bisect-conf.cmd
 /repo/
-/out/
+/build/
+/cache/

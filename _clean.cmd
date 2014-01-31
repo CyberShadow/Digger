@@ -1,6 +1,6 @@
 @echo off
 
-rm -rf out
+rm -rf build
 
 cd repo
 

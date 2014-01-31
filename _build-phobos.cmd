@@ -2,8 +2,8 @@
 
 echo ------------------------------- BUILDING PHOBOS ------------------------------
 
-set PATH=C:\Soft\dm\bin;..\..\out\windows\bin;C:\Soft\UnxUtils\usr\local\wbin;%WINDIR%\System32
-set MAKEOPTS=DOC=doc DOCSRC=../dlang.org DIR=..\..\out
+set PATH=C:\Soft\dm\bin;..\..\build\windows\bin;C:\Soft\UnxUtils\usr\local\wbin;%WINDIR%\System32
+set MAKEOPTS=DOC=doc DOCSRC=../dlang.org DIR=..\..\build
 
 call :buildmodel
 
@@ -13,13 +13,13 @@ call :buildmodel
 
 ::@echo ---------------- INSTALLATION -----------------
 
-::move ..\..\out\windows\lib\phobos.lib
-::move ..\..\out\windows\lib\phobos64.lib
+::move ..\..\build\windows\lib\phobos.lib
+::move ..\..\build\windows\lib\phobos64.lib
 
 ::make -f win32.mak install %MAKEOPTS% %*
 ::if errorlevel 1 exit
 
-C:\cygwin\bin\cp -r etc std crc32.d ../../out/import/phobos/
+C:\cygwin\bin\cp -r etc std crc32.d ../../build/import/phobos/
 
 :: Cleanup
 
@@ -58,7 +58,7 @@ goto :eof
 if exist *.lib del *.lib
 make -f win%DMODEL%.mak phobos%DMODELSUFFIX%.lib %MAKEOPTS% %CONFIGOPTS% %*
 if not exist phobos%DMODELSUFFIX%.lib exit
-if exist ..\..\out\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib del ..\..\out\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib
-move phobos%DMODELSUFFIX%.lib ..\..\out\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib
+if exist ..\..\build\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib del ..\..\build\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib
+move phobos%DMODELSUFFIX%.lib ..\..\build\windows\lib\phobos%DMODELSUFFIX%%CONFIGSUFFIX%.lib
 
 goto :eof

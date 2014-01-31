@@ -37,5 +37,5 @@ if errorlevel 1 exit 1
 
 :install
 :: Install
-copy /y dmd.exe ..\..\..\out\windows\bin
-copy /y dmd.pdb ..\..\..\out\windows\bin
+copy /y dmd.exe ..\..\..\build\windows\bin
+copy /y dmd.pdb ..\..\..\build\windows\bin

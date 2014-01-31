@@ -2,14 +2,14 @@
 
 call _clean.cmd
 
-mkdir out
-mkdir out\windows
-mkdir out\windows\bin
-mkdir out\windows\lib
-mkdir out\import
-mkdir out\import\phobos
+mkdir build
+mkdir build\windows
+mkdir build\windows\bin
+mkdir build\windows\lib
+mkdir build\import
+mkdir build\import\phobos
 
-sed "s#OUTDIR#%CD:\=/%/out#g" < sc.ini.tpl > out/windows/bin/sc.ini
+sed "s#OUTDIR#%CD:\=/%/current#g" < sc.ini.tpl > build/windows/bin/sc.ini
 
 cd repo
 

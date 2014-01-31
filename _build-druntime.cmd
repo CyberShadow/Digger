@@ -8,7 +8,7 @@ if exist import rmdir /S /Q import
 mkdir import
 ::call git checkout import
 
-set PATH=C:\Soft\dm\bin;..\..\out\windows\bin;%WINDIR%\System32
+set PATH=C:\Soft\dm\bin;..\..\build\windows\bin;%WINDIR%\System32
 set MAKEOPTS=
 
 if exist doc rmdir /S /Q doc
@@ -24,10 +24,10 @@ if errorlevel 1 exit 1
 if %BRANCH%==master make -f win32.mak %* copydir copy
 if errorlevel 1 exit 1
 
-::if exist lib\* copy /y lib\* ..\..\out\windows\lib\
-rmdir /S /Q ..\..\out\import\druntime
-mkdir ..\..\out\import\druntime
-xcopy /Q /E /I /Y import ..\..\out\import\druntime
+::if exist lib\* copy /y lib\* ..\..\build\windows\lib\
+rmdir /S /Q ..\..\build\import\druntime
+mkdir ..\..\build\import\druntime
+xcopy /Q /E /I /Y import ..\..\build\import\druntime
 
 :: Cleanup
 

@@ -18,7 +18,7 @@ call git bisect reset
 if errorlevel 1 exit 1
 call git bisect start "%BAD%" "%GOOD%"
 if errorlevel 1 exit 1
-call git bisect run cmd /c "%CD%\..\_bisect-run-test.cmd %TESTER%"
+call git bisect run cmd /c "%~dp0\_bisect-run-test.cmd %TESTER%"
 if errorlevel 1 exit 1
 
 goto :eof

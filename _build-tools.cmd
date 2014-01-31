@@ -16,6 +16,6 @@ echo ------------------------------- BUILDING TOOLS ----------------------------
 call dmake -f win32.mak DMD=dmd rdmd
 if errorlevel 1 exit
 
-copy /y generated\windows\32\rdmd.exe ..\..\out\windows\bin\
+copy /y generated\windows\32\rdmd.exe ..\..\build\windows\bin\
 
 C:\cygwin\bin\rm -rf generated
