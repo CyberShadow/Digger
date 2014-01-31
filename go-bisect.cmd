@@ -3,11 +3,11 @@
 call go-bisect-conf.cmd
 
 call :testrev GOOD "%GOOD%"
-if errorlevel 125 echo GOOD revision %GOOD% is not buildable (test command returned status %ERRORLEVEL%) & exit 1
+if %ERRORLEVEL%==125 echo GOOD revision %GOOD% is not buildable (test command returned status %ERRORLEVEL%) & exit 1
 if errorlevel 1 echo GOOD revision %GOOD% is not correct (test command returned status %ERRORLEVEL%) & exit 1
 
 call :testrev BAD "%BAD%"
-if errorlevel 125 echo BAD revision %BAD% is not buildable (test command returned status %ERRORLEVEL%) & exit 1
+if %ERRORLEVEL%==125 echo BAD revision %BAD% is not buildable (test command returned status %ERRORLEVEL%) & exit 1
 if errorlevel 1 goto badok
 echo BAD revision %BAD% is not correct (test command returned status %BAD%) & exit 1
 :badok
