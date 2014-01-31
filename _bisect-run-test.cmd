@@ -26,4 +26,5 @@ set RESULT=%ERRORLEVEL%
 
 echo ######################### TEST DONE WITH STATUS %RESULT% ############################
 
-exit /b %RESULT%
+if %RESULT%==0 exit /B 0
+exit /B 1
