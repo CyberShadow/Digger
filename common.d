@@ -21,13 +21,13 @@ void invoke(alias runner)(string[] args, ref string[string] newEnv)
 
 void run(string[] args, string[string] newEnv = null)
 {
-	invoke!{ return spawnProcess(args, newEnv, Config.newEnv).wait(); }(args, newEnv);
+	invoke!({ return spawnProcess(args, newEnv, Config.newEnv).wait(); })(args, newEnv);
 }
 
 string query(string[] args, string[string] newEnv = null)
 {
 	string output;
-	invoke!{ auto result = execute(args, newEnv, Config.newEnv); output = result.output.strip(); return result.status; }(args, newEnv);
+	invoke!({ auto result = execute(args, newEnv, Config.newEnv); output = result.output.strip(); return result.status; })(args, newEnv);
 	return output;
 }
 
