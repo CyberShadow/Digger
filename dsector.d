@@ -221,6 +221,7 @@ void build()
 	auto repo = Repository(REPO);
 	repo.run("submodule", "update");
 
+	mkdir(BUILD_DIR);
 	buildDMD();
 	buildDruntime();
 	buildPhobos();
