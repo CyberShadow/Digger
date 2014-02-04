@@ -66,7 +66,7 @@ int doBisectStep()
 
 	log("Running test command...");
 	auto result = spawnShell(config.tester, dEnv, Config.newEnv).wait();
-	log("Test command exited with status %s.".format(result));
+	log("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
 	return result;
 }
 
