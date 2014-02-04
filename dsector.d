@@ -28,10 +28,9 @@ int main(string[] args)
 
 	auto repo = Repository(REPO);
 
-	void test(bool good)()
+	void test(bool good, string rev)
 	{
 		auto name = good ? "GOOD" : "BAD";
-		auto rev = getRev!good();
 		log("Sanity-check, testing %s revision %s...".format(name, rev));
 		repo.run("checkout", rev);
 		auto result = doBisectStep();
@@ -45,8 +44,17 @@ int main(string[] args)
 
 	if (!opts.noVerify)
 	{
-		test!true();
-		test!false();
+		auto good = getRev!true();
+		auto bad = getRev!false();
+
+		enforce(good != bad, "Good and bad revisions are both " ~ bad);
+
+		auto nGood = repo.query(["log", "--format=oneline", good]).splitLines().length;
+		auto nBad  = repo.query(["log", "--format=oneline", bad ]).splitLines().length;
+		enforce(nGood < nBad, "Good commit is newer than bad commit");
+
+		test(true, good);
+		test(false, bad);
 	}
 
 	repo.run("bisect", "start", getRev!false(), getRev!true());
