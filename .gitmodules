@@ -1,0 +1,3 @@
+[submodule "ae"]
+	path = ae
+	url = git://github.com/CyberShadow/ae.git
