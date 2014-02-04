@@ -1,5 +1,7 @@
 module dsector;
 
+import std.algorithm;
+import std.array;
 import std.exception;
 import std.file;
 import std.path;
@@ -247,58 +249,79 @@ void install(string src, string dst)
 	rename(src, dst);
 }
 
+string model = "32";
+string modelSuffix = "";
+version (Windows)
+{
+	string makeFileName = "win32.mak";
+	string makeFileNameModel = "win"~model~".mak";
+	string binExt = ".exe";
+}
+else
+{
+	string makeFileName = "posix.mak";
+	string makeFileNameModel = "posix.mak";
+	string binExt = "";
+}
+
 void buildDMD()
 {
 	logProgress("BUILDING DMD");
 
 	{
 		auto owd = pushd(buildPath(REPO, "dmd", "src"));
-		run(["make", "-f", "win32.mak", "clean"], dEnv);
-		run(["make", "-f", "win32.mak", "debdmd"], dEnv);
-		//cv2pdb -C dmd.exe
+		run(["make", "-f", makeFileName, "MODEL=" ~ model], dEnv);
 	}
 
 	install(
-		buildPath(REPO, "dmd", "src", "dmd.exe"),
-		buildPath(BUILD_DIR, "bin", "dmd.exe"),
+		buildPath(REPO, "dmd", "src", "dmd" ~ binExt),
+		buildPath(BUILD_DIR, "bin", "dmd" ~ binExt),
 	);
 
-	auto ini = q"EOS
+	version (Windows)
+	{
+		auto ini = q"EOS
 [Environment]
 LIB="%@P%\..\lib"
 DFLAGS="-I%@P%\..\import"
 LINKCMD=%DMC%\link.exe
 EOS";
-	buildPath(BUILD_DIR, "bin", "sc.ini").write(ini);
+		buildPath(BUILD_DIR, "bin", "sc.ini").write(ini);
+	}
+	else
+	{
+		auto ini = q"EOS
+[Environment]
+DFLAGS="-I%@P%/../import" "-L-L%@P%/../lib"
+EOS";
+		buildPath(BUILD_DIR, "bin", "dmd.conf").write(ini);
+	}
 
 	log("DMD OK!");
 }
 
-string model = "32";
-string modelSuffix = "";
-
 void buildDruntime()
 {
-	string lib, obj;
-
 	{
 		auto owd = pushd(buildPath(REPO, "druntime"));
 
 		mkdir("import");
 		mkdir("lib");
 
-		lib = buildPath("lib", "druntime%s.lib".format(modelSuffix));
-		obj = buildPath("lib", "gcstub%s.obj"  .format(modelSuffix));
-		run(["make", "-f", "win%s.mak".format(model), lib, obj, "import", "copydir", "copy"], dEnv);
-		enforce(lib.exists);
-		enforce(obj.exists);
+		version (Windows)
+		{
+			auto lib = buildPath("lib", "druntime%s.lib".format(modelSuffix));
+			auto obj = buildPath("lib", "gcstub%s.obj"  .format(modelSuffix));
+			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model, lib, obj, "import", "copydir", "copy"], dEnv);
+			enforce(lib.exists);
+			enforce(obj.exists);
+		}
+		else
+		{
+			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model], dEnv);
+		}
 	}
 
-	foreach (f; [obj])
-		install(
-			buildPath(REPO, "druntime", f),
-			buildPath(BUILD_DIR, f),
-		);
 	install(
 		buildPath(REPO, "druntime", "import"),
 		buildPath(BUILD_DIR, "import"),
@@ -310,12 +333,21 @@ void buildDruntime()
 
 void buildPhobos()
 {
-	auto lib = "phobos%s.lib".format(modelSuffix);
+	string[] targets;
+
 	{
 		auto owd = pushd(buildPath(REPO, "phobos"));
-		mkdir("myoutdir");
-		run(["make", "-f", "win%s.mak".format(model), lib], dEnv);
-		enforce("phobos%s.lib".format(modelSuffix).exists);
+		version (Windows)
+		{
+			auto lib = "phobos%s.lib".format(modelSuffix);
+			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model, lib], dEnv);
+			enforce("phobos%s.lib".format(modelSuffix).exists);
+		}
+		else
+		{
+			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model], dEnv);
+			targets = "generated".dirEntries(SpanMode.depth).filter!(de => de.name.endsWith(".a")).map!(de => de.name).array();
+		}
 	}
 
 	foreach (f; ["std", "crc32.d"])
@@ -324,10 +356,11 @@ void buildPhobos()
 				buildPath(REPO, "phobos", f),
 				buildPath(BUILD_DIR, "import", f),
 			);
-	install(
-		buildPath(REPO, "phobos", lib),
-		buildPath(BUILD_DIR, "lib", lib),
-	);
+	foreach (lib; targets)
+		install(
+			buildPath(REPO, "phobos", lib),
+			buildPath(BUILD_DIR, "lib", lib.baseName()),
+		);
 
 	log("Phobos OK!");
 }
@@ -337,11 +370,11 @@ void buildTools()
 	// Just build rdmd
 	{
 		auto owd = pushd(buildPath(REPO, "tools"));
-		run(["dmd", "rdmd"], dEnv);
+		run(["dmd", "-m" ~ model, "rdmd"], dEnv);
 	}
 	install(
-		buildPath(REPO, "tools", "rdmd.exe"),
-		buildPath(BUILD_DIR, "bin", "rdmd.exe"),
+		buildPath(REPO, "tools", "rdmd" ~ binExt),
+		buildPath(BUILD_DIR, "bin", "rdmd" ~ binExt),
 	);
 
 	log("Tools OK!");
