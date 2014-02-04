@@ -1,0 +1,30 @@
+; Starting points.
+; Known bad (with regression) and good (w/o regression) commits.
+; Dsector will verify these commits to avoid a false conclusion.
+; Supported formats:
+; - "master" (implies latest commit)
+; - SHA-1 hash of D.git repo commit
+; - SHA-1 hash of a component's repo commit
+;   (must be a pull request merge commit)
+; - Full GitHub URL of a pull request, e.g.:
+;   https://github.com/D-Programming-Language/dmd/pull/123
+; - If prefixed with "@", time spec (e.g. "@ 2013-01-02",
+;   "@ October 2013", "@ 15 days ago"  or "@ Tuesday")
+
+bad  = master
+good = @ 1 month ago
+
+; Tester command.
+; Should exit with status 0 to indicate success (a "good" commit,
+; not manifesting the regression), and any other status to
+; indicate failure (a "bad" commit, with the regression).
+; Exit code 125 is treated specially and indicates
+
+tester = cd C:\Temp && dmd -o- test.d
+
+; Build cache.
+; To speed up successive runs, Dsector can save the results of
+; each commit's build. The downside is that this uses a lot of
+; disk space.
+
+; cache = true

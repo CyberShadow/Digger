@@ -1,4 +1,12 @@
-/go-bisect-conf.cmd
+/dsector.ini
 /repo/
 /build/
+/current/
 /cache/
+/dm/
+
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.lib
