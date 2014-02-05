@@ -240,7 +240,8 @@ void install(string src, string dst)
 	ensurePathExists(dst);
 	if (src.isDir)
 	{
-		dst.mkdirRecurse();
+		if (!dst.exists)
+			dst.mkdirRecurse();
 		foreach (de; src.dirEntries(SpanMode.shallow))
 			install(de.name, dst.buildPath(de.name.baseName));
 	}
