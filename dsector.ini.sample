@@ -28,3 +28,8 @@ tester = cd C:\Temp && dmd -o- test.d
 ; disk space.
 
 ; cache = true
+
+; Target model.
+; Whether to target 32 or 64 bits when building D components.
+
+model = 32

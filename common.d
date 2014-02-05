@@ -52,6 +52,7 @@ struct ConfigFile
 	string bad, good;
 	string tester;
 	bool cache;
+	string model = "32";
 }
 immutable ConfigFile config;
 

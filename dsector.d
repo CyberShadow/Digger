@@ -178,8 +178,10 @@ bool prepareBuild()
 				import win32.winnt;
 
 				WCHAR buf[1024];
-				newPaths ~= buf[0..GetWindowsDirectory(buf.ptr, buf.length)].toUTF8();
-				newPaths ~= buf[0..GetSystemDirectory (buf.ptr, buf.length)].toUTF8();
+				auto winDir = buf[0..GetWindowsDirectory(buf.ptr, buf.length)].toUTF8();
+				auto sysDir = buf[0..GetSystemDirectory (buf.ptr, buf.length)].toUTF8();
+				auto tmpDir = buf[0..GetTempPath(buf.length, buf.ptr)].toUTF8()[0..$-1];
+				newPaths ~= [sysDir, winDir];
 			}
 			else
 				newPaths = ["/bin", "/usr/bin"];
@@ -200,7 +202,8 @@ bool prepareBuild()
 
 			version(Windows)
 			{
-				dEnv["TEMP"] = dEnv["TMP"] = buf[0..GetTempPath(buf.length, buf.ptr)].toUTF8();
+				dEnv["TEMP"] = dEnv["TMP"] = tmpDir;
+				dEnv["SystemRoot"] = winDir;
 			}
 		}
 
@@ -257,19 +260,19 @@ void install(string src, string dst)
 	rename(src, dst);
 }
 
-string model = "32";
-string modelSuffix = "";
+@property string model() { return config.model; }
+@property string modelSuffix() { return config.model == config.init.model ? "" : config.model; }
 version (Windows)
 {
-	string makeFileName = "win32.mak";
-	string makeFileNameModel = "win"~model~".mak";
-	string binExt = ".exe";
+	enum string makeFileName = "win32.mak";
+	@property string makeFileNameModel() { return "win"~model~".mak"; }
+	enum string binExt = ".exe";
 }
 else
 {
-	string makeFileName = "posix.mak";
-	string makeFileNameModel = "posix.mak";
-	string binExt = "";
+	enum string makeFileName = "posix.mak";
+	enum string makeFileNameModel = "posix.mak";
+	enum string binExt = "";
 }
 
 void buildDMD()
@@ -293,6 +296,17 @@ void buildDMD()
 LIB="%@P%\..\lib"
 DFLAGS="-I%@P%\..\import"
 LINKCMD=%DMC%\link.exe
+[Environment64]
+LIB="%@P%\..\lib"
+DFLAGS=%DFLAGS% -L/OPT:NOICF
+VCINSTALLDIR=\Program Files (x86)\Microsoft Visual Studio 10.0\VC\
+PATH=%PATH%;%VCINSTALLDIR%\bin\amd64
+WindowsSdkDir=\Program Files (x86)\Microsoft SDKs\Windows\v7.0A
+LINKCMD=%VCINSTALLDIR%\bin\amd64\link.exe
+LIB=%LIB%;"%VCINSTALLDIR%\lib\amd64"
+LIB=%LIB%;"%WindowsSdkDir%\Lib\winv6.3\um\x64"
+LIB=%LIB%;"%WindowsSdkDir%\Lib\win8\um\x64"
+LIB=%LIB%;"%WindowsSdkDir%\Lib\x64"
 EOS";
 		buildPath(BUILD_DIR, "bin", "sc.ini").write(ini);
 	}
@@ -349,7 +363,8 @@ void buildPhobos()
 		{
 			auto lib = "phobos%s.lib".format(modelSuffix);
 			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model, lib], dEnv);
-			enforce("phobos%s.lib".format(modelSuffix).exists);
+			enforce(lib.exists);
+			targets = [lib];
 		}
 		else
 		{
