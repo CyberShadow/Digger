@@ -9,7 +9,7 @@ import cache;
 import common;
 import repo;
 
-import ae.sys.windows; // http://d.puremagic.com/issues/show_bug.cgi?id=7016
+version(Windows) import ae.sys.windows; // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 
 int main()
 {
