@@ -47,7 +47,7 @@ void prepareRepo(bool update)
 			.map!(r => buildPath(REPO, r))
 			.chain(REPO.only)
 			.array();
-		foreach (r; allRepos.parallel)
+		foreach (r; allRepos)
 			Repository(r).run("fetch", "origin");
 	}
 }

@@ -23,7 +23,7 @@ int main(string[] args)
 		return doBisectStep();
 	}
 
-	prepareRepo(false);
+	prepareRepo(true);
 	prepareTools();
 
 	auto repo = Repository(REPO);
