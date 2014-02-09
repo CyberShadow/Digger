@@ -211,8 +211,13 @@ bool prepareBuild()
 			build();
 		catch (Exception e)
 		{
-			log("Build failed: " ~ e.msg);
-			buildPath(BUILD_DIR, UNBUILDABLE_MARKER).touch();
+			if (BUILD_DIR.exists)
+			{
+				log("Build failed: " ~ e.msg);
+				buildPath(BUILD_DIR, UNBUILDABLE_MARKER).touch();
+			}
+			else // Failed even before we started building
+				throw e;
 		}
 	}
 
