@@ -255,9 +255,17 @@ void clean()
 
 void install(string src, string dst)
 {
-	log(src ~ " -> " ~ dst);
 	ensurePathExists(dst);
-	rename(src, dst);
+	if (dst.exists && dst.isDir)
+	{
+		foreach (de; src.dirEntries(SpanMode.shallow))
+			install(de.name, dst.buildPath(de.name.baseName));
+	}
+	else
+	{
+		log(src ~ " -> " ~ dst);
+		rename(src, dst);
+	}
 }
 
 @property string model() { return config.model; }
@@ -373,7 +381,7 @@ void buildPhobos()
 		}
 	}
 
-	foreach (f; ["std", "crc32.d"])
+	foreach (f; ["std", "etc", "crc32.d"])
 		if (buildPath(REPO, "phobos", f).exists)
 			install(
 				buildPath(REPO, "phobos", f),
