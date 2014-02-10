@@ -86,20 +86,3 @@ void log(string s)
 }
 
 alias logProgress = log;
-
-// ****************************************************************************
-
-auto pushd(string dir)
-{
-	struct Popd
-	{
-		string oldPath;
-		this(string cwd) { oldPath = cwd; }
-		@disable this();
-		@disable this(this);
-		~this() { chdir(oldPath); }
-	}
-	auto cwd = getcwd();
-	if (dir) chdir(dir);
-	return Popd(cwd);
-}
