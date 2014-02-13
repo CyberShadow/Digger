@@ -1,6 +1,7 @@
 module build;
 
 import std.algorithm;
+import std.datetime;
 import std.exception;
 import std.file;
 import std.path;
@@ -183,6 +184,7 @@ void build()
 
 	mkdir(buildDir);
 	buildDMD();
+	buildPhobosIncludes();
 	buildDruntime();
 	buildPhobos();
 	buildTools();
@@ -282,8 +284,10 @@ void buildDruntime()
 	{
 		auto owd = pushd(buildPath(repoDir, "druntime"));
 
-		mkdir("import");
-		mkdir("lib");
+		mkdirRecurse("import");
+		mkdirRecurse("lib");
+
+		setTimes(buildPath("src", "rt", "minit.obj"), Clock.currTime(), Clock.currTime());
 
 		version (Windows)
 		{
@@ -308,6 +312,17 @@ void buildDruntime()
 	log("Druntime OK!");
 }
 
+void buildPhobosIncludes()
+{
+	// In older versions of D, Druntime depended on Phobos modules.
+	foreach (f; ["std", "etc", "crc32.d"])
+		if (buildPath(repoDir, "phobos", f).exists)
+			install(
+				buildPath(repoDir, "phobos", f),
+				buildPath(buildDir, "import", f),
+			);
+}
+
 void buildPhobos()
 {
 	string[] targets;
@@ -328,12 +343,6 @@ void buildPhobos()
 		}
 	}
 
-	foreach (f; ["std", "etc", "crc32.d"])
-		if (buildPath(repoDir, "phobos", f).exists)
-			install(
-				buildPath(repoDir, "phobos", f),
-				buildPath(buildDir, "import", f),
-			);
 	foreach (lib; targets)
 		install(
 			buildPath(repoDir, "phobos", lib),
