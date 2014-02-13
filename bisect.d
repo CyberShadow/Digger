@@ -81,12 +81,17 @@ int doBisect()
 		auto nGood = repo.query(["log", "--format=oneline", good]).splitLines().length;
 		auto nBad  = repo.query(["log", "--format=oneline", bad ]).splitLines().length;
 		if (bisectConfig.reverse)
+		{
 			enforce(nBad < nGood, "Bad commit is newer than good commit (and reverse search is enabled)");
+			test(false, bad);
+			test(true, good);
+		}
 		else
+		{
 			enforce(nGood < nBad, "Good commit is newer than bad commit");
-
-		test(true, good);
-		test(false, bad);
+			test(true, good);
+			test(false, bad);
+		}
 	}
 
 	auto startPoints = [getRev!false(), getRev!true()];
