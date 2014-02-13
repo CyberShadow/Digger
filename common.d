@@ -42,7 +42,7 @@ import ae.utils.sini;
 
 struct Opts
 {
-	bool inBisect, noVerify, cache;
+	bool inBisect, noVerify;
 	string dir;
 }
 immutable Opts opts;
@@ -63,7 +63,6 @@ shared static this()
 	auto args = Runtime.args;
 	getopt(args,
 		"no-verify", &opts.noVerify,
-		"cache"    , &opts.cache,
 
 		"in-bisect", &opts.inBisect,
 		"dir"      , &opts.dir,

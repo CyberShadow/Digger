@@ -158,7 +158,7 @@ bool prepareBuild()
 
 	bool doBuild = true;
 
-	if (opts.cache)
+	if (config.cache)
 	{
 		auto repo = Repository(REPO);
 		auto commit = repo.query("rev-parse", "HEAD");
@@ -230,7 +230,7 @@ bool prepareBuild()
 		}
 	}
 
-	if (opts.cache)
+	if (config.cache)
 	{
 		BUILD_DIR.rename(cacheDir);
 		cacheDir.dirLink(CURRENT_DIR);
