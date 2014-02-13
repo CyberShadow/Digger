@@ -50,19 +50,19 @@ struct Repository
 	}
 }
 
-enum REPO = "repo";
+alias repoDir = subDir!"repo";     /// D-dot-git repository directory
 enum REPO_URL = "https://bitbucket.org/cybershadow/d.git";
 
 void prepareRepo(bool update)
 {
-	if (!REPO.exists)
+	if (!repoDir.exists)
 	{
 		log("Cloning initial repository...");
-		run(["git", "clone", "--recursive", REPO_URL, REPO]);
+		run(["git", "clone", "--recursive", REPO_URL, repoDir]);
 		return;
 	}
 
-	auto repo = Repository(REPO);
+	auto repo = Repository(repoDir);
 	repo.run("bisect", "reset");
 	repo.run("checkout", "--force", "master");
 	repo.run("reset", "--hard", "origin/master");
@@ -74,26 +74,17 @@ void prepareRepo(bool update)
 			.query("ls-files")
 			.splitLines()
 			.filter!(r => r != ".gitmodules")
-			.map!(r => buildPath(REPO, r))
-			.chain(REPO.only)
+			.map!(r => buildPath(repoDir, r))
+			.chain(repoDir.only)
 			.array();
 		foreach (r; allRepos.parallel)
 			Repository(r).run("-c", "fetch.recurseSubmodules=false", "fetch", "origin");
 	}
 }
 
-/// Returns SHA-1 of the initial search points.
-string getRev(bool good)()
-{
-	static string result;
-	if (!result)
-		result = parseRev(good ? config.good : config.bad);
-	return result;
-}
-
 string parseRev(string rev)
 {
-	auto repo = Repository(REPO);
+	auto repo = Repository(repoDir);
 
 	try
 		return repo.query("log", "-n", "1", "--pretty=format:%H", rev);

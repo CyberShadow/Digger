@@ -37,23 +37,26 @@ import core.runtime;
 
 import std.file;
 import std.getopt;
+import std.path;
 
 import ae.utils.sini;
 
 struct Opts
 {
-	bool inBisect, noVerify;
+	immutable(string)[] args;
+
 	string dir;
+	string configFile;
+
+	// bisect options
+	bool noVerify;
 }
 immutable Opts opts;
 
 struct ConfigFile
 {
-	string bad, good;
-	bool reverse;
-	string tester;
+	string workDir;
 	bool cache;
-	string model = "32";
 }
 immutable ConfigFile config;
 
@@ -62,21 +65,40 @@ shared static this()
 	Opts opts;
 	auto args = Runtime.args;
 	getopt(args,
-		"no-verify", &opts.noVerify,
-
-		"in-bisect", &opts.inBisect,
-		"dir"      , &opts.dir,
+		"no-verify"  , &opts.noVerify,
+		"dir"        , &opts.dir,
+		"config-file", &opts.configFile,
+		std.getopt.config.stopOnFirstNonOption
 	);
-	.opts = opts;
+	if (args.length > 1)
+		opts.args = args[1..$].idup;
 
 	if (opts.dir)
 		chdir(opts.dir);
 
-	config = "dsector.ini"
+	enum CONFIG_FILE = "dsector.ini";
+
+	if (!opts.configFile)
+	{
+		opts.configFile = CONFIG_FILE;
+		if (!opts.configFile.exists)
+			opts.configFile = buildPath(thisExePath.dirName, CONFIG_FILE);
+		if (!opts.configFile.exists)
+			opts.configFile = buildPath(__FILE__.dirName, CONFIG_FILE);
+		if (!opts.configFile.exists)
+			opts.configFile = buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".dsector", CONFIG_FILE);
+		if (!opts.configFile.exists)
+			throw new Exception("Config file not found - see dsector.ini.sample");
+	}
+
+	config = opts.configFile
 		.readText()
 		.splitLines()
 		.parseStructuredIni!ConfigFile();
+	.opts = opts;
 }
+
+@property string subDir(string name)() { return buildPath(config.workDir, name); }
 
 // ****************************************************************************
 
