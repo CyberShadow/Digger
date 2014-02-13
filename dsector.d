@@ -20,7 +20,10 @@ int main(string[] args)
 	if (opts.inBisect)
 	{
 		log("Invoked by git-bisect - performing bisect step.");
-		return doBisectStep();
+		auto result = doBisectStep();
+		if (config.reverse && result != EXIT_UNTESTABLE)
+			result = result ? 0 : 1;
+		return result;
 	}
 
 	prepareRepo(true);
@@ -51,13 +54,19 @@ int main(string[] args)
 
 		auto nGood = repo.query(["log", "--format=oneline", good]).splitLines().length;
 		auto nBad  = repo.query(["log", "--format=oneline", bad ]).splitLines().length;
-		enforce(nGood < nBad, "Good commit is newer than bad commit");
+		if (config.reverse)
+			enforce(nBad < nGood, "Bad commit is newer than good commit (and reverse search is enabled)");
+		else
+			enforce(nGood < nBad, "Good commit is newer than bad commit");
 
 		test(true, good);
 		test(false, bad);
 	}
 
-	repo.run("bisect", "start", getRev!false(), getRev!true());
+	auto startPoints = [getRev!false(), getRev!true()];
+	if (config.reverse)
+		startPoints.reverse;
+	repo.run(["bisect", "start"] ~ startPoints);
 	repo.run("bisect", "run",
 		thisExePath,
 		"--in-bisect",

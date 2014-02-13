@@ -50,6 +50,7 @@ immutable Opts opts;
 struct ConfigFile
 {
 	string bad, good;
+	bool reverse;
 	string tester;
 	bool cache;
 	string model = "32";
