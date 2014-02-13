@@ -162,7 +162,7 @@ bool prepareBuild()
 	{
 		auto repo = Repository(REPO);
 		auto commit = repo.query("rev-parse", "HEAD");
-		auto buildID = commit;
+		auto buildID = "%s-%s".format(commit, model);
 		cacheDir = CACHE_DIR.buildPath(buildID);
 		if (cacheDir.exists)
 		{
