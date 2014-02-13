@@ -108,7 +108,7 @@ string parseRev(string rev)
 		return grep[0];
 
 	auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev).splitLines();
-	if (pickaxe.length <= 2) // removed <- added
+	if (pickaxe.length && pickaxe.length <= 2) // removed <- added
 		return pickaxe[$-1];   // the one where it was added
 
 	throw new Exception("Unknown/ambiguous revision: " ~ rev);
