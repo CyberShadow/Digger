@@ -205,15 +205,16 @@ void clean()
 void install(string src, string dst)
 {
 	ensurePathExists(dst);
-	if (dst.exists && dst.isDir)
+	if (src.isDir)
 	{
+		dst.mkdirRecurse();
 		foreach (de; src.dirEntries(SpanMode.shallow))
 			install(de.name, dst.buildPath(de.name.baseName));
 	}
 	else
 	{
 		log(src ~ " -> " ~ dst);
-		rename(src, dst);
+		hardLink(src, dst);
 	}
 }
 
