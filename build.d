@@ -166,6 +166,7 @@ bool prepareBuild()
 
 	if (currentCacheDir)
 	{
+		ensurePathExists(currentCacheDir);
 		buildDir.rename(currentCacheDir);
 		currentCacheDir.dirLink(currentDir);
 	}
