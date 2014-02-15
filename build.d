@@ -162,16 +162,16 @@ bool prepareBuild()
 			else // Failed even before we started building
 				throw e;
 		}
-	}
 
-	if (currentCacheDir)
-	{
-		ensurePathExists(currentCacheDir);
-		buildDir.rename(currentCacheDir);
-		currentCacheDir.dirLink(currentDir);
+		if (currentCacheDir)
+		{
+			ensurePathExists(currentCacheDir);
+			buildDir.rename(currentCacheDir);
+			currentCacheDir.dirLink(currentDir);
+		}
+		else
+			rename(buildDir, currentDir);
 	}
-	else
-		rename(buildDir, currentDir);
 
 	return !buildPath(currentDir, UNBUILDABLE_MARKER).exists;
 }
