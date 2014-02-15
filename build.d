@@ -83,6 +83,52 @@ enum UNBUILDABLE_MARKER = "unbuildable";
 
 string[string] dEnv;
 
+void prepareEnv()
+{
+	if (dEnv)
+		return;
+
+	auto oldPaths = environment["PATH"].split(pathSeparator);
+
+	// Build a new environment from scratch, to avoid tainting the build with the current environment.
+	string[] newPaths;
+
+	version(Windows)
+	{
+		import std.utf;
+		import win32.winbase;
+		import win32.winnt;
+
+		WCHAR buf[1024];
+		auto winDir = buf[0..GetWindowsDirectory(buf.ptr, buf.length)].toUTF8();
+		auto sysDir = buf[0..GetSystemDirectory (buf.ptr, buf.length)].toUTF8();
+		auto tmpDir = buf[0..GetTempPath(buf.length, buf.ptr)].toUTF8()[0..$-1];
+		newPaths ~= [sysDir, winDir];
+	}
+	else
+		newPaths = ["/bin", "/usr/bin"];
+
+	// Add the DMD we built
+	newPaths ~= buildPath(buildDir, "bin").absolutePath();   // For Phobos/Druntime/Tools
+	newPaths ~= buildPath(currentDir, "bin").absolutePath(); // For other D programs
+
+	// Add the DM tools
+	version (Windows)
+	{
+		auto dmc = buildPath(dmcDir, `bin`).absolutePath();
+		dEnv["DMC"] = dmc;
+		newPaths ~= dmc;
+	}
+
+	dEnv["PATH"] = newPaths.join(pathSeparator);
+
+	version(Windows)
+	{
+		dEnv["TEMP"] = dEnv["TMP"] = tmpDir;
+		dEnv["SystemRoot"] = winDir;
+	}
+}
+
 bool prepareBuild()
 {
 	string currentCacheDir; // this build's cache location
@@ -105,51 +151,10 @@ bool prepareBuild()
 		}
 	}
 
+	prepareEnv();
+
 	if (doBuild)
 	{
-		{
-			auto oldPaths = environment["PATH"].split(pathSeparator);
-
-			// Build a new environment from scratch, to avoid tainting the build with the current environment.
-			string[] newPaths;
-			dEnv = null;
-
-			version(Windows)
-			{
-				import std.utf;
-				import win32.winbase;
-				import win32.winnt;
-
-				WCHAR buf[1024];
-				auto winDir = buf[0..GetWindowsDirectory(buf.ptr, buf.length)].toUTF8();
-				auto sysDir = buf[0..GetSystemDirectory (buf.ptr, buf.length)].toUTF8();
-				auto tmpDir = buf[0..GetTempPath(buf.length, buf.ptr)].toUTF8()[0..$-1];
-				newPaths ~= [sysDir, winDir];
-			}
-			else
-				newPaths = ["/bin", "/usr/bin"];
-
-			// Add the DMD we built
-			newPaths ~= buildPath(buildDir, "bin").absolutePath();   // For Phobos/Druntime/Tools
-			newPaths ~= buildPath(currentDir, "bin").absolutePath(); // For other D programs
-
-			// Add the DM tools
-			version (Windows)
-			{
-				auto dmc = buildPath(dmcDir, `bin`).absolutePath();
-				dEnv["DMC"] = dmc;
-				newPaths ~= dmc;
-			}
-
-			dEnv["PATH"] = newPaths.join(pathSeparator);
-
-			version(Windows)
-			{
-				dEnv["TEMP"] = dEnv["TMP"] = tmpDir;
-				dEnv["SystemRoot"] = winDir;
-			}
-		}
-
 		try
 			build();
 		catch (Exception e)
