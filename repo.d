@@ -65,7 +65,6 @@ void prepareRepo(bool update)
 	auto repo = Repository(repoDir);
 	repo.run("bisect", "reset");
 	repo.run("checkout", "--force", "master");
-	repo.run("reset", "--hard", "origin/master");
 
 	if (update)
 	{
@@ -80,6 +79,8 @@ void prepareRepo(bool update)
 		foreach (r; allRepos.parallel)
 			Repository(r).run("-c", "fetch.recurseSubmodules=false", "fetch", "origin");
 	}
+
+	repo.run("reset", "--hard", "origin/master");
 }
 
 string parseRev(string rev)
