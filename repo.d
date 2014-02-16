@@ -92,13 +92,13 @@ string parseRev(string rev)
 
 	// git's approxidate accepts anything, so a disambiguating prefix is required
 	if (rev.startsWith("@"))
-		return repo.query("log", "-n", "1", "--pretty=format:%H", "--until", rev[1..$].strip());
+		return repo.query("log", "-n", "1", "--pretty=format:%H", "--until", rev[1..$].strip(), "origin/master");
 
-	auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev).splitLines();
+	auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
 	if (grep.length == 1)
 		return grep[0];
 
-	auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev).splitLines();
+	auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
 	if (pickaxe.length && pickaxe.length <= 2) // removed <- added
 		return pickaxe[$-1];   // the one where it was added
 
