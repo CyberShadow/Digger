@@ -88,14 +88,16 @@ shared static this()
 			opts.configFile = buildPath(__FILE__.dirName, CONFIG_FILE);
 		if (!opts.configFile.exists)
 			opts.configFile = buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger", CONFIG_FILE);
-		if (!opts.configFile.exists)
-			throw new Exception("Config file not found - see digger.ini.sample");
 	}
 
-	config = opts.configFile
-		.readText()
-		.splitLines()
-		.parseStructuredIni!ConfigFile();
+	if (opts.configFile.exists)
+	{
+		config = opts.configFile
+			.readText()
+			.splitLines()
+			.parseStructuredIni!ConfigFile();
+	}
+
 	.opts = opts;
 }
 
