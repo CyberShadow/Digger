@@ -115,9 +115,9 @@ int doBisectStep()
 	if (!prepareBuild())
 		return EXIT_UNTESTABLE;
 
-	log("Running test command...");
+	logProgress("Running test command...");
 	auto result = spawnShell(bisectConfig.tester, dEnv, Config.newEnv).wait();
-	log("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
+	logProgress("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
 	return result;
 }
 

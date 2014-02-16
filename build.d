@@ -188,6 +188,7 @@ void build()
 	auto repo = Repository(repoDir);
 	repo.run("submodule", "update");
 
+	logProgress("Building...");
 	mkdir(buildDir);
 	buildDMD();
 	buildPhobosIncludes();
@@ -198,14 +199,14 @@ void build()
 
 void clean()
 {
-	logProgress("CLEANUP");
+	log("Cleaning up...");
 	if (buildDir.exists)
 		buildDir.rmdirRecurse();
 	enforce(!buildDir.exists);
 
 	auto repo = Repository(repoDir);
 	repo.run("submodule", "foreach", "git", "reset", "--hard");
-	repo.run("submodule", "foreach", "git", "clean", "--force", "-x", "-d");
+	repo.run("submodule", "foreach", "git", "clean", "--force", "-x", "-d", "--quiet");
 }
 
 void install(string src, string dst)
@@ -219,7 +220,7 @@ void install(string src, string dst)
 	}
 	else
 	{
-		log(src ~ " -> " ~ dst);
+		debug log(src ~ " -> " ~ dst);
 		hardLink(src, dst);
 	}
 }
@@ -241,8 +242,6 @@ else
 
 void buildDMD()
 {
-	logProgress("BUILDING DMD");
-
 	{
 		auto owd = pushd(buildPath(repoDir, "dmd", "src"));
 		run(["make", "-f", makeFileName, "MODEL=" ~ model], dEnv);

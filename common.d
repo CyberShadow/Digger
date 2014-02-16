@@ -107,4 +107,7 @@ void log(string s)
 	stderr.writeln("dsector: ", s);
 }
 
-alias logProgress = log;
+void logProgress(string s)
+{
+	log((" " ~ s ~ " ").center(70, '-'));
+}
