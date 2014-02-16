@@ -47,3 +47,7 @@ tester = cd C:\Temp && dmd -o- test.d
 ; Whether to target 32 or 64 bits when building D components.
 
 model = 32
+
+; Build/test environment.
+; See digger.ini.sample for an explanation.
+[environment]

@@ -57,6 +57,7 @@ struct ConfigFile
 {
 	string workDir;
 	bool cache;
+	immutable string[string] environment;
 }
 immutable ConfigFile config;
 

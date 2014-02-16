@@ -22,6 +22,8 @@ struct BisectConfig
 	string tester;
 
 	BuildConfig build;
+
+	string[string] environment;
 }
 BisectConfig bisectConfig;
 
@@ -112,6 +114,10 @@ int doBisect()
 
 int doBisectStep()
 {
+	auto oldEnv = dEnv.dup;
+	scope(exit) dEnv = oldEnv;
+	applyEnv(bisectConfig.environment);
+
 	if (!prepareBuild())
 		return EXIT_UNTESTABLE;
 

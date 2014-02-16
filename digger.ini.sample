@@ -20,3 +20,26 @@
 ; disk space.
 
 ; cache = true
+
+; Build/test environment.
+; By default, Digger completely clears the environment and
+; builds a new one from scratch, to avoid potential sources
+; of contamination that can affect the D builds or test results.
+; The environment is calculated in this order:
+; 1. Clear entirely
+; 2. Build minimal environment
+; 3. Apply dsector.ini settings
+; 4. Apply bisect.ini settings, if we are bisecting
+[environment]
+
+; You can use %VAR% syntax to refer to the previous value of a
+; variable, or if there wasn't one, to the value from the
+; original environment (before it was cleared and rebuilt).
+
+; Examples:
+
+; Add something to PATH
+;PATH=%PATH%;C:\Tools
+
+; Import PATHEXT from the original environment
+;PATHEXT=%PATHEXT%
