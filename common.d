@@ -76,7 +76,7 @@ shared static this()
 	if (opts.dir)
 		chdir(opts.dir);
 
-	enum CONFIG_FILE = "dsector.ini";
+	enum CONFIG_FILE = "digger.ini";
 
 	if (!opts.configFile)
 	{
@@ -86,9 +86,9 @@ shared static this()
 		if (!opts.configFile.exists)
 			opts.configFile = buildPath(__FILE__.dirName, CONFIG_FILE);
 		if (!opts.configFile.exists)
-			opts.configFile = buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".dsector", CONFIG_FILE);
+			opts.configFile = buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger", CONFIG_FILE);
 		if (!opts.configFile.exists)
-			throw new Exception("Config file not found - see dsector.ini.sample");
+			throw new Exception("Config file not found - see digger.ini.sample");
 	}
 
 	config = opts.configFile
@@ -104,7 +104,7 @@ shared static this()
 
 void log(string s)
 {
-	stderr.writeln("dsector: ", s);
+	stderr.writeln("digger: ", s);
 }
 
 void logProgress(string s)

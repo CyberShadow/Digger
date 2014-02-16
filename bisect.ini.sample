@@ -4,7 +4,7 @@
 
 ; Starting points.
 ; Known bad (with regression) and good (w/o regression) commits.
-; Dsector will verify these commits to avoid a false conclusion.
+; Digger will verify these commits to avoid a false conclusion.
 ; Supported formats:
 ; - "master" (implies latest commit)
 ; - SHA-1 hash of D.git repo commit
@@ -23,7 +23,7 @@ good = @ 1 month ago
 ; something. Although this can be accomplished by reversing the
 ; return value of the test command, the terminology can get
 ; confusing, since "good" will mean "still broken" and "bad"
-; will mean "already fixed". This option causes D-sector to
+; will mean "already fixed". This option causes Digger to
 ; reverse the test command output, as well as diagnostic
 ; messages.
 ; Note that git still uses the reversed meanings, so e.g. it

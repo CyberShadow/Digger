@@ -1,4 +1,4 @@
-module dsector;
+module digger;
 
 import std.exception;
 

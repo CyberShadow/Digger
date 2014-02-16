@@ -1,21 +1,21 @@
-; Copy this file to dsector.ini, and make the appropriate
+; Copy this file to digger.ini, and make the appropriate
 ; changes below.
-; D-sector looks for dsector.ini in these locations, in order:
+; Digger looks for digger.ini in these locations, in order:
 ; current directory, EXE directory, source directory, and
-; ~/.dsector/dsector.ini.
+; ~/.digger/digger.ini.
 
 ; Working directory.
-; This directory will contain all of D-sector's working files:
+; This directory will contain all of Digger's working files:
 ; the D repositories, any build prerequisites obtained
 ; automatically, the current build output, and the cache, if
 ; enabled.
 ; Please specify an absolute path. The default is to use the
 ; current directory.
 
-; workDir = C:\Temp\Dsector
+; workDir = C:\Temp\Digger
 
 ; Build cache.
-; To speed up successive runs, Dsector can save the results of
+; To speed up successive runs, Digger can save the results of
 ; each commit's build. The downside is that this uses a lot of
 ; disk space.
 
