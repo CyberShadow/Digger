@@ -254,6 +254,9 @@ void buildDMD()
 
 	version (Windows)
 	{
+		// TODO: either properly detect where VS and the SDK are installed,
+		// or obtain and create a portable install with only the necessary components,
+		// as done here: https://github.com/CyberShadow/FarCI
 		auto ini = q"EOS
 [Environment]
 LIB="%@P%\..\lib"
