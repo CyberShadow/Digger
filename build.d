@@ -162,6 +162,11 @@ bool prepareBuild()
 			if (buildDir.exists)
 			{
 				log("Build failed: " ~ e.msg);
+
+				// An incomplete build is useless, nuke the directory
+				// and create a new one just for the UNBUILDABLE_MARKER.
+				rmdirRecurse(buildDir);
+				mkdir(buildDir);
 				buildPath(buildDir, UNBUILDABLE_MARKER).touch();
 			}
 			else // Failed even before we started building
