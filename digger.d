@@ -29,7 +29,7 @@ int main()
 		{
 			bool model64;
 			getopt(args,
-				"--64", &model64,
+				"64", &model64,
 			);
 			enforce(args.length == 2, "Specify revision");
 			prepareRepo(true);
