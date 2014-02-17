@@ -36,7 +36,9 @@ reverse = false
 # Should exit with status 0 to indicate success (a "good" commit,
 # not manifesting the regression), and any other status to
 # indicate failure (a "bad" commit, with the regression).
-# Exit code 125 is treated specially and indicates
+# Exit code 125 is treated specially and indicates that the
+# current D revision is untestable, and that Git should try
+# another.
 
 tester = cd C:\Temp && dmd -o- test.d
 
