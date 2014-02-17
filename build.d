@@ -325,18 +325,7 @@ void buildDruntime()
 
 		setTimes(buildPath("src", "rt", "minit.obj"), Clock.currTime(), Clock.currTime());
 
-		version (Windows)
-		{
-			auto lib = buildPath("lib", "druntime%s.lib".format(modelSuffix));
-			auto obj = buildPath("lib", "gcstub%s.obj"  .format(modelSuffix));
-			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model, lib, obj, "import", "copydir", "copy"], dEnv);
-			enforce(lib.exists);
-			enforce(obj.exists);
-		}
-		else
-		{
-			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model], dEnv);
-		}
+		run(["make", "-f", makeFileNameModel, "MODEL=" ~ model], dEnv);
 	}
 
 	install(
