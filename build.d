@@ -163,6 +163,7 @@ void prepareBuild()
 		currentCacheDir = buildPath(cacheDir, buildID);
 		if (currentCacheDir.exists)
 		{
+			log("Found in cache: " ~ currentCacheDir);
 			currentCacheDir.dirLink(currentDir);
 			enforce(!buildPath(currentDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
 			return;
