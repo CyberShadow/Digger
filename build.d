@@ -11,6 +11,7 @@ import std.string;
 
 import ae.sys.file;
 
+import cache;
 import common;
 import repo;
 
@@ -79,7 +80,6 @@ void prepareTools()
 
 alias currentDir = subDir!"current";     /// Final build directory
 alias buildDir   = subDir!"build";       /// Temporary build directory
-alias cacheDir   = subDir!"cache";       /// Cache directory
 enum UNBUILDABLE_MARKER = "unbuildable";
 
 string[string] dEnv;
@@ -148,6 +148,8 @@ void applyEnv(in string[string] env)
 
 bool prepareBuild()
 {
+	auto repo = Repository(repoDir);
+	auto commit = repo.query("rev-parse", "HEAD");
 	string currentCacheDir; // this build's cache location
 
 	if (currentDir.exists)
@@ -157,8 +159,6 @@ bool prepareBuild()
 
 	if (config.cache)
 	{
-		auto repo = Repository(repoDir);
-		auto commit = repo.query("rev-parse", "HEAD");
 		auto buildID = "%s-%s".format(commit, model);
 		currentCacheDir = buildPath(cacheDir, buildID);
 		if (currentCacheDir.exists)
@@ -195,6 +195,7 @@ bool prepareBuild()
 			ensurePathExists(currentCacheDir);
 			buildDir.rename(currentCacheDir);
 			currentCacheDir.dirLink(currentDir);
+			optimizeRevision(commit);
 		}
 		else
 			rename(buildDir, currentDir);

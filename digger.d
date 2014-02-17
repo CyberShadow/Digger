@@ -5,6 +5,7 @@ import std.getopt;
 
 import bisect;
 import build;
+import cache;
 import common;
 import repo;
 
@@ -39,6 +40,9 @@ int main()
 			enforce(prepareBuild(), "Build failed");
 			return 0;
 		}
+		case "compact":
+			optimizeCache();
+			return 0;
 		default:
 			throw new Exception("Unknown command: " ~ args[0]);
 	}

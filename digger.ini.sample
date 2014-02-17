@@ -16,8 +16,9 @@
 
 # Build cache.
 # To speed up successive runs, Digger can save the results of
-# each commit's build. The downside is that this uses a lot of
-# disk space.
+# each commit's build. The downside is that this uses up disk
+# space (although note that Digger uses hard links to minimize
+# disk usage).
 
 # cache = true
 
