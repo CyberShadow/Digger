@@ -106,7 +106,6 @@ int doBisect()
 		"--config-file", opts.configFile,
 		"bisect",
 		"--in-bisect", bisectConfigFile,
-
 	);
 
 	return 0;
@@ -134,4 +133,38 @@ string getRev(bool good)()
 	if (!result)
 		result = parseRev(good ? bisectConfig.good : bisectConfig.bad);
 	return result;
+}
+
+/// Find the earliest revision that Digger can build.
+/// Used during development to extend Digger's range.
+int doDelve()
+{
+	bool inBisect;
+
+	auto args = opts.args.dup;
+	getopt(args,
+		"in-bisect", &inBisect,
+	);
+
+	if (inBisect)
+	{
+		log("Invoked by git-bisect - performing bisect step.");
+		inDelve = true;
+		auto success = prepareBuild();
+		return success ? 1 : 0;
+	}
+	else
+	{
+		prepareRepo(false);
+		auto repo = Repository(repoDir);
+		auto root = repo.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
+		repo.run(["bisect", "start", "master", root]);
+		repo.run("bisect", "run",
+			thisExePath,
+			"--dir", getcwd(),
+			"--config-file", opts.configFile,
+			"delve", "--in-bisect",
+		);
+		return 0;
+	}
 }

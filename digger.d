@@ -43,6 +43,8 @@ int main()
 		case "compact":
 			optimizeCache();
 			return 0;
+		case "delve":
+			return doDelve();
 		default:
 			throw new Exception("Unknown command: " ~ args[0]);
 	}

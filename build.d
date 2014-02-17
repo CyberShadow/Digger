@@ -20,6 +20,7 @@ struct BuildConfig
 	string model = "32";
 }
 BuildConfig buildConfig;
+bool inDelve;
 
 version(Windows)
 alias dmcDir = subDir!"dm";
@@ -185,6 +186,10 @@ bool prepareBuild()
 				rmdirRecurse(buildDir);
 				mkdir(buildDir);
 				buildPath(buildDir, UNBUILDABLE_MARKER).touch();
+
+				// Don't cache failed build results during delve
+				if (inDelve)
+					currentCacheDir = null;
 			}
 			else // Failed even before we started building
 				throw e;
