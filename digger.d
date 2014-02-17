@@ -34,6 +34,8 @@ int main()
 			getopt(args,
 				"64", &model64,
 			);
+			if (model64)
+				buildConfig.model = "64";
 			enforce(args.length == 2, "Specify revision");
 			prepareRepo(true);
 			auto rev = parseRev(args[1]);
