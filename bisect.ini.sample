@@ -48,6 +48,11 @@ tester = cd C:\Temp && dmd -o- test.d
 
 model = 32
 
+# Whether to build a debug compiler.
+# Debug compilers are built quicker, but compile D code slower.
+
+debugDMD = false
+
 # Build/test environment.
 # See digger.ini.sample for an explanation.
 [environment]

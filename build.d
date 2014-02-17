@@ -18,6 +18,7 @@ import repo;
 struct BuildConfig
 {
 	string model = "32";
+	bool debugDMD = false;
 }
 BuildConfig buildConfig;
 bool inDelve;
@@ -268,7 +269,8 @@ void buildDMD()
 {
 	{
 		auto owd = pushd(buildPath(repoDir, "dmd", "src"));
-		run(["make", "-f", makeFileName, "MODEL=" ~ model], dEnv);
+		string[] targets = buildConfig.debugDMD ? [] : ["dmd"];
+		run(["make", "-f", makeFileName, "MODEL=" ~ model] ~ targets, dEnv);
 	}
 
 	install(
