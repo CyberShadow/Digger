@@ -23,7 +23,9 @@ int main()
 		{
 			enforce(args.length == 2, "Specify revision");
 			auto rev = parseRev(args[1]);
-			Repository(repoDir).run("log", "-n1", rev);
+			auto repo = Repository(repoDir);
+			repo.run("log", "-n1", rev);
+			repo.run("log", "-n1", "--pretty=format:t=%ct", rev);
 			return 0;
 		}
 		case "build":

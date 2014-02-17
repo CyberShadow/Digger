@@ -140,6 +140,17 @@ string getRev(bool good)()
 	return result;
 }
 
+struct CommitRange
+{
+	uint startTime; /// first bad commit
+	uint endTime;   /// first good commit
+}
+/// Known unbuildable time ranges
+const CommitRange[] badCommits =
+[
+	{ 1342243766, 1342259226 },
+];
+
 /// Find the earliest revision that Digger can build.
 /// Used during development to extend Digger's range.
 int doDelve()
@@ -151,9 +162,21 @@ int doDelve()
 		"in-bisect", &inBisect,
 	);
 
+	auto repo = Repository(repoDir);
+
 	if (inBisect)
 	{
 		log("Invoked by git-bisect - performing bisect step.");
+
+		import std.conv;
+		auto t = repo.query("log", "-n1", "--pretty=format:%ct").to!int();
+		foreach (r; badCommits)
+			if (r.startTime <= t && t < r.endTime)
+			{
+				log("This revision is known to be unbuildable, skipping.");
+				return EXIT_UNTESTABLE;
+			}
+
 		inDelve = true;
 		try
 		{
@@ -169,7 +192,6 @@ int doDelve()
 	else
 	{
 		prepareRepo(false);
-		auto repo = Repository(repoDir);
 		auto root = repo.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
 		repo.run(["bisect", "start", "master", root]);
 		repo.run("bisect", "run",
