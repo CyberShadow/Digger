@@ -154,6 +154,8 @@ void prepareBuild()
 	auto commit = repo.query("rev-parse", "HEAD");
 	string currentCacheDir; // this build's cache location
 
+	prepareEnv();
+
 	if (currentDir.exists)
 		currentDir.rmdirRecurse();
 
@@ -169,8 +171,6 @@ void prepareBuild()
 			return;
 		}
 	}
-
-	prepareEnv();
 
 	scope (exit)
 	{
