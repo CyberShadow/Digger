@@ -117,8 +117,13 @@ int doBisectStep()
 	scope(exit) dEnv = oldEnv;
 	applyEnv(bisectConfig.environment);
 
-	if (!prepareBuild())
+	try
+		prepareBuild();
+	catch (Exception e)
+	{
+		log("Build failed: " ~ e.toString());
 		return EXIT_UNTESTABLE;
+	}
 
 	logProgress("Running test command...");
 	auto result = spawnShell(bisectConfig.tester, dEnv, Config.newEnv).wait();
@@ -150,8 +155,16 @@ int doDelve()
 	{
 		log("Invoked by git-bisect - performing bisect step.");
 		inDelve = true;
-		auto success = prepareBuild();
-		return success ? 1 : 0;
+		try
+		{
+			prepareBuild();
+			return 1;
+		}
+		catch (Exception e)
+		{
+			log("Build failed: " ~ e.toString());
+			return 0;
+		}
 	}
 	else
 	{

@@ -147,7 +147,7 @@ void applyEnv(in string[string] env)
 	}
 }
 
-bool prepareBuild()
+void prepareBuild()
 {
 	auto repo = Repository(repoDir);
 	auto commit = repo.query("rev-parse", "HEAD");
@@ -156,8 +156,6 @@ bool prepareBuild()
 	if (currentDir.exists)
 		currentDir.rmdirRecurse();
 
-	bool doBuild = true;
-
 	if (config.cache)
 	{
 		auto buildID = "%s-%s".format(commit, model);
@@ -165,48 +163,46 @@ bool prepareBuild()
 		if (currentCacheDir.exists)
 		{
 			currentCacheDir.dirLink(currentDir);
-			doBuild = false;
+			enforce(!buildPath(currentDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
+			return;
 		}
 	}
 
 	prepareEnv();
 
-	if (doBuild)
+	scope (exit)
 	{
-		try
-			build();
-		catch (Exception e)
+		if (buildDir.exists)
 		{
-			if (buildDir.exists)
+			if (currentCacheDir)
 			{
-				log("Build failed: " ~ e.msg);
-
-				// An incomplete build is useless, nuke the directory
-				// and create a new one just for the UNBUILDABLE_MARKER.
-				rmdirRecurse(buildDir);
-				mkdir(buildDir);
-				buildPath(buildDir, UNBUILDABLE_MARKER).touch();
-
-				// Don't cache failed build results during delve
-				if (inDelve)
-					currentCacheDir = null;
+				ensurePathExists(currentCacheDir);
+				buildDir.rename(currentCacheDir);
+				currentCacheDir.dirLink(currentDir);
+				optimizeRevision(commit);
 			}
-			else // Failed even before we started building
-				throw e;
+			else
+				rename(buildDir, currentDir);
 		}
-
-		if (currentCacheDir)
-		{
-			ensurePathExists(currentCacheDir);
-			buildDir.rename(currentCacheDir);
-			currentCacheDir.dirLink(currentDir);
-			optimizeRevision(commit);
-		}
-		else
-			rename(buildDir, currentDir);
 	}
 
-	return !buildPath(currentDir, UNBUILDABLE_MARKER).exists;
+	scope (failure)
+	{
+		if (buildDir.exists)
+		{
+			// An incomplete build is useless, nuke the directory
+			// and create a new one just for the UNBUILDABLE_MARKER.
+			rmdirRecurse(buildDir);
+			mkdir(buildDir);
+			buildPath(buildDir, UNBUILDABLE_MARKER).touch();
+
+			// Don't cache failed build results during delve
+			if (inDelve)
+				currentCacheDir = null;
+		}
+	}
+
+	build();
 }
 
 void build()

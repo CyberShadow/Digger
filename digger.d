@@ -37,7 +37,7 @@ int main()
 			auto rev = parseRev(args[1]);
 			Repository(repoDir).run("checkout", rev);
 			prepareTools();
-			enforce(prepareBuild(), "Build failed");
+			prepareBuild();
 			return 0;
 		}
 		case "compact":
