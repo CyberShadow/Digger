@@ -148,7 +148,8 @@ struct CommitRange
 /// Known unbuildable time ranges
 const CommitRange[] badCommits =
 [
-	{ 1342243766, 1342259226 },
+	{ 1342243766, 1342259226 }, // Messed up DMD make files
+	{ 1317625155, 1319346272 }, // Missing std.stdio import in std.regex
 ];
 
 /// Find the earliest revision that Digger can build.
