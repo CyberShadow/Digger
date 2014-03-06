@@ -77,7 +77,7 @@ void prepareRepo(bool update)
 			.chain(repoDir.only)
 			.array();
 		foreach (r; allRepos.parallel)
-			Repository(r).run("-c", "fetch.recurseSubmodules=false", "fetch", "origin");
+			Repository(r).run("-c", "fetch.recurseSubmodules=false", "remote", "update");
 	}
 
 	repo.run("reset", "--hard", "origin/master");
