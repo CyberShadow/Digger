@@ -29,11 +29,12 @@ BisectConfig bisectConfig;
 
 int doBisect()
 {
-	bool inBisect;
+	bool inBisect, noVerify;
 
 	auto args = opts.args.dup;
 	getopt(args,
 		"in-bisect", &inBisect,
+		"no-verify", &noVerify,
 	);
 
 	enforce(args.length >= 2, "Specify bisect.ini");
@@ -73,7 +74,7 @@ int doBisect()
 			.format(name, rev, result));
 	}
 
-	if (!opts.noVerify)
+	if (!noVerify)
 	{
 		auto good = getRev!true();
 		auto bad = getRev!false();

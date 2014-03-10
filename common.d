@@ -47,9 +47,6 @@ struct Opts
 
 	string dir;
 	string configFile;
-
-	// bisect options
-	bool noVerify;
 }
 immutable Opts opts;
 
@@ -66,7 +63,6 @@ shared static this()
 	Opts opts;
 	auto args = Runtime.args;
 	getopt(args,
-		"no-verify"  , &opts.noVerify,
 		"dir"        , &opts.dir,
 		"config-file", &opts.configFile,
 		std.getopt.config.stopOnFirstNonOption
