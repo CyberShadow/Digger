@@ -9,6 +9,12 @@ Git is required.
 
 Currently, you must have Microsoft Visual Studio 2010 and Windows SDK v7.0A installed to build for Windows/64.
 
+### Building
+
+    $ git clone --recursive https://github.com/CyberShadow/Digger
+    $ cd Digger
+    $ rdmd --build-only digger
+
 ### Configuration
 
 Copy `digger.ini.sample` to `digger.ini` and adjust as instructed by the comments.
