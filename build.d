@@ -10,16 +10,13 @@ import std.process : environment;
 import std.string;
 
 import ae.sys.file;
+import ae.sys.d.build;
 
 import cache;
 import common;
 import repo;
 
-struct BuildConfig
-{
-	string model = "32";
-	bool debugDMD = false;
-}
+alias BuildConfig = DBuilder.Config;
 BuildConfig buildConfig;
 bool inDelve;
 
@@ -148,6 +145,17 @@ void applyEnv(in string[string] env)
 	}
 }
 
+DiggerBuilder builder;
+
+void prepareBuilder()
+{
+	builder = new DiggerBuilder();
+	builder.config = buildConfig;
+	builder.repoDir = repoDir;
+	builder.buildDir = buildDir;
+	builder.dEnv = dEnv;
+}
+
 void prepareBuild()
 {
 	auto repo = Repository(repoDir);
@@ -155,13 +163,14 @@ void prepareBuild()
 	string currentCacheDir; // this build's cache location
 
 	prepareEnv();
+	prepareBuilder();
 
 	if (currentDir.exists)
 		currentDir.rmdirRecurse();
 
 	if (config.cache)
 	{
-		auto buildID = "%s-%s".format(commit, model);
+		auto buildID = "%s-%s".format(commit, builder.model);
 		if (buildConfig.debugDMD)
 			buildID ~= "-debug";
 
@@ -210,6 +219,14 @@ void prepareBuild()
 	build();
 }
 
+class DiggerBuilder : DBuilder
+{
+	override void log(string s)
+	{
+		common.log(s);
+	}
+}
+
 void build()
 {
 	clean();
@@ -219,11 +236,8 @@ void build()
 
 	logProgress("Building...");
 	mkdir(buildDir);
-	buildDMD();
-	buildPhobosIncludes();
-	buildDruntime();
-	buildPhobos();
-	buildTools();
+
+	builder.build();
 }
 
 void clean()
@@ -236,162 +250,4 @@ void clean()
 	auto repo = Repository(repoDir);
 	repo.run("submodule", "foreach", "git", "reset", "--hard");
 	repo.run("submodule", "foreach", "git", "clean", "--force", "-x", "-d", "--quiet");
-}
-
-void install(string src, string dst)
-{
-	ensurePathExists(dst);
-	if (src.isDir)
-	{
-		if (!dst.exists)
-			dst.mkdirRecurse();
-		foreach (de; src.dirEntries(SpanMode.shallow))
-			install(de.name, dst.buildPath(de.name.baseName));
-	}
-	else
-	{
-		debug log(src ~ " -> " ~ dst);
-		hardLink(src, dst);
-	}
-}
-
-@property string model() { return buildConfig.model; }
-@property string modelSuffix() { return buildConfig.model == buildConfig.init.model ? "" : buildConfig.model; }
-version (Windows)
-{
-	enum string makeFileName = "win32.mak";
-	@property string makeFileNameModel() { return "win"~model~".mak"; }
-	enum string binExt = ".exe";
-}
-else
-{
-	enum string makeFileName = "posix.mak";
-	enum string makeFileNameModel = "posix.mak";
-	enum string binExt = "";
-}
-
-void buildDMD()
-{
-	{
-		auto owd = pushd(buildPath(repoDir, "dmd", "src"));
-		string[] targets = buildConfig.debugDMD ? [] : ["dmd"];
-		run(["make", "-f", makeFileName, "MODEL=" ~ model] ~ targets, dEnv);
-	}
-
-	install(
-		buildPath(repoDir, "dmd", "src", "dmd" ~ binExt),
-		buildPath(buildDir, "bin", "dmd" ~ binExt),
-	);
-
-	version (Windows)
-	{
-		// TODO: either properly detect where VS and the SDK are installed,
-		// or obtain and create a portable install with only the necessary components,
-		// as done here: https://github.com/CyberShadow/FarCI
-		auto ini = q"EOS
-[Environment]
-LIB="%@P%\..\lib"
-DFLAGS="-I%@P%\..\import"
-LINKCMD=%DMC%\link.exe
-[Environment64]
-LIB="%@P%\..\lib"
-DFLAGS=%DFLAGS% -L/OPT:NOICF
-VCINSTALLDIR=\Program Files (x86)\Microsoft Visual Studio 10.0\VC\
-PATH=%PATH%;%VCINSTALLDIR%\bin\amd64
-WindowsSdkDir=\Program Files (x86)\Microsoft SDKs\Windows\v7.0A
-LINKCMD=%VCINSTALLDIR%\bin\amd64\link.exe
-LIB=%LIB%;"%VCINSTALLDIR%\lib\amd64"
-LIB=%LIB%;"%WindowsSdkDir%\Lib\winv6.3\um\x64"
-LIB=%LIB%;"%WindowsSdkDir%\Lib\win8\um\x64"
-LIB=%LIB%;"%WindowsSdkDir%\Lib\x64"
-EOS";
-		buildPath(buildDir, "bin", "sc.ini").write(ini);
-	}
-	else
-	{
-		auto ini = q"EOS
-[Environment]
-DFLAGS="-I%@P%/../import" "-L-L%@P%/../lib"
-EOS";
-		buildPath(buildDir, "bin", "dmd.conf").write(ini);
-	}
-
-	log("DMD OK!");
-}
-
-void buildDruntime()
-{
-	{
-		auto owd = pushd(buildPath(repoDir, "druntime"));
-
-		mkdirRecurse("import");
-		mkdirRecurse("lib");
-
-		setTimes(buildPath("src", "rt", "minit.obj"), Clock.currTime(), Clock.currTime());
-
-		run(["make", "-f", makeFileNameModel, "MODEL=" ~ model], dEnv);
-	}
-
-	install(
-		buildPath(repoDir, "druntime", "import"),
-		buildPath(buildDir, "import"),
-	);
-
-
-	log("Druntime OK!");
-}
-
-void buildPhobosIncludes()
-{
-	// In older versions of D, Druntime depended on Phobos modules.
-	foreach (f; ["std", "etc", "crc32.d"])
-		if (buildPath(repoDir, "phobos", f).exists)
-			install(
-				buildPath(repoDir, "phobos", f),
-				buildPath(buildDir, "import", f),
-			);
-}
-
-void buildPhobos()
-{
-	string[] targets;
-
-	{
-		auto owd = pushd(buildPath(repoDir, "phobos"));
-		version (Windows)
-		{
-			auto lib = "phobos%s.lib".format(modelSuffix);
-			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model, lib], dEnv);
-			enforce(lib.exists);
-			targets = [lib];
-		}
-		else
-		{
-			run(["make", "-f", makeFileNameModel, "MODEL=" ~ model], dEnv);
-			targets = "generated".dirEntries(SpanMode.depth).filter!(de => de.name.endsWith(".a")).map!(de => de.name).array();
-		}
-	}
-
-	foreach (lib; targets)
-		install(
-			buildPath(repoDir, "phobos", lib),
-			buildPath(buildDir, "lib", lib.baseName()),
-		);
-
-	log("Phobos OK!");
-}
-
-void buildTools()
-{
-	// Just build rdmd
-	{
-		auto owd = pushd(buildPath(repoDir, "tools"));
-		run(["dmd", "-m" ~ model, "rdmd"], dEnv);
-	}
-	install(
-		buildPath(repoDir, "tools", "rdmd" ~ binExt),
-		buildPath(buildDir, "bin", "rdmd" ~ binExt),
-	);
-
-	log("Tools OK!");
 }
