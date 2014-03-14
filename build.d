@@ -23,6 +23,9 @@ bool inDelve;
 version(Windows)
 alias dmcDir = subDir!"dm";
 
+// http://d.puremagic.com/issues/show_bug.cgi?id=7016
+static import ae.net.http.client;
+
 /// Obtains prerequisites necessary for building D.
 void prepareTools()
 {
@@ -35,8 +38,18 @@ void prepareTools()
 			void downloadFile(string url, string target)
 			{
 				log("Downloading " ~ url);
-				import std.net.curl;
-				download(url, target);
+
+				import std.stdio : File;
+				import ae.net.http.client;
+				import ae.net.asockets;
+				import ae.sys.data;
+
+				httpGet(url,
+					(Data data) { std.file.write(target, data.contents); },
+					(string error) { throw new Exception(error); }
+				);
+
+				socketManager.loop();
 			}
 
 			alias obtainUsing!downloadFile cachedDownload;
