@@ -225,6 +225,10 @@ void startTask(string[] args...)
 
 void initialize()
 {
+	if (!repoDir.exists)
+		log("First run detected.\nPlease be patient, " ~
+			"cloning everything might take a few minutes...\n");
+
 	log("Preparing repository...");
 	prepareRepo(true);
 	auto repo = Repository(repoDir);
