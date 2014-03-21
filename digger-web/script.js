@@ -194,7 +194,10 @@ function showTask($logDiv, complete) {
 			if (status.lines[i].error)
 				$line.addClass('error');
 			$logDiv.append($line);
-			$line.slideDown();
+			if (status.lines.length > 10)
+				$line.show();
+			else
+				$line.slideDown();
 		}
 		if (status.lines.length)
 			$logDiv.animate({scrollTop: 1e9}, {queue:false});
