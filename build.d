@@ -166,6 +166,7 @@ void prepareBuilder()
 	builder.config = buildConfig;
 	builder.repoDir = repoDir;
 	builder.buildDir = buildDir;
+	version(Windows)
 	builder.dmcDir = dmcDir;
 	builder.dEnv = dEnv;
 }
