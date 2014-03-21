@@ -214,11 +214,26 @@ private:
 
 Task currentTask;
 
+bool taskRunning()
+{
+	return currentTask && currentTask.getState() == Task.State.running;
+}
+
 void startTask(string[] args...)
 {
-	assert(!currentTask || currentTask.getState() != Task.State.running,
-		"A task is already running");
+	assert(!taskRunning(), "A task is already running");
 	currentTask = new Task(args);
+}
+
+shared static this()
+{
+	addShutdownHandler({
+		if (taskRunning())
+		{
+			log("Waiting for current task to finish...");
+			currentTask.pid.wait();
+		}
+	 });
 }
 
 // ***************************************************************************
