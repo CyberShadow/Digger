@@ -1,0 +1,64 @@
+html {
+	font-family: "Trebuchet MS", sans-serif;
+}
+
+body {
+	width: 42em;
+	margin: 0 auto;
+}
+
+h1 {
+	text-align: center;
+	font-size: 36pt;
+	margin: 36pt 0;
+}
+
+#failing-box {
+	float: right;
+}
+
+table {
+	width: 100%;
+	border-spacing: 0;
+}
+
+tr.bad {
+	display: none;
+}
+
+tr:last-child {
+	width: 20%;
+}
+
+.test {
+	color: white;
+	border-radius: 5px;
+	text-align: center;
+	padding: 2px;
+	display: block;
+	text-decoration: none;
+	width: 52pt;
+}
+
+.test.success { background-color: #0a0; }
+.test.failure { background-color: #a00; }
+.test.unknown { background-color: #aaa; }
+
+#buttons {
+	margin: 24pt 0 48pt 0
+}
+
+#buttons input {
+	font-size: 24pt;
+	width: 100%;
+}
+
+.log {
+	font-family: "Consolas", monospace;
+	white-space: pre-wrap;
+	color: #444;
+}
+
+.log .error {
+	color: black;
+}

@@ -103,7 +103,7 @@ shared static this()
 
 void log(string s)
 {
-	stderr.writeln("digger: ", s);
+	stderr.writeln("digger: ", s); stderr.flush();
 }
 
 void logProgress(string s)

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="script.js"></script>
+
+<link rel="stylesheet" href="style.css">
+
+<form id="pull-form" style="display: none">
+	<h1>Customize your D build</h1>
+
+	<div id="failing-box">
+		<input type="checkbox" id="show-failing" name="show-failing"><label for="show-failing">Show failing</label>
+	</div>
+
+	<div id="repos"></div>
+
+	<table id="buttons"><tr>
+		<td><input type="submit" value="Build"></td>
+		<td><input type="submit" value="Exit" ></td>
+	</tr></table>
+</form>
+
+<div id="initialization">
+	<h1>Initializing</h1>
+
+	<div class="log"></div>
+</div>
