@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 
+<title>digger-web</title>
+
 <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src="script.js"></script>
 
 <link rel="stylesheet" href="style.css">
 
-<form id="pull-form" style="display: none">
+<div id="pull-form" style="display: none">
 	<h1>Customize your D build</h1>
 
 	<div id="failing-box">
@@ -15,13 +17,19 @@
 	<div id="repos"></div>
 
 	<table id="buttons"><tr>
-		<td><input type="submit" value="Build"></td>
-		<td><input type="submit" value="Exit" ></td>
+		<td><input type="submit" value="Build" id="build-button"></td>
+		<td><input type="submit" value="Exit"  id="exit-button"></td>
 	</tr></table>
-</form>
+</div>
 
 <div id="initialization">
 	<h1>Initializing</h1>
+
+	<div class="log"></div>
+</div>
+
+<div id="build-progress" style="display: none">
+	<h1>Starting build...</h1>
 
 	<div class="log"></div>
 </div>

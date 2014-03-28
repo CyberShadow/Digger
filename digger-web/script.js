@@ -1,5 +1,7 @@
 var components = ['DMD', 'Druntime', 'Phobos', 'Tools'];
 
+var debug = false;
+
 $(function() {
 	showTask($('#initialization .log'), function() {
 		$('#initialization').slideUp();
@@ -109,6 +111,27 @@ function getData() {
 	$('#show-failing').click(function() {
 		$('.bad').toggle(this.checked);
 	});
+
+	$('#build-button').click(function() {
+		$('input').prop('disabled', true);
+		$('#pull-form').slideUp();
+		$('#build-progress').slideDown();
+		$('#build-progress h1').text('Building...');
+		$.getJSON('/build', function() {
+			showTask($('#build-progress .log'), function() {
+				$('h1').text('Build complete');
+			}, function() {
+				$('h1').text('Build failed');
+			});
+		});
+	});
+
+	$('#exit-button').click(function() {
+		$.getJSON('/exit', function() {
+			exit('Exiting', 'You can now close this browser tab.');
+			exiting = true;
+		});
+	});
 }
 
 var stateText = {
@@ -137,7 +160,7 @@ function showTask($logDiv, complete, error) {
 			else
 				alert('Task failed');
 		} else {
-			setTimeout(showTask, 100, $logDiv, complete, error);
+			setTimeout(showTask, debug ? 2000 : 100, $logDiv, complete, error);
 		}
 	});
 }
@@ -179,3 +202,32 @@ function togglePull(add, $row, $logDiv, repo, number) {
 		});
 	});
 }
+
+var pongFailCount = 0;
+var exiting = false;
+
+function exit(reason, text) {
+	if (exiting)
+		return;
+	$('body')
+		.empty()
+		.append($('<h1>').text(reason))
+		.append($('<p>').text(text).html())
+	;
+	exiting = true;
+	window.close();
+}
+
+var pongTimer = setInterval(function() {
+	$.ajax('/ping', {
+		timeout : 1000,
+		success : function() { pongFailCount = 0; },
+		error : function() {
+			pongFailCount++;
+			if (pongFailCount == 10)
+				exit('Connection lost', 'Lost connection to process, exiting.');
+			if (exiting)
+				clearInterval(pongTimer);
+		}
+	});
+}, debug ? 1e9 : 100);

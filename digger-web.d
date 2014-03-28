@@ -1,8 +1,10 @@
 module digger_web;
 
 import std.conv;
+import std.datetime;
 import std.exception;
 import std.file;
+import std.functional;
 import std.path;
 import std.process;
 import std.regex;
@@ -13,6 +15,8 @@ import ae.net.asockets;
 import ae.net.http.client;
 import ae.net.http.responseex;
 import ae.net.http.server;
+import ae.sys.timing;
+import ae.net.shutdown;
 
 import build;
 import common;
@@ -20,6 +24,9 @@ import repo;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 version(Windows) static import ae.sys.windows;
+
+// http://d.puremagic.com/issues/show_bug.cgi?id=12481
+alias pipe = std.process.pipe;
 
 // ***************************************************************************
 
@@ -33,6 +40,8 @@ class WebFrontend
 		httpd = new HttpServer();
 		httpd.handleRequest = &onRequest;
 		port = httpd.listen(0, "localhost");
+
+		addShutdownHandler(&httpd.close);
 	}
 
 	void onRequest(HttpRequest request, HttpServerConnection conn)
@@ -59,23 +68,61 @@ class WebFrontend
 				);
 			case "status.json":
 			{
+				enforce(currentTask, "No task was started");
+
 				struct Status
 				{
 					immutable(Task.OutputLine)[] lines;
 					string state;
 				}
-				enforce(currentTask, "No task was started");
-				auto status = Status(currentTask.flushLines(), text(currentTask.getState()).split(".")[$-1]);
+				Status status;
+				status.lines = currentTask.flushLines();
+				status.state = text(currentTask.getState()).split(".")[$-1];
 				return conn.sendResponse(resp.serveJson(status));
 			}
+			case "ping":
+				lastPing = Clock.currTime;
+				return conn.sendResponse(resp.serveJson("OK"));
+			case "exit":
+				log("Exit requested.");
+				shutdown();
+				return conn.sendResponse(resp.serveJson("OK"));
 			case "merge":
 			case "unmerge":
+			case "build":
 				startTask(segments);
 				return conn.sendResponse(resp.serveJson("OK"));
 			default:
 				return conn.sendResponse(resp.serveFile(resource[1..$], "digger-web/"));
 		}
 	}
+}
+
+// ***************************************************************************
+
+SysTime lastPing;
+
+enum watchdogTimeout = 5.seconds;
+
+void watchdog()
+{
+	if (exiting)
+		return;
+	if (lastPing != SysTime.init && Clock.currTime - lastPing > watchdogTimeout)
+	{
+		log("No ping request in %s, exiting".format(watchdogTimeout));
+		return shutdown();
+	}
+	setTimeout(toDelegate(&watchdog), 100.msecs);
+}
+
+bool exiting;
+
+void startWatchdog()
+{
+	addShutdownHandler({ exiting = true; });
+	debug(ASOCKETS) {} else
+		watchdog();
 }
 
 // ***************************************************************************
@@ -167,7 +214,8 @@ Task currentTask;
 
 void startTask(string[] args...)
 {
-	assert(!currentTask || currentTask.getState() != Task.State.running, "A task is already running");
+	assert(!currentTask || currentTask.getState() != Task.State.running,
+		"A task is already running");
 	currentTask = new Task(args);
 }
 
@@ -227,6 +275,27 @@ void unmerge(string component, string pull)
 	log("Unmerge successful.");
 }
 
+alias resultDir = subDir!"result";
+
+void runBuild()
+{
+	log("Preparing build...");
+	prepareEnv();
+	prepareBuilder();
+
+	log("Building...");
+	builder.build();
+
+	log("Moving...");
+	if (resultDir.exists)
+		resultDir.rmdirRecurse();
+	rename(buildDir, resultDir);
+
+	log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
+		resultDir.buildPath("bin").absolutePath()
+	));
+}
+
 // ***************************************************************************
 
 /// Try to figure out if this is a desktop machine
@@ -259,13 +328,17 @@ void showURL(ushort port)
 	}
 }
 
+WebFrontend web;
+
 void webMain()
 {
-	auto web = new WebFrontend();
+	web = new WebFrontend();
 
 	showURL(web.port);
 
 	startTask("initialize");
+
+	startWatchdog();
 
 	socketManager.loop();
 }
@@ -285,6 +358,8 @@ void doMain()
 		case "unmerge":
 			enforce(opts.args.length == 3);
 			return unmerge(opts.args[1], opts.args[2]);
+		case "build":
+			return runBuild();
 		default:
 			assert(false);
 	}
