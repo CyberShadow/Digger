@@ -3,10 +3,14 @@ var components = ['DMD', 'Druntime', 'Phobos', 'Tools'];
 var debug = false;
 
 $(function() {
-	showTask($('#initialization .log'), function() {
-		$('#initialization').slideUp();
-		$('#pull-form').slideDown();
-		getData();
+	showTask($('#initialization .log'), function(success) {
+		$('#initialization .status').slideUp();
+		$('#initialization h1').text('Initialization ' + (success ? 'complete' : 'failed'));
+		if (success) {
+			$('#initialization').slideUp();
+			$('#pull-form').slideDown();
+			getData();
+		}
 	});
 });
 
@@ -92,6 +96,7 @@ function getData() {
 					);
 					$row.append(
 						$('<td>')
+						.attr('class', 'status')
 						.append(
 							$('<a>')
 							.attr('class', 'test ' + state.state)
@@ -118,10 +123,9 @@ function getData() {
 		$('#build-progress').slideDown();
 		$('#build-progress h1').text('Building...');
 		$.getJSON('/build', function() {
-			showTask($('#build-progress .log'), function() {
-				$('h1').text('Build complete');
-			}, function() {
-				$('h1').text('Build failed');
+			showTask($('#build-progress .log'), function(success) {
+				$('#build-progress .status').slideUp();
+				$('#build-progress h1').text('Build ' + (success ? 'complete' : 'failed'));
 			});
 		});
 	});
@@ -140,7 +144,7 @@ var stateText = {
 	'unknown' : 'Unknown',
 };
 
-function showTask($logDiv, complete, error) {
+function showTask($logDiv, complete) {
 	$.getJSON('/status.json', function(status) {
 		for (var i=0; i<status.lines.length; i++) {
 			var $line = $('<div>');
@@ -151,16 +155,15 @@ function showTask($logDiv, complete, error) {
 			$logDiv.append($line);
 			$line.slideDown();
 		}
+		if (status.lines.length)
+			$logDiv.animate({scrollTop: 1e9}, {queue:false});
 		if (status.state == 'complete') {
-			complete();
+			complete(true);
 		} else
 		if (status.state == 'error') {
-			if (error)
-				error();
-			else
-				alert('Task failed');
+			complete(false);
 		} else {
-			setTimeout(showTask, debug ? 2000 : 100, $logDiv, complete, error);
+			setTimeout(showTask, debug ? 2000 : 100, $logDiv, complete);
 		}
 	});
 }
@@ -169,9 +172,9 @@ function togglePull(add, $row, $logDiv, repo, number) {
 	$('input').prop('disabled', true);
 	$logDiv.empty();
 	$logDiv.show();
-	$checkbox = $row.find('input[type=checkbox]');
+	var $checkbox = $row.find('input[type=checkbox]');
 	$checkbox.hide();
-	$spinner = $('<img>').attr('src', 'loading.gif');
+	var $spinner = $('<img>').attr('src', 'loading.gif');
 	$checkbox.after($spinner);
 
 	function complete(success) {
@@ -180,26 +183,29 @@ function togglePull(add, $row, $logDiv, repo, number) {
 		$checkbox.show();
 		$spinner.remove();
 
-		if (success) {
-			$logDiv.slideUp();
-		} else {
-			$logLines = $logDiv.find('div');
-			$logLines.slideUp();
-			$logDiv.append(
-				$('<div>')
-				.css('color', 'red')
-				.text('Merge failed')
-			);
-		}
+		setTimeout(function() {
+			if (success) {
+				$logDiv.slideUp();
+			} else {
+				var $logLines = $logDiv.find('div');
+				$logLines.slideUp();
+				$logDiv.append(
+					$('<a>')
+					.css('color', 'red')
+					.text((add ? 'Merge' : 'Unmerge') + ' failed')
+					.attr('href', '#')
+					.attr('title', 'View log')
+					.click(function() {
+						$logLines.slideToggle();
+					})
+				);
+			}
+		}, 500);
 	}
 
 	var action = add ? 'merge' : 'unmerge';
 	$.getJSON('/' + action + '/' +  repo + '/' + number, function() {
-		showTask($logDiv, function() {
-			setTimeout(complete, 500, true);
-		}, function() {
-			setTimeout(complete, 500, false);
-		});
+		showTask($logDiv, complete);
 	});
 }
 

@@ -1,5 +1,6 @@
 module digger_web;
 
+import std.algorithm;
 import std.conv;
 import std.datetime;
 import std.exception;
@@ -15,8 +16,9 @@ import ae.net.asockets;
 import ae.net.http.client;
 import ae.net.http.responseex;
 import ae.net.http.server;
-import ae.sys.timing;
 import ae.net.shutdown;
+import ae.sys.timing;
+import ae.utils.regex;
 
 import build;
 import common;
@@ -227,18 +229,31 @@ void initialize()
 	prepareRepo(true);
 	auto repo = Repository(repoDir);
 
+	log("Preparing component repositories...");
+	foreach (component; listComponents().parallel)
+	{
+		auto crepo = Repository(buildPath(repoDir, component));
+
+		log(component ~ ": Resetting repository...");
+		crepo.run("reset", "--hard");
+
+		log(component ~ ": Cleaning up...");
+		crepo.run("clean", "--force", "-x", "-d", "--quiet");
+
+		log(component ~ ": Fetching pull requests...");
+		crepo.run("fetch", "origin", "+refs/pull/*/head:refs/remotes/origin/pr/*");
+
+		log(component ~ ": Creating work branch...");
+		crepo.run("checkout", "-B", "custom", "origin/master");
+	}
+
 	log("Preparing tools...");
 	prepareTools();
 
-	log("Cleaning up...");
-	repo.run("submodule", "foreach", "git", "reset", "--hard");
-	repo.run("submodule", "foreach", "git", "clean", "--force", "-x", "-d", "--quiet");
-
-	log("Creating work branch...");
-	repo.run("submodule", "foreach", "git", "checkout", "-B", "custom", "origin/master");
-
 	log("Ready.");
 }
+
+const mergeCommitMessage = "digger-pr-%s-merge";
 
 void merge(string component, string pull)
 {
@@ -246,8 +261,6 @@ void merge(string component, string pull)
 	enforce(pull.match(`^\d+$`));
 
 	auto repo = Repository(buildPath(repoDir, component));
-	log("Fetching " ~ component ~ " pull request #" ~ pull ~ "...");
-	repo.run("fetch", "origin", "refs/pull/" ~ pull ~ "/head");
 
 	scope(failure)
 	{
@@ -256,7 +269,7 @@ void merge(string component, string pull)
 	}
 
 	log("Merging...");
-	repo.run("merge", "FETCH_HEAD");
+	repo.run("merge", "--no-ff", "-m", mergeCommitMessage.format(pull), "origin/pr/" ~ pull);
 
 	log("Merge successful.");
 }
@@ -269,10 +282,32 @@ void unmerge(string component, string pull)
 	auto repo = Repository(buildPath(repoDir, component));
 
 	log("Rebasing...");
-	environment["GIT_EDITOR"] = "sed -i \"s#.*refs/pull/" ~ pull ~ "/head.*##g\"";
+	environment["GIT_EDITOR"] = "%s unmerge-rebase-edit %s".format(escapeShellFileName(thisExePath), pull);
+	// "sed -i \"s#.*" ~ mergeCommitMessage.format(pull).escapeRE() ~ ".*##g\"";
 	repo.run("rebase", "--interactive", "--preserve-merges", "origin/master");
 
 	log("Unmerge successful.");
+}
+
+void unmergeRebaseEdit(string pull, string fileName)
+{
+	auto lines = fileName.readText().splitLines();
+
+	bool removing, remaining;
+	foreach_reverse (ref line; lines)
+		if (line.startsWith("pick "))
+		{
+			if (line.match(`^pick [0-9a-f]+ ` ~ mergeCommitMessage.format(`\d+`) ~ `$`))
+				removing = line.canFind(mergeCommitMessage.format(pull));
+			if (removing)
+				line = "# " ~ line;
+			else
+				remaining = true;
+		}
+	if (!remaining)
+		lines = ["noop"];
+
+	std.file.write(fileName, lines.join("\n"));
 }
 
 alias resultDir = subDir!"result";
@@ -358,6 +393,9 @@ void doMain()
 		case "unmerge":
 			enforce(opts.args.length == 3);
 			return unmerge(opts.args[1], opts.args[2]);
+		case "unmerge-rebase-edit":
+			enforce(opts.args.length == 3);
+			return unmergeRebaseEdit(opts.args[1], opts.args[2]);
 		case "build":
 			return runBuild();
 		default:
@@ -367,7 +405,14 @@ void doMain()
 
 int main()
 {
-	// https://d.puremagic.com/issues/show_bug.cgi?id=6423
-	doMain();
-	return 0;
+	try
+	{
+		doMain();
+		return 0;
+	}
+	catch (Exception e)
+	{
+		stderr.writefln("Fatal error: %s", e.msg);
+		return 1;
+	}
 }

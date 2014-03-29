@@ -53,6 +53,16 @@ struct Repository
 alias repoDir = subDir!"repo";     /// D-dot-git repository directory
 enum REPO_URL = "https://bitbucket.org/cybershadow/d.git";
 
+string[] listComponents()
+{
+	auto repo = Repository(repoDir);
+	return repo
+		.query("ls-files")
+		.splitLines()
+		.filter!(r => r != ".gitmodules")
+		.array();
+}
+
 void prepareRepo(bool update)
 {
 	if (!repoDir.exists)
@@ -69,10 +79,7 @@ void prepareRepo(bool update)
 	if (update)
 	{
 		log("Updating repositories...");
-		auto allRepos = repo
-			.query("ls-files")
-			.splitLines()
-			.filter!(r => r != ".gitmodules")
+		auto allRepos = listComponents()
 			.map!(r => buildPath(repoDir, r))
 			.chain(repoDir.only)
 			.array();

@@ -26,8 +26,8 @@ tr.bad {
 	display: none;
 }
 
-tr:last-child {
-	width: 20%;
+td.status {
+	width: 52pt;
 }
 
 .test {
@@ -57,6 +57,9 @@ tr:last-child {
 	font-family: "Consolas", monospace;
 	white-space: pre-wrap;
 	color: #444;
+
+	max-height: 400pt;
+	overflow-y: auto;
 }
 
 .log .error {
