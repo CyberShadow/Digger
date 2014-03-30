@@ -269,7 +269,26 @@ void merge(string component, string pull)
 	}
 
 	log("Merging...");
-	repo.run("merge", "--no-ff", "-m", mergeCommitMessage.format(pull), "origin/pr/" ~ pull);
+
+	void doMerge()
+	{
+		repo.run("merge", "--no-ff", "-m", mergeCommitMessage.format(pull), "origin/pr/" ~ pull);
+	}
+
+	if (component == "dmd")
+	{
+		try
+			doMerge();
+		catch (Exception)
+		{
+			log("Merge failed. Attempting conflict resolution...");
+			repo.run("checkout", "--theirs", "test");
+			repo.run("add", "test");
+			repo.run("-c", "rerere.enabled=false", "commit", "-m", mergeCommitMessage.format(pull));
+		}
+	}
+	else
+		doMerge();
 
 	log("Merge successful.");
 }
