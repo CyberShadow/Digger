@@ -45,10 +45,10 @@ td.status {
 .test.unknown { background-color: #aaa; }
 
 #buttons {
-	margin: 24pt 0 48pt 0
 }
 
-#buttons input {
+input[type=submit] {
+	margin-top: 24pt;
 	font-size: 24pt;
 	width: 100%;
 }

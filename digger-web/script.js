@@ -73,6 +73,8 @@ function getData() {
 						.attr('type', 'checkbox')
 						.attr('id', name)
 						.attr('name', name)
+						.data('repo', repo)
+						.data('pull', pull.number)
 						.click(function() {
 							togglePull(this.checked, $row, $logRow.find('div.log'), repo, pull.number);
 						})
@@ -136,6 +138,28 @@ function getData() {
 			exiting = true;
 		});
 	});
+
+	$('#everything-button').click(function() {
+		$('#everything-button').val('Meditating...');
+		var $checkboxes = $('#repos input:checkbox:visible:not(:checked)');
+		var n = 0;
+
+		function next() {
+			if (n < $checkboxes.length) {
+				var $checkbox = $checkboxes.eq(n++);
+				var $row = $checkbox.closest('tr');
+				var $logRow = $row.next();
+				var repo = $checkbox.data('repo');
+				var pull = $checkbox.data('pull');
+				togglePull(true, $row, $logRow.find('div.log'), repo, pull, next);
+			} else {
+				$('#build-button').click();
+			}
+		}
+
+		$("html, body").animate({ scrollTop: "0px" });
+		next();
+	});
 }
 
 var stateText = {
@@ -168,7 +192,7 @@ function showTask($logDiv, complete) {
 	});
 }
 
-function togglePull(add, $row, $logDiv, repo, number) {
+function togglePull(add, $row, $logDiv, repo, number, complete) {
 	$('input').prop('disabled', true);
 	$logDiv.empty();
 	$logDiv.show();
@@ -177,11 +201,13 @@ function togglePull(add, $row, $logDiv, repo, number) {
 	var $spinner = $('<img>').attr('src', 'loading.gif');
 	$checkbox.after($spinner);
 
-	function complete(success) {
+	function completeHandler(success) {
 		$('input').prop('disabled', false);
 		$checkbox.prop('checked', add == success);
 		$checkbox.show();
 		$spinner.remove();
+		if (complete)
+			complete(success);
 
 		setTimeout(function() {
 			if (success) {
@@ -205,7 +231,7 @@ function togglePull(add, $row, $logDiv, repo, number) {
 
 	var action = add ? 'merge' : 'unmerge';
 	$.getJSON('/' + action + '/' +  repo + '/' + number, function() {
-		showTask($logDiv, complete);
+		showTask($logDiv, completeHandler);
 	});
 }
 
