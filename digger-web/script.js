@@ -144,14 +144,31 @@ function getData() {
 		var $checkboxes = $('#repos input:checkbox:visible:not(:checked)');
 		var n = 0;
 
+		var enabled = {};
+
 		function next() {
 			if (n < $checkboxes.length) {
 				var $checkbox = $checkboxes.eq(n++);
 				var $row = $checkbox.closest('tr');
 				var $logRow = $row.next();
+				var $logDiv = $logRow.find('div.log');
 				var repo = $checkbox.data('repo');
 				var pull = $checkbox.data('pull');
-				togglePull(true, $row, $logRow.find('div.log'), repo, pull, next);
+
+				var id = repo+'#'+pull;
+				enabled[id] = 1;
+				var conflict = haveConflict(enabled);
+				if (conflict) {
+					delete enabled[id];
+					$logDiv.append(
+						$('<a>')
+						.text('Skipping - known conflict ('+conflict+')')
+						.attr('href', 'http://wiki.dlang.org/Pull_request_conflicts')
+					);
+					next();
+				}
+				else
+					togglePull(true, $row, $logDiv, repo, pull, next);
 			} else {
 				$('#build-button').click();
 			}
@@ -234,6 +251,50 @@ function togglePull(add, $row, $logDiv, repo, number, complete) {
 		showTask($logDiv, completeHandler);
 	});
 }
+
+// ***************************************************************************
+
+function wikiGet(title, success) {
+	$.ajax('http://wiki.dlang.org/api.php', {
+		data : {
+			action : 'query',
+			prop   : 'revisions',
+			rvprop : 'content',
+			format : 'json',
+			titles : title
+		},
+		dataType : 'jsonp',
+		success : function(data) {
+			for (var page in data.query.pages)
+				success(data.query.pages[page].revisions[0]['*']);
+		}
+	});
+}
+
+var conflicts = [];
+
+wikiGet('Pull request conflicts', function(text) {
+	var lines = text.split(/\r?\n/g);
+	for (var i=0; i<lines.length; i++)
+		conflicts.push(lines[i].split(/\s+/g));
+});
+
+function haveConflict(enabled) {
+	function allEnabled(pulls) {
+		for (var i=0; i<pulls.length; i++)
+			if (!(pulls[i] in enabled))
+				return false;
+		return true;
+	}
+
+	for (var i=0; i<conflicts.length; i++)
+		if (allEnabled(conflicts[i]))
+			return conflicts[i].join(' ');
+
+	return null;
+}
+
+// ***************************************************************************
 
 var pongFailCount = 0;
 var exiting = false;
