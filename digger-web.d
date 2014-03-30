@@ -250,6 +250,8 @@ void initialize()
 	log("Preparing tools...");
 	prepareTools();
 
+	clean();
+
 	log("Ready.");
 }
 
