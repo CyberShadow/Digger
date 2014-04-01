@@ -68,6 +68,7 @@ void prepareRepo(bool update)
 	if (!repoDir.exists)
 	{
 		log("Cloning initial repository...");
+		scope(failure) log("Check that you have git installed and accessible from PATH.");
 		run(["git", "clone", "--recursive", REPO_URL, repoDir]);
 		return;
 	}
