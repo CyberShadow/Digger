@@ -112,7 +112,7 @@ void prepareEnv()
 		import win32.winbase;
 		import win32.winnt;
 
-		WCHAR buf[1024];
+		TCHAR buf[1024];
 		auto winDir = buf[0..GetWindowsDirectory(buf.ptr, buf.length)].toUTF8();
 		auto sysDir = buf[0..GetSystemDirectory (buf.ptr, buf.length)].toUTF8();
 		auto tmpDir = buf[0..GetTempPath(buf.length, buf.ptr)].toUTF8()[0..$-1];
