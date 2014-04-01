@@ -20,12 +20,11 @@ import ae.net.shutdown;
 import ae.sys.timing;
 import ae.utils.regex;
 
+version(Windows) import ae.sys.windows;
+
 import build;
 import common;
 import repo;
-
-// http://d.puremagic.com/issues/show_bug.cgi?id=7016
-version(Windows) static import ae.sys.windows;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=12481
 alias pipe = std.process.pipe;
@@ -407,6 +406,8 @@ WebFrontend web;
 
 void webMain()
 {
+	version(Windows) hideOwnConsoleWindow();
+
 	web = new WebFrontend();
 
 	showURL(web.port);
@@ -445,14 +446,31 @@ void doMain()
 
 int main()
 {
-	try
+	debug
 	{
 		doMain();
 		return 0;
 	}
-	catch (Exception e)
+	else
 	{
-		stderr.writefln("Fatal error: %s", e.msg);
-		return 1;
+		try
+		{
+			doMain();
+			return 0;
+		}
+		catch (Exception e)
+		{
+			version (Windows)
+			{
+				if (opts.args.length == 0)
+				{
+					import win32.winuser;
+					messageBox(e.msg, "Fatal error", MB_ICONERROR);
+					return 1;
+				}
+			}
+			stderr.writefln("Fatal error: %s", e.msg);
+			return 1;
+		}
 	}
 }
