@@ -21,14 +21,26 @@ Copy `digger.ini.sample` to `digger.ini` and adjust as instructed by the comment
 
 ### Usage
 
-To build a specific D version:
+To build D:
 
+    # build a specific D version
     $ digger build v2.064.2
+
+    # build for x86-64
+    $ digger build --64 v2.064.2
+
+    # build latest master branch commit
     $ digger build master
-    $ digger build --64 master
-    $ digger build "@ 3 weeks ago"
+
+    # build commit from a point in time
+    $ digger build "2.065 @ 3 weeks ago"
+
+    # build latest 2.065 (release) branch commit
+    $ digger build 2.065
+
+    # build specified branch from a point in time
+    $ digger build "2.065 @ 3 weeks ago"
 
 To bisect D's history to find which pull request introduced a bug, first copy `bisect.ini.sample` to `bisect.ini`, adjust as instructed by the comments, then run:
 
     $ digger bisect path/to/bisect.ini
-

@@ -95,13 +95,25 @@ string parseRev(string rev)
 {
 	auto repo = Repository(repoDir);
 
-	try
-		return repo.query("log", "-n", "1", "--pretty=format:%H", rev);
-	catch (Exception e) {}
+	auto args = ["log", "--pretty=format:%H"];
 
 	// git's approxidate accepts anything, so a disambiguating prefix is required
-	if (rev.startsWith("@"))
-		return repo.query("log", "-n", "1", "--pretty=format:%H", "--until", rev[1..$].strip(), "origin/master");
+	if (rev.canFind('@'))
+	{
+		auto parts = rev.findSplit("@");
+		args ~= ["--until", parts[2].strip()];
+		rev = parts[0].strip();
+		if (rev.empty)
+			rev = "origin/master";
+	}
+
+	try
+		return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
+	catch (Exception e)
+	try
+		return repo.query(args ~ ["-n", "1", rev]);
+	catch (Exception e)
+		{}
 
 	auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
 	if (grep.length == 1)
