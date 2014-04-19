@@ -8,11 +8,12 @@ import build;
 import cache;
 import common;
 import repo;
+import webtasks;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 version(Windows) static import ae.sys.windows;
 
-int main()
+int doMain()
 {
 	auto args = opts.args.dup;
 	enforce(args.length, "No command specified");
@@ -50,7 +51,59 @@ int main()
 			return 0;
 		case "delve":
 			return doDelve();
+
+		// digger-web tasks
+		case "do":
+			args = args[1..$];
+			enforce(args.length, "No task specified");
+			switch (args[0])
+			{
+				case "initialize":
+					initialize();
+					return 0;
+				case "merge":
+					enforce(args.length == 3);
+					merge(args[1], args[2]);
+					return 9;
+				case "unmerge":
+					enforce(args.length == 3);
+					unmerge(args[1], args[2]);
+					return 0;
+				case "unmerge-rebase-edit":
+					enforce(args.length == 3);
+					unmergeRebaseEdit(args[1], args[2]);
+					return 0;
+				case "build":
+					runBuild();
+					return 0;
+				default:
+					assert(false);
+			}
+
 		default:
 			throw new Exception("Unknown command: " ~ args[0]);
+	}
+}
+
+int main()
+{
+	debug
+	{
+		doMain();
+		return 0;
+	}
+	else
+	{
+		try
+		{
+			doMain();
+			return 0;
+		}
+		catch (Exception e)
+		{
+			import std.stdio : stderr;
+			stderr.writefln("Fatal error: %s", e.msg);
+			return 1;
+		}
 	}
 }

@@ -101,9 +101,22 @@ shared static this()
 
 // ****************************************************************************
 
+/// Send to stderr iff we have a console to write to
+void writeToConsole(string s)
+{
+	version (Windows)
+	{
+		import core.sys.windows.windows : GetConsoleWindow;
+		if (!GetConsoleWindow())
+			return;
+	}
+
+	stderr.write(s); stderr.flush();
+}
+
 void log(string s)
 {
-	stderr.writeln("digger: ", s); stderr.flush();
+	writeToConsole("digger: " ~ s ~ "\n");
 }
 
 void logProgress(string s)

@@ -4,12 +4,9 @@ import std.algorithm;
 import std.conv;
 import std.datetime;
 import std.exception;
-import std.file;
 import std.functional;
 import std.path;
 import std.process;
-import std.regex;
-import std.stdio;
 import std.string;
 
 import ae.net.asockets;
@@ -18,13 +15,11 @@ import ae.net.http.responseex;
 import ae.net.http.server;
 import ae.net.shutdown;
 import ae.sys.timing;
-import ae.utils.regex;
 
-version(Windows) import ae.sys.windows;
-
-import build;
 import common;
-import repo;
+
+// http://d.puremagic.com/issues/show_bug.cgi?id=7016
+version(Windows) static import ae.sys.windows;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=12481
 alias pipe = std.process.pipe;
@@ -157,7 +152,7 @@ class Task
 						Thread.sleep(1.msecs);
 						continue;
 					}
-					stderr.write("OE"[error], ": ", s); stderr.flush();
+					writeToConsole("%s: %s".format("OE"[error], s));
 					synchronized(this)
 						lines ~= OutputLine(s, error);
 				}
@@ -174,11 +169,14 @@ class Task
 		pipeLines(outPipe, false);
 		pipeLines(errPipe, true );
 
+		import std.stdio : stdin;
 		pid = spawnProcess(
-			[thisExePath] ~ args,
+			[absolutePath("digger"), "do"] ~ args,
 			stdin,
 			outPipe.writeEnd,
 			errPipe.writeEnd,
+			null,
+			Config.suppressConsole,
 		);
 	}
 
@@ -237,141 +235,6 @@ shared static this()
 
 // ***************************************************************************
 
-void initialize()
-{
-	if (!repoDir.exists)
-		log("First run detected.\nPlease be patient, " ~
-			"cloning everything might take a few minutes...\n");
-
-	log("Preparing repository...");
-	prepareRepo(true);
-	auto repo = Repository(repoDir);
-
-	log("Preparing component repositories...");
-	foreach (component; listComponents().parallel)
-	{
-		auto crepo = Repository(buildPath(repoDir, component));
-
-		log(component ~ ": Resetting repository...");
-		crepo.run("reset", "--hard");
-
-		log(component ~ ": Cleaning up...");
-		crepo.run("clean", "--force", "-x", "-d", "--quiet");
-
-		log(component ~ ": Fetching pull requests...");
-		crepo.run("fetch", "origin", "+refs/pull/*/head:refs/remotes/origin/pr/*");
-
-		log(component ~ ": Creating work branch...");
-		crepo.run("checkout", "-B", "custom", "origin/master");
-	}
-
-	log("Preparing tools...");
-	prepareTools();
-
-	clean();
-
-	log("Ready.");
-}
-
-const mergeCommitMessage = "digger-pr-%s-merge";
-
-void merge(string component, string pull)
-{
-	enforce(component.match(`^[a-z]+$`));
-	enforce(pull.match(`^\d+$`));
-
-	auto repo = Repository(buildPath(repoDir, component));
-
-	scope(failure)
-	{
-		log("Aborting merge...");
-		repo.run("merge", "--abort");
-	}
-
-	log("Merging...");
-
-	void doMerge()
-	{
-		repo.run("merge", "--no-ff", "-m", mergeCommitMessage.format(pull), "origin/pr/" ~ pull);
-	}
-
-	if (component == "dmd")
-	{
-		try
-			doMerge();
-		catch (Exception)
-		{
-			log("Merge failed. Attempting conflict resolution...");
-			repo.run("checkout", "--theirs", "test");
-			repo.run("add", "test");
-			repo.run("-c", "rerere.enabled=false", "commit", "-m", mergeCommitMessage.format(pull));
-		}
-	}
-	else
-		doMerge();
-
-	log("Merge successful.");
-}
-
-void unmerge(string component, string pull)
-{
-	enforce(component.match(`^[a-z]+$`));
-	enforce(pull.match(`^\d+$`));
-
-	auto repo = Repository(buildPath(repoDir, component));
-
-	log("Rebasing...");
-	environment["GIT_EDITOR"] = "%s unmerge-rebase-edit %s".format(escapeShellFileName(thisExePath), pull);
-	// "sed -i \"s#.*" ~ mergeCommitMessage.format(pull).escapeRE() ~ ".*##g\"";
-	repo.run("rebase", "--interactive", "--preserve-merges", "origin/master");
-
-	log("Unmerge successful.");
-}
-
-void unmergeRebaseEdit(string pull, string fileName)
-{
-	auto lines = fileName.readText().splitLines();
-
-	bool removing, remaining;
-	foreach_reverse (ref line; lines)
-		if (line.startsWith("pick "))
-		{
-			if (line.match(`^pick [0-9a-f]+ ` ~ mergeCommitMessage.format(`\d+`) ~ `$`))
-				removing = line.canFind(mergeCommitMessage.format(pull));
-			if (removing)
-				line = "# " ~ line;
-			else
-				remaining = true;
-		}
-	if (!remaining)
-		lines = ["noop"];
-
-	std.file.write(fileName, lines.join("\n"));
-}
-
-alias resultDir = subDir!"result";
-
-void runBuild()
-{
-	log("Preparing build...");
-	prepareEnv();
-	prepareBuilder();
-
-	log("Building...");
-	builder.build();
-
-	log("Moving...");
-	if (resultDir.exists)
-		resultDir.rmdirRecurse();
-	rename(buildDir, resultDir);
-
-	log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
-		resultDir.buildPath("bin").absolutePath()
-	));
-}
-
-// ***************************************************************************
-
 /// Try to figure out if this is a desktop machine
 /// which can run a graphical web browser, or a
 /// headless machine which can't.
@@ -404,10 +267,8 @@ void showURL(ushort port)
 
 WebFrontend web;
 
-void webMain()
+void doMain()
 {
-	version(Windows) hideOwnConsoleWindow();
-
 	web = new WebFrontend();
 
 	showURL(web.port);
@@ -417,31 +278,6 @@ void webMain()
 	startWatchdog();
 
 	socketManager.loop();
-}
-
-void doMain()
-{
-	if (opts.args.length == 0)
-		return webMain();
-	else
-	switch (opts.args[0])  
-	{
-		case "initialize":
-			return initialize();
-		case "merge":
-			enforce(opts.args.length == 3);
-			return merge(opts.args[1], opts.args[2]);
-		case "unmerge":
-			enforce(opts.args.length == 3);
-			return unmerge(opts.args[1], opts.args[2]);
-		case "unmerge-rebase-edit":
-			enforce(opts.args.length == 3);
-			return unmergeRebaseEdit(opts.args[1], opts.args[2]);
-		case "build":
-			return runBuild();
-		default:
-			assert(false);
-	}
 }
 
 int main()
@@ -464,12 +300,17 @@ int main()
 			{
 				if (opts.args.length == 0)
 				{
-					import win32.winuser;
+					import ae.sys.windows : messageBox;
+					import core.sys.windows.windows : MB_ICONERROR;
 					messageBox(e.msg, "Fatal error", MB_ICONERROR);
 					return 1;
 				}
 			}
-			stderr.writefln("Fatal error: %s", e.msg);
+			else
+			{
+				import std.stdio;
+				stderr.writefln("Fatal error: %s", e.msg);
+			}
 			return 1;
 		}
 	}
