@@ -185,9 +185,7 @@ void prepareBuild()
 
 	if (config.cache)
 	{
-		auto buildID = "%s-%s".format(commit, builder.config.build.model);
-		if (buildConfig.debugDMD)
-			buildID ~= "-debug";
+		auto buildID = "%s-%s".format(commit, builder.config.build);
 
 		currentCacheDir = buildPath(cacheDir, buildID);
 		if (currentCacheDir.exists)
