@@ -3,14 +3,16 @@ var components = ['DMD', 'Druntime', 'Phobos', 'Tools'];
 var debug = false;
 
 $(function() {
-	showTask($('#initialization .log'), function(success) {
-		$('#initialization .status').slideUp();
-		$('#initialization h1').text('Initialization ' + (success ? 'complete' : 'failed'));
-		if (success) {
-			$('#initialization').slideUp();
-			$('#pull-form').slideDown();
-			getData();
-		}
+	$.getJSON('/initialize', function() {
+		showTask($('#initialization .log'), function(success) {
+			$('#initialization .status').slideUp();
+			$('#initialization h1').text('Initialization ' + (success ? 'complete' : 'failed'));
+			if (success) {
+				$('#initialization').slideUp();
+				$('#pull-form').slideDown();
+				getData();
+			}
+		});
 	});
 });
 

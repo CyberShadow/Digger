@@ -48,6 +48,9 @@ class WebFrontend
 		auto segments = resource.split("/")[1..$];
 		switch (segments[0])
 		{
+			case "initialize":
+				startTask("initialize");
+				return conn.sendResponse(resp.serveJson("OK"));
 			case "pull-state.json":
 				// Proxy request to GHDaemon, a daemon which caches GitHub
 				// pull request test results. Required to avoid GitHub API
@@ -218,7 +221,7 @@ bool taskRunning()
 
 void startTask(string[] args...)
 {
-	assert(!taskRunning(), "A task is already running");
+	enforce(!taskRunning(), "A task is already running");
 	currentTask = new Task(args);
 }
 
@@ -272,8 +275,6 @@ void doMain()
 	web = new WebFrontend();
 
 	showURL(web.port);
-
-	startTask("initialize");
 
 	startWatchdog();
 
