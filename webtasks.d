@@ -52,8 +52,8 @@ const mergeCommitMessage = "digger-pr-%s-merge";
 
 void merge(string component, string pull)
 {
-	enforce(component.match(`^[a-z]+$`));
-	enforce(pull.match(`^\d+$`));
+	enforce(component.match(`^[a-z]+$`), "Bad component");
+	enforce(pull.match(`^\d+$`), "Bad pull number");
 
 	auto repo = Repository(buildPath(repoDir, component));
 
@@ -90,8 +90,8 @@ void merge(string component, string pull)
 
 void unmerge(string component, string pull)
 {
-	enforce(component.match(`^[a-z]+$`));
-	enforce(pull.match(`^\d+$`));
+	enforce(component.match(`^[a-z]+$`), "Bad component");
+	enforce(pull.match(`^\d+$`), "Bad pull number");
 
 	auto repo = Repository(buildPath(repoDir, component));
 
