@@ -16,7 +16,7 @@ import cache;
 import common;
 import repo;
 
-alias BuildConfig = DBuilder.Config;
+alias BuildConfig = DBuilder.Config.Build;
 BuildConfig buildConfig;
 bool inDelve;
 
@@ -163,12 +163,12 @@ DiggerBuilder builder;
 void prepareBuilder()
 {
 	builder = new DiggerBuilder();
-	builder.config = buildConfig;
-	builder.repoDir = repoDir;
-	builder.buildDir = buildDir;
+	builder.config.build = buildConfig;
+	builder.config.local.repoDir = repoDir;
+	builder.config.local.buildDir = buildDir;
 	version(Windows)
-	builder.dmcDir = dmcDir;
-	builder.dEnv = dEnv;
+	builder.config.local.dmcDir = dmcDir;
+	builder.config.local.env = dEnv;
 }
 
 void prepareBuild()
@@ -185,7 +185,7 @@ void prepareBuild()
 
 	if (config.cache)
 	{
-		auto buildID = "%s-%s".format(commit, builder.model);
+		auto buildID = "%s-%s".format(commit, builder.config.build.model);
 		if (buildConfig.debugDMD)
 			buildID ~= "-debug";
 
