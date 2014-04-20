@@ -89,7 +89,7 @@ class WebFrontend
 				startTask(segments);
 				return conn.sendResponse(resp.serveJson("OK"));
 			default:
-				return conn.sendResponse(resp.serveFile(resource[1..$], "digger-web/"));
+				return conn.sendResponse(resp.serveFile(resource[1..$], "web/"));
 		}
 	}
 }
