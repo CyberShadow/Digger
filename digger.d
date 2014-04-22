@@ -88,17 +88,11 @@ int doMain()
 int main()
 {
 	debug
-	{
-		doMain();
-		return 0;
-	}
+		return doMain();
 	else
 	{
 		try
-		{
-			doMain();
-			return 0;
-		}
+			return doMain();
 		catch (Exception e)
 		{
 			import std.stdio : stderr;
