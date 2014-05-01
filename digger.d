@@ -63,7 +63,7 @@ int doMain()
 				case "merge":
 					enforce(args.length == 3);
 					merge(args[1], args[2]);
-					return 9;
+					return 0;
 				case "unmerge":
 					enforce(args.length == 3);
 					unmerge(args[1], args[2]);
