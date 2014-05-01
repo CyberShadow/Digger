@@ -10,7 +10,7 @@ import std.process : environment;
 import std.string;
 
 import ae.sys.file;
-import ae.sys.d.build;
+import ae.sys.d.builder;
 
 import cache;
 import common;
