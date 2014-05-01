@@ -10,45 +10,12 @@ import std.range;
 import std.regex;
 import std.string;
 
+import ae.sys.cmd;
 import ae.sys.file;
 
+public import ae.sys.git;
+
 import common;
-
-struct Repository
-{
-	string path;
-
-	string[] argsPrefix;
-
-	this(string path)
-	{
-		path = path.absolutePath();
-		enforce(path.exists, "Repository path does not exist");
-		auto dotGit = path.buildPath(".git");
-		if (dotGit.isFile)
-			dotGit = path.buildPath(dotGit.readText().strip()[8..$]);
-		//path = path.replace(`\`, `/`);
-		this.path = path;
-		this.argsPrefix = [`git`, `--work-tree=` ~ path, `--git-dir=` ~ dotGit];
-	}
-
-	void   run  (string[] args...) { auto owd = pushd(workPath(args[0])); return .run  (argsPrefix ~ args); }
-	string query(string[] args...) { auto owd = pushd(workPath(args[0])); return .query(argsPrefix ~ args); }
-
-	/// Certain git commands (notably, bisect) must
-	/// be run in the repository's root directory.
-	private string workPath(string cmd)
-	{
-		switch (cmd)
-		{
-			case "bisect":
-			case "submodule":
-				return path;
-			default:
-				return null;
-		}
-	}
-}
 
 alias repoDir = subDir!"repo";     /// D-dot-git repository directory
 enum REPO_URL = "https://bitbucket.org/cybershadow/d.git";
