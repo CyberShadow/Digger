@@ -10,58 +10,33 @@ import std.range;
 import std.regex;
 import std.string;
 
-import ae.sys.cmd;
 import ae.sys.file;
-
-public import ae.sys.git;
+import ae.sys.d.manager;
 
 import common;
 
-alias repoDir = subDir!"repo";     /// D-dot-git repository directory
-enum REPO_URL = "https://bitbucket.org/cybershadow/d.git";
-
-string[] listComponents()
+class DiggerManager : DManager
 {
-	auto repo = Repository(repoDir);
-	return repo
-		.query("ls-files")
-		.splitLines()
-		.filter!(r => r != ".gitmodules")
-		.array();
+	this()
+	{
+		super(subDir!"repo");
+	}
+
+	override void log(string s)
+	{
+		common.log(s);
+	}
 }
 
-void prepareRepo(bool update)
+DiggerManager d;
+
+static this()
 {
-	if (!repoDir.exists)
-	{
-		log("Cloning initial repository...");
-		scope(failure) log("Check that you have git installed and accessible from PATH.");
-		run(["git", "clone", "--recursive", REPO_URL, repoDir]);
-		return;
-	}
-
-	auto repo = Repository(repoDir);
-	repo.run("bisect", "reset");
-	repo.run("checkout", "--force", "master");
-
-	if (update)
-	{
-		log("Updating repositories...");
-		auto allRepos = listComponents()
-			.map!(r => buildPath(repoDir, r))
-			.chain(repoDir.only)
-			.array();
-		foreach (r; allRepos.parallel)
-			Repository(r).run("-c", "fetch.recurseSubmodules=false", "remote", "update");
-	}
-
-	repo.run("reset", "--hard", "origin/master");
+	d = new DiggerManager();
 }
 
 string parseRev(string rev)
 {
-	auto repo = Repository(repoDir);
-
 	auto args = ["log", "--pretty=format:%H"];
 
 	// git's approxidate accepts anything, so a disambiguating prefix is required
@@ -75,18 +50,18 @@ string parseRev(string rev)
 	}
 
 	try
-		return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
+		return d.repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
 	catch (Exception e)
 	try
-		return repo.query(args ~ ["-n", "1", rev]);
+		return d.repo.query(args ~ ["-n", "1", rev]);
 	catch (Exception e)
 		{}
 
-	auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
+	auto grep = d.repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
 	if (grep.length == 1)
 		return grep[0];
 
-	auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
+	auto pickaxe = d.repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
 	if (pickaxe.length && pickaxe.length <= 2) // removed <- added
 		return pickaxe[$-1];   // the one where it was added
 

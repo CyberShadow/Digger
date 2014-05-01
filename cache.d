@@ -36,7 +36,7 @@ void dedupDirectories(string dirA, string dirB)
 
 private void optimizeCacheImpl(bool reverse = false, string onlyRev = null)
 {
-	string[] history = Repository(repoDir).query("log", "--pretty=format:%H", "origin/master").splitLines();
+	string[] history = d.repo.query("log", "--pretty=format:%H", "origin/master").splitLines();
 	if (reverse)
 		history.reverse;
 	

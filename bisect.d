@@ -55,16 +55,14 @@ int doBisect()
 		return result;
 	}
 
-	prepareRepo(true);
+	d.prepareRepo(true);
 	prepareTools();
-
-	auto repo = Repository(repoDir);
 
 	void test(bool good, string rev)
 	{
 		auto name = good ? "GOOD" : "BAD";
 		log("Sanity-check, testing %s revision %s...".format(name, rev));
-		repo.run("checkout", rev);
+		d.repo.run("checkout", rev);
 		auto result = doBisectStep();
 		enforce(result != EXIT_UNTESTABLE,
 			"%s revision %s is not testable"
@@ -81,8 +79,8 @@ int doBisect()
 
 		enforce(good != bad, "Good and bad revisions are both " ~ bad);
 
-		auto nGood = repo.query(["log", "--format=oneline", good]).splitLines().length;
-		auto nBad  = repo.query(["log", "--format=oneline", bad ]).splitLines().length;
+		auto nGood = d.repo.query(["log", "--format=oneline", good]).splitLines().length;
+		auto nBad  = d.repo.query(["log", "--format=oneline", bad ]).splitLines().length;
 		if (bisectConfig.reverse)
 		{
 			enforce(nBad < nGood, "Bad commit is newer than good commit (and reverse search is enabled)");
@@ -100,8 +98,8 @@ int doBisect()
 	auto startPoints = [getRev!false(), getRev!true()];
 	if (bisectConfig.reverse)
 		startPoints.reverse;
-	repo.run(["bisect", "start"] ~ startPoints);
-	repo.run("bisect", "run",
+	d.repo.run(["bisect", "start"] ~ startPoints);
+	d.repo.run("bisect", "run",
 		thisExePath,
 		"--dir", getcwd(),
 		"--config-file", opts.configFile,
@@ -164,14 +162,12 @@ int doDelve()
 		"in-bisect", &inBisect,
 	);
 
-	auto repo = Repository(repoDir);
-
 	if (inBisect)
 	{
 		log("Invoked by git-bisect - performing bisect step.");
 
 		import std.conv;
-		auto t = repo.query("log", "-n1", "--pretty=format:%ct").to!int();
+		auto t = d.repo.query("log", "-n1", "--pretty=format:%ct").to!int();
 		foreach (r; badCommits)
 			if (r.startTime <= t && t < r.endTime)
 			{
@@ -193,10 +189,10 @@ int doDelve()
 	}
 	else
 	{
-		prepareRepo(false);
-		auto root = repo.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
-		repo.run(["bisect", "start", "master", root]);
-		repo.run("bisect", "run",
+		d.prepareRepo(false);
+		auto root = d.repo.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
+		d.repo.run(["bisect", "start", "master", root]);
+		d.repo.run("bisect", "run",
 			thisExePath,
 			"--dir", getcwd(),
 			"--config-file", opts.configFile,

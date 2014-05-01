@@ -25,9 +25,8 @@ int doMain()
 		{
 			enforce(args.length == 2, "Specify revision");
 			auto rev = parseRev(args[1]);
-			auto repo = Repository(repoDir);
-			repo.run("log", "-n1", rev);
-			repo.run("log", "-n1", "--pretty=format:t=%ct", rev);
+			d.repo.run("log", "-n1", rev);
+			d.repo.run("log", "-n1", "--pretty=format:t=%ct", rev);
 			return 0;
 		}
 		case "build":
@@ -39,9 +38,9 @@ int doMain()
 			if (model64)
 				buildConfig.model = "64";
 			enforce(args.length == 2, "Specify revision");
-			prepareRepo(true);
+			d.prepareRepo(true);
 			auto rev = parseRev(args[1]);
-			Repository(repoDir).run("checkout", rev);
+			d.repo.run("checkout", rev);
 			prepareTools();
 			prepareBuild();
 			return 0;

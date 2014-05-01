@@ -164,7 +164,7 @@ void prepareBuilder()
 {
 	builder = new DiggerBuilder();
 	builder.config.build = buildConfig;
-	builder.config.local.repoDir = repoDir;
+	builder.config.local.repoDir = d.repoDir;
 	builder.config.local.buildDir = buildDir;
 	version(Windows)
 	builder.config.local.dmcDir = dmcDir;
@@ -173,8 +173,7 @@ void prepareBuilder()
 
 void prepareBuild()
 {
-	auto repo = Repository(repoDir);
-	auto commit = repo.query("rev-parse", "HEAD");
+	auto commit = d.repo.query("rev-parse", "HEAD");
 	string currentCacheDir; // this build's cache location
 
 	prepareEnv();
@@ -244,8 +243,7 @@ void build()
 {
 	clean();
 
-	auto repo = Repository(repoDir);
-	repo.run("submodule", "update");
+	d.repo.run("submodule", "update");
 
 	logProgress("Building...");
 	mkdir(buildDir);
@@ -260,7 +258,6 @@ void clean()
 		buildDir.rmdirRecurse();
 	enforce(!buildDir.exists);
 
-	auto repo = Repository(repoDir);
-	repo.run("submodule", "foreach", "git", "reset", "--hard");
-	repo.run("submodule", "foreach", "git", "clean", "--force", "-x", "-d", "--quiet");
+	d.repo.run("submodule", "foreach", "git", "reset", "--hard");
+	d.repo.run("submodule", "foreach", "git", "clean", "--force", "-x", "-d", "--quiet");
 }

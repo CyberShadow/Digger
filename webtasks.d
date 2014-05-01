@@ -4,7 +4,7 @@ import std.algorithm;
 import std.exception;
 import std.file;
 import std.path;
-import std.process;
+import std.process : environment, escapeShellFileName;
 import std.regex;
 import std.string;
 
@@ -14,18 +14,17 @@ import repo;
 
 void initialize()
 {
-	if (!repoDir.exists)
+	if (!d.repoDir.exists)
 		log("First run detected.\nPlease be patient, " ~
 			"cloning everything might take a few minutes...\n");
 
 	log("Preparing repository...");
-	prepareRepo(true);
-	auto repo = Repository(repoDir);
+	d.prepareRepo(true);
 
 	log("Preparing component repositories...");
-	foreach (component; listComponents().parallel)
+	foreach (component; d.listComponents().parallel)
 	{
-		auto crepo = Repository(buildPath(repoDir, component));
+		auto crepo = d.componentRepo(component);
 
 		log(component ~ ": Resetting repository...");
 		crepo.run("reset", "--hard");
@@ -55,19 +54,19 @@ void merge(string component, string pull)
 	enforce(component.match(`^[a-z]+$`), "Bad component");
 	enforce(pull.match(`^\d+$`), "Bad pull number");
 
-	auto repo = Repository(buildPath(repoDir, component));
+	auto crepo = d.componentRepo(component);
 
 	scope(failure)
 	{
 		log("Aborting merge...");
-		repo.run("merge", "--abort");
+		crepo.run("merge", "--abort");
 	}
 
 	log("Merging...");
 
 	void doMerge()
 	{
-		repo.run("merge", "--no-ff", "-m", mergeCommitMessage.format(pull), "origin/pr/" ~ pull);
+		crepo.run("merge", "--no-ff", "-m", mergeCommitMessage.format(pull), "origin/pr/" ~ pull);
 	}
 
 	if (component == "dmd")
@@ -77,9 +76,9 @@ void merge(string component, string pull)
 		catch (Exception)
 		{
 			log("Merge failed. Attempting conflict resolution...");
-			repo.run("checkout", "--theirs", "test");
-			repo.run("add", "test");
-			repo.run("-c", "rerere.enabled=false", "commit", "-m", mergeCommitMessage.format(pull));
+			crepo.run("checkout", "--theirs", "test");
+			crepo.run("add", "test");
+			crepo.run("-c", "rerere.enabled=false", "commit", "-m", mergeCommitMessage.format(pull));
 		}
 	}
 	else
@@ -93,12 +92,12 @@ void unmerge(string component, string pull)
 	enforce(component.match(`^[a-z]+$`), "Bad component");
 	enforce(pull.match(`^\d+$`), "Bad pull number");
 
-	auto repo = Repository(buildPath(repoDir, component));
+	auto crepo = d.componentRepo(component);
 
 	log("Rebasing...");
 	environment["GIT_EDITOR"] = "%s unmerge-rebase-edit %s".format(escapeShellFileName(thisExePath), pull);
 	// "sed -i \"s#.*" ~ mergeCommitMessage.format(pull).escapeRE() ~ ".*##g\"";
-	repo.run("rebase", "--interactive", "--preserve-merges", "origin/master");
+	crepo.run("rebase", "--interactive", "--preserve-merges", "origin/master");
 
 	log("Unmerge successful.");
 }
