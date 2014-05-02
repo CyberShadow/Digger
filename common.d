@@ -78,8 +78,9 @@ void writeToConsole(string s)
 {
 	version (Windows)
 	{
-		import core.sys.windows.windows : GetConsoleWindow;
-		if (!GetConsoleWindow())
+		import core.sys.windows.windows;
+		auto h = GetStdHandle(STD_ERROR_HANDLE);
+		if (!h || h == INVALID_HANDLE_VALUE)
 			return;
 	}
 
