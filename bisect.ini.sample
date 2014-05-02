@@ -12,8 +12,9 @@
 #   (must be a pull request merge commit)
 # - Full GitHub URL of a pull request, e.g.:
 #   https://github.com/D-Programming-Language/dmd/pull/123
-# - If prefixed with "@", time spec (e.g. "@ 2013-01-02",
-#   "@ October 2013", "@ 15 days ago"  or "@ Tuesday")
+# - Optionally time spec after "@" (e.g. "@ 2013-01-02",
+#   "master @ October 2013", "2.065 @ 15 days ago" or "@ Tuesday")
+#   (if no ref is specified, master is assumed).
 
 bad  = master
 good = @ 1 month ago
