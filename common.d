@@ -90,8 +90,3 @@ void log(string s)
 {
 	writeToConsole("digger: " ~ s ~ "\n");
 }
-
-void logProgress(string s)
-{
-	log((" " ~ s ~ " ").center(70, '-'));
-}

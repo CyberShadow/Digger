@@ -129,9 +129,9 @@ int doBisectStep()
 	d.dEnv["PATH"] = buildPath(currentDir, "bin").absolutePath() ~ pathSeparator ~ d.dEnv["PATH"];
 	environment["PATH"] = d.dEnv["PATH"];
 
-	logProgress("Running test command...");
+	d.logProgress("Running test command...");
 	auto result = spawnShell(bisectConfig.tester, d.dEnv, Config.newEnv).wait();
-	logProgress("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
+	d.logProgress("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
 	return result;
 }
 

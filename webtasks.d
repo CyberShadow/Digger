@@ -42,7 +42,7 @@ void initialize()
 	log("Preparing tools...");
 	d.preparePrerequisites();
 
-	clean();
+	d.clean();
 
 	log("Ready.");
 }
@@ -129,10 +129,10 @@ void runBuild()
 {
 	log("Preparing build...");
 	d.prepareEnv();
-	prepareBuilder();
+	d.prepareBuilder();
 
 	log("Building...");
-	builder.build();
+	d.builder.build();
 
 	log("Moving...");
 	if (resultDir.exists)

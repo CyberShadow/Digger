@@ -22,35 +22,24 @@ bool inDelve;
 
 enum UNBUILDABLE_MARKER = "unbuildable";
 
-DiggerBuilder builder;
-
 alias currentDir = subDir!"current";     /// Final build directory.
-
-void prepareBuilder()
-{
-	builder = new DiggerBuilder();
-	builder.config.build = buildConfig;
-	builder.config.local.repoDir = d.repoDir;
-	builder.config.local.buildDir = d.buildDir;
-	version(Windows)
-	builder.config.local.dmcDir = d.dmcDir;
-	builder.config.local.env = d.dEnv;
-}
 
 void prepareBuild()
 {
 	auto commit = d.repo.query("rev-parse", "HEAD");
 	string currentCacheDir; // this build's cache location
 
+	d.config.build = buildConfig;
+
 	d.prepareEnv();
-	prepareBuilder();
+	d.prepareBuilder();
 
 	if (currentDir.exists)
 		currentDir.rmdirRecurse();
 
 	if (config.cache)
 	{
-		auto buildID = "%s-%s".format(commit, builder.config.build);
+		auto buildID = "%s-%s".format(commit, buildConfig);
 
 		currentCacheDir = buildPath(cacheDir, buildID);
 		if (currentCacheDir.exists)
@@ -94,36 +83,5 @@ void prepareBuild()
 		}
 	}
 
-	build();
-}
-
-class DiggerBuilder : DBuilder
-{
-	override void log(string s)
-	{
-		common.log(s);
-	}
-}
-
-void build()
-{
-	clean();
-
-	d.repo.run("submodule", "update");
-
-	logProgress("Building...");
-	mkdir(d.buildDir);
-
-	builder.build();
-}
-
-void clean()
-{
-	log("Cleaning up...");
-	if (d.buildDir.exists)
-		d.buildDir.rmdirRecurse();
-	enforce(!d.buildDir.exists);
-
-	d.repo.run("submodule", "foreach", "git", "reset", "--hard");
-	d.repo.run("submodule", "foreach", "git", "clean", "--force", "-x", "-d", "--quiet");
+	d.build();
 }
