@@ -95,7 +95,7 @@ void unmerge(string component, string pull)
 	auto crepo = d.componentRepo(component);
 
 	log("Rebasing...");
-	environment["GIT_EDITOR"] = "%s unmerge-rebase-edit %s".format(escapeShellFileName(thisExePath), pull);
+	environment["GIT_EDITOR"] = "%s do unmerge-rebase-edit %s".format(escapeShellFileName(thisExePath), pull);
 	// "sed -i \"s#.*" ~ mergeCommitMessage.format(pull).escapeRE() ~ ".*##g\"";
 	crepo.run("rebase", "--interactive", "--preserve-merges", "origin/master");
 
