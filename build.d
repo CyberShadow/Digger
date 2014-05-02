@@ -20,76 +20,6 @@ alias BuildConfig = DBuilder.Config.Build;
 BuildConfig buildConfig;
 bool inDelve;
 
-version(Windows)
-alias dmcDir = subDir!"dm";
-
-// http://d.puremagic.com/issues/show_bug.cgi?id=7016
-static import ae.net.http.client;
-
-/// Obtains prerequisites necessary for building D.
-void prepareTools()
-{
-	version(Windows)
-	{
-		void prepareDMC(string dmc)
-		{
-			auto workDir = config.workDir;
-
-			void downloadFile(string url, string target)
-			{
-				log("Downloading " ~ url);
-
-				import std.stdio : File;
-				import ae.net.http.client;
-				import ae.net.asockets;
-				import ae.sys.data;
-
-				httpGet(url,
-					(Data data) { std.file.write(target, data.contents); },
-					(string error) { throw new Exception(error); }
-				);
-
-				socketManager.loop();
-			}
-
-			alias obtainUsing!downloadFile cachedDownload;
-			cachedDownload("http://ftp.digitalmars.com/dmc.zip", buildPath(workDir, "dmc.zip"));
-			cachedDownload("http://ftp.digitalmars.com/optlink.zip", buildPath(workDir, "optlink.zip"));
-
-			void unzip(string zip, string target)
-			{
-				log("Unzipping " ~ zip);
-				import std.zip;
-				auto archive = new ZipArchive(zip.read);
-				foreach (name, entry; archive.directory)
-				{
-					auto path = buildPath(target, name);
-					ensurePathExists(path);
-					if (name.endsWith(`/`))
-						path.mkdirRecurse();
-					else
-						std.file.write(path, archive.expand(entry));
-				}
-			}
-
-			alias safeUpdate!unzip safeUnzip;
-
-			safeUnzip(buildPath(workDir, "dmc.zip"), buildPath(workDir, "dmc"));
-			enforce(buildPath(workDir, "dmc", "dm", "bin", "dmc.exe").exists);
-			rename(buildPath(workDir, "dmc", "dm"), dmc);
-			rmdir(buildPath(workDir, "dmc"));
-			remove(buildPath(workDir, "dmc.zip"));
-
-			safeUnzip(buildPath(workDir, "optlink.zip"), buildPath(workDir, "optlink"));
-			rename(buildPath(workDir, "optlink", "link.exe"), buildPath(dmc, "bin", "link.exe"));
-			rmdir(buildPath(workDir, "optlink"));
-			remove(buildPath(workDir, "optlink.zip"));
-		}
-
-		obtainUsing!(prepareDMC, q{dmc})(dmcDir);
-	}
-}
-
 alias currentDir = subDir!"current";     /// Final build directory
 alias buildDir   = subDir!"build";       /// Temporary build directory
 enum UNBUILDABLE_MARKER = "unbuildable";
@@ -128,7 +58,7 @@ void prepareEnv()
 	// Add the DM tools
 	version (Windows)
 	{
-		auto dmc = buildPath(dmcDir, `bin`).absolutePath();
+		auto dmc = buildPath(d.dmcDir, `bin`).absolutePath();
 		dEnv["DMC"] = dmc;
 		newPaths ~= dmc;
 	}
@@ -167,7 +97,7 @@ void prepareBuilder()
 	builder.config.local.repoDir = d.repoDir;
 	builder.config.local.buildDir = buildDir;
 	version(Windows)
-	builder.config.local.dmcDir = dmcDir;
+	builder.config.local.dmcDir = d.dmcDir;
 	builder.config.local.env = dEnv;
 }
 

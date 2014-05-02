@@ -56,7 +56,7 @@ int doBisect()
 	}
 
 	d.prepareRepo(true);
-	prepareTools();
+	d.preparePrerequisites();
 
 	void test(bool good, string rev)
 	{

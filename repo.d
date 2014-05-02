@@ -19,7 +19,7 @@ class DiggerManager : DManager
 {
 	this()
 	{
-		super(subDir!"repo");
+		this.config.workDir = common.config.workDir;
 	}
 
 	override void log(string s)

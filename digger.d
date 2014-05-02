@@ -41,7 +41,7 @@ int doMain()
 			d.prepareRepo(true);
 			auto rev = parseRev(args[1]);
 			d.repo.run("checkout", rev);
-			prepareTools();
+			d.preparePrerequisites();
 			prepareBuild();
 			return 0;
 		}

@@ -40,7 +40,7 @@ void initialize()
 	}
 
 	log("Preparing tools...");
-	prepareTools();
+	d.preparePrerequisites();
 
 	clean();
 
