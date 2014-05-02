@@ -128,7 +128,7 @@ alias resultDir = subDir!"result";
 void runBuild()
 {
 	log("Preparing build...");
-	prepareEnv();
+	d.prepareEnv();
 	prepareBuilder();
 
 	log("Building...");
@@ -137,7 +137,7 @@ void runBuild()
 	log("Moving...");
 	if (resultDir.exists)
 		resultDir.rmdirRecurse();
-	rename(buildDir, resultDir);
+	rename(d.buildDir, resultDir);
 
 	log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
 		resultDir.buildPath("bin").absolutePath()
