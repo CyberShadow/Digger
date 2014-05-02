@@ -24,6 +24,8 @@ enum UNBUILDABLE_MARKER = "unbuildable";
 
 DiggerBuilder builder;
 
+alias currentDir = subDir!"current";     /// Final build directory.
+
 void prepareBuilder()
 {
 	builder = new DiggerBuilder();
@@ -43,8 +45,8 @@ void prepareBuild()
 	d.prepareEnv();
 	prepareBuilder();
 
-	if (d.currentDir.exists)
-		d.currentDir.rmdirRecurse();
+	if (currentDir.exists)
+		currentDir.rmdirRecurse();
 
 	if (config.cache)
 	{
@@ -54,8 +56,8 @@ void prepareBuild()
 		if (currentCacheDir.exists)
 		{
 			log("Found in cache: " ~ currentCacheDir);
-			currentCacheDir.dirLink(d.currentDir);
-			enforce(!buildPath(d.currentDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
+			currentCacheDir.dirLink(currentDir);
+			enforce(!buildPath(currentDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
 			return;
 		}
 	}
@@ -68,11 +70,11 @@ void prepareBuild()
 			{
 				ensurePathExists(currentCacheDir);
 				d.buildDir.rename(currentCacheDir);
-				currentCacheDir.dirLink(d.currentDir);
+				currentCacheDir.dirLink(currentDir);
 				optimizeRevision(commit);
 			}
 			else
-				rename(d.buildDir, d.currentDir);
+				rename(d.buildDir, currentDir);
 		}
 	}
 
