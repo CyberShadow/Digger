@@ -15,7 +15,7 @@ import ae.sys.d.manager;
 
 import common;
 
-class DiggerManager : DManager
+final class DiggerManager : DManager
 {
 	this()
 	{
@@ -25,6 +25,27 @@ class DiggerManager : DManager
 	override void log(string s)
 	{
 		common.log(s);
+	}
+
+	override void prepareEnv()
+	{
+		super.prepareEnv();
+
+		applyEnv(common.config.environment);
+	}
+
+	void applyEnv(in string[string] env)
+	{
+		auto oldEnv = environment.toAA();
+		foreach (name, value; dEnv)
+			oldEnv[name] = value;
+		foreach (name, value; env)
+		{
+			string newValue = value;
+			foreach (oldName, oldValue; oldEnv)
+				newValue = newValue.replace("%" ~ oldName ~ "%", oldValue);
+			dEnv[name] = oldEnv[name] = newValue;
+		}
 	}
 }
 
