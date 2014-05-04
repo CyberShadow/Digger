@@ -31,9 +31,6 @@ void prepareBuild()
 
 	d.config.build = buildConfig;
 
-	d.prepareEnv();
-	d.prepareBuilder();
-
 	if (currentDir.exists)
 		currentDir.rmdirRecurse();
 
@@ -83,5 +80,6 @@ void prepareBuild()
 		}
 	}
 
+	d.reset();
 	d.build();
 }

@@ -7,6 +7,7 @@ import bisect;
 import build;
 import cache;
 import common;
+import custom;
 import repo;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
@@ -37,10 +38,9 @@ int doMain()
 			if (model64)
 				buildConfig.model = "64";
 			enforce(args.length == 2, "Specify revision");
-			d.prepareRepo(true);
+			d.initialize(true);
 			auto rev = parseRev(args[1]);
 			d.repo.run("checkout", rev);
-			d.preparePrerequisites();
 			prepareBuild();
 			return 0;
 		}
@@ -49,33 +49,8 @@ int doMain()
 			return 0;
 		case "delve":
 			return doDelve();
-
-		// digger-web tasks
 		case "do":
-			args = args[1..$];
-			enforce(args.length, "No task specified");
-			switch (args[0])
-			{
-				case "initialize":
-					d.initialize();
-					return 0;
-				case "merge":
-					enforce(args.length == 3);
-					d.merge(args[1], args[2]);
-					return 0;
-				case "unmerge":
-					enforce(args.length == 3);
-					d.unmerge(args[1], args[2]);
-					return 0;
-				case "callback":
-					d.callback(args[1..$]);
-					return 0;
-				case "build":
-					d.runBuild();
-					return 0;
-				default:
-					assert(false);
-			}
+			return handleWebTask(args[1..$]);
 
 		default:
 			throw new Exception("Unknown command: " ~ args[0]);

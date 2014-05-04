@@ -56,8 +56,7 @@ int doBisect()
 		return result;
 	}
 
-	d.prepareRepo(true);
-	d.preparePrerequisites();
+	d.initialize(true);
 
 	void test(bool good, string rev)
 	{
@@ -194,7 +193,7 @@ int doDelve()
 	}
 	else
 	{
-		d.prepareRepo(false);
+		d.initialize(false);
 		auto root = d.repo.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
 		d.repo.run(["bisect", "start", "master", root]);
 		d.repo.run("bisect", "run",

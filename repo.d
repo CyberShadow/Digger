@@ -11,11 +11,11 @@ import std.regex;
 import std.string;
 
 import ae.sys.file;
-import ae.sys.d.customizer;
+import ae.sys.d.manager;
 
 import common;
 
-final class DiggerCustomizer : DCustomizer
+final class DiggerManager : DManager
 {
 	this()
 	{
@@ -47,18 +47,13 @@ final class DiggerCustomizer : DCustomizer
 			dEnv[name] = oldEnv[name] = newValue;
 		}
 	}
-
-	override string getCallbackCommand()
-	{
-		return escapeShellFileName(thisExePath) ~ " do callback";
-	}
 }
 
-DiggerCustomizer d;
+DiggerManager d;
 
 static this()
 {
-	d = new DiggerCustomizer();
+	d = new DiggerManager();
 }
 
 string parseRev(string rev)
