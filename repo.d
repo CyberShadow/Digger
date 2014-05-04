@@ -11,9 +11,12 @@ import std.regex;
 import std.string;
 
 import ae.sys.file;
+import ae.sys.d.builder;
 import ae.sys.d.manager;
 
 import common;
+
+alias BuildConfig = DBuilder.Config.Build;
 
 final class DiggerManager : DManager
 {
@@ -66,9 +69,10 @@ string parseRev(string rev)
 		auto parts = rev.findSplit("@");
 		args ~= ["--until", parts[2].strip()];
 		rev = parts[0].strip();
-		if (rev.empty)
-			rev = "origin/master";
 	}
+
+	if (rev.empty)
+		rev = "origin/master";
 
 	try
 		return d.repo.query(args ~ ["-n", "1", "origin/" ~ rev]);

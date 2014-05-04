@@ -7,9 +7,11 @@ import std.path;
 import std.process;
 import std.string;
 
+import ae.sys.d.builder;
+import ae.sys.file;
 import ae.utils.sini;
 
-import build;
+import cache;
 import common;
 import repo;
 
@@ -28,6 +30,9 @@ struct BisectConfig
 }
 BisectConfig bisectConfig;
 
+/// Final build directory for bisect tests.
+alias currentDir = subDir!"current";
+
 int doBisect()
 {
 	bool inBisect, noVerify;
@@ -45,7 +50,6 @@ int doBisect()
 		.readText()
 		.splitLines()
 		.parseStructuredIni!BisectConfig();
-	buildConfig = bisectConfig.build;
 
 	if (inBisect)
 	{
@@ -117,7 +121,7 @@ int doBisectStep()
 	d.applyEnv(bisectConfig.environment);
 
 	try
-		prepareBuild();
+		prepareBuild(bisectConfig.build);
 	catch (Exception e)
 	{
 		log("Build failed: " ~ e.toString());
@@ -155,6 +159,8 @@ const CommitRange[] badCommits =
 	{ 1317625155, 1319346272 }, // Missing std.stdio import in std.regex
 ];
 
+bool inDelve;
+
 /// Find the earliest revision that Digger can build.
 /// Used during development to extend Digger's range.
 int doDelve()
@@ -182,7 +188,7 @@ int doDelve()
 		inDelve = true;
 		try
 		{
-			prepareBuild();
+			prepareBuild(bisectConfig.build);
 			return 1;
 		}
 		catch (Exception e)
@@ -204,4 +210,68 @@ int doDelve()
 		);
 		return 0;
 	}
+}
+
+// ---------------------------------------------------------------------------
+
+enum UNBUILDABLE_MARKER = "unbuildable";
+
+void prepareBuild(BuildConfig buildConfig)
+{
+	auto commit = d.repo.query("rev-parse", "HEAD");
+	string currentCacheDir; // this build's cache location
+
+	d.config.build = buildConfig;
+
+	if (currentDir.exists)
+		currentDir.rmdirRecurse();
+
+	if (config.cache)
+	{
+		auto buildID = "%s-%s".format(commit, buildConfig);
+
+		currentCacheDir = buildPath(cacheDir, buildID);
+		if (currentCacheDir.exists)
+		{
+			log("Found in cache: " ~ currentCacheDir);
+			currentCacheDir.dirLink(currentDir);
+			enforce(!buildPath(currentDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
+			return;
+		}
+	}
+
+	scope (exit)
+	{
+		if (d.buildDir.exists)
+		{
+			if (currentCacheDir)
+			{
+				ensurePathExists(currentCacheDir);
+				d.buildDir.rename(currentCacheDir);
+				currentCacheDir.dirLink(currentDir);
+				optimizeRevision(commit);
+			}
+			else
+				rename(d.buildDir, currentDir);
+		}
+	}
+
+	scope (failure)
+	{
+		if (d.buildDir.exists)
+		{
+			// An incomplete build is useless, nuke the directory
+			// and create a new one just for the UNBUILDABLE_MARKER.
+			rmdirRecurse(d.buildDir);
+			mkdir(d.buildDir);
+			buildPath(d.buildDir, UNBUILDABLE_MARKER).touch();
+
+			// Don't cache failed build results during delve
+			if (inDelve)
+				currentCacheDir = null;
+		}
+	}
+
+	d.reset();
+	d.build();
 }

@@ -17,11 +17,15 @@ Currently, you must have Microsoft Visual Studio 2010 and Windows SDK v7.0A inst
 
 ### Configuration
 
-Copy `digger.ini.sample` to `digger.ini` and adjust as instructed by the comments.
+You can optionally configure a few settings using a configuration file.
+To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by the comments.
 
 ### Usage
 
-To build D:
+##### Building D
+
+    # build latest master branch commit
+    $ digger build
 
     # build a specific D version
     $ digger build v2.064.2
@@ -29,17 +33,19 @@ To build D:
     # build for x86-64
     $ digger build --64 v2.064.2
 
-    # build latest master branch commit
-    $ digger build master
-
     # build commit from a point in time
-    $ digger build "2.065 @ 3 weeks ago"
+    $ digger build "@ 3 weeks ago"
 
     # build latest 2.065 (release) branch commit
     $ digger build 2.065
 
     # build specified branch from a point in time
     $ digger build "2.065 @ 3 weeks ago"
+
+    # build with added pull request
+    $ digger build "master + dmd#123"
+
+##### Bisecting
 
 To bisect D's history to find which pull request introduced a bug, first copy `bisect.ini.sample` to `bisect.ini`, adjust as instructed by the comments, then run:
 

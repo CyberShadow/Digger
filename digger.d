@@ -4,7 +4,6 @@ import std.exception;
 import std.getopt;
 
 import bisect;
-import build;
 import cache;
 import common;
 import custom;
@@ -31,17 +30,15 @@ int doMain()
 		}
 		case "build":
 		{
+			BuildConfig buildConfig;
 			bool model64;
 			getopt(args,
 				"64", &model64,
 			);
 			if (model64)
 				buildConfig.model = "64";
-			enforce(args.length == 2, "Specify revision");
-			d.initialize(true);
-			auto rev = parseRev(args[1]);
-			d.repo.run("checkout", rev);
-			prepareBuild();
+
+			buildCustom(args.length > 1 ? args[1] : null, buildConfig);
 			return 0;
 		}
 		case "compact":

@@ -1,11 +1,15 @@
 module custom;
 
+import std.algorithm;
+import std.array;
 import std.exception;
 import std.file;
 import std.path;
 import std.string;
 
 import ae.sys.d.customizer;
+import ae.utils.array;
+import ae.utils.regex;
 
 import common;
 import repo;
@@ -23,14 +27,13 @@ class DiggerCustomizer : DCustomizer
 				"cloning everything might take a few minutes...\n");
 
 		super.initialize();
-
-		d.log("Ready.");
 	}
 
 	/// Build the customized D version.
 	/// The result will be in resultDir.
-	void runBuild()
+	void runBuild(BuildConfig buildConfig)
 	{
+		d.config.build = buildConfig;
 		d.build();
 
 		d.log("Moving...");
@@ -57,6 +60,8 @@ int handleWebTask(string[] args)
 	{
 		case "initialize":
 			customizer.initialize();
+			customizer.begin(); // TODO: add starting branch to web UI
+			log("Ready.");
 			return 0;
 		case "merge":
 			enforce(args.length == 3);
@@ -70,9 +75,39 @@ int handleWebTask(string[] args)
 			customizer.callback(args[1..$]);
 			return 0;
 		case "build":
-			customizer.runBuild();
+			customizer.runBuild(BuildConfig.init); // TODO: add build config to web UI
 			return 0;
 		default:
 			assert(false);
 	}
+}
+
+/// Build D according to the given spec string
+/// (e.g. master+dmd#123).
+void buildCustom(string spec, BuildConfig buildConfig)
+{
+	auto customizer = new DiggerCustomizer();
+	customizer.initialize();
+
+	auto parts = spec.split("+");
+	parts = parts.map!strip().array();
+	if (parts.empty)
+		parts = [null];
+	auto rev = parseRev(parts.shift());
+
+	customizer.begin(rev);
+
+	foreach (part; parts)
+	{
+		if (part.matchCaptures(re!`^(\w+)#(\d+)$`,
+			(string component, string pull)
+			{
+				customizer.merge(component, pull);
+			}))
+			continue;
+
+		throw new Exception("Don't know how to apply customization: " ~ spec);
+	}
+
+	customizer.runBuild(buildConfig);
 }
