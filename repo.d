@@ -11,11 +11,11 @@ import std.regex;
 import std.string;
 
 import ae.sys.file;
-import ae.sys.d.manager;
+import ae.sys.d.customizer;
 
 import common;
 
-final class DiggerManager : DManager
+final class DiggerCustomizer : DCustomizer
 {
 	this()
 	{
@@ -49,11 +49,11 @@ final class DiggerManager : DManager
 	}
 }
 
-DiggerManager d;
+DiggerCustomizer d;
 
 static this()
 {
-	d = new DiggerManager();
+	d = new DiggerCustomizer();
 }
 
 string parseRev(string rev)

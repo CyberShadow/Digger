@@ -8,7 +8,6 @@ import build;
 import cache;
 import common;
 import repo;
-import webtasks;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 version(Windows) static import ae.sys.windows;
@@ -58,22 +57,22 @@ int doMain()
 			switch (args[0])
 			{
 				case "initialize":
-					initialize();
+					d.initialize();
 					return 0;
 				case "merge":
 					enforce(args.length == 3);
-					merge(args[1], args[2]);
+					d.merge(args[1], args[2]);
 					return 0;
 				case "unmerge":
 					enforce(args.length == 3);
-					unmerge(args[1], args[2]);
+					d.unmerge(args[1], args[2]);
 					return 0;
 				case "unmerge-rebase-edit":
 					enforce(args.length == 3);
-					unmergeRebaseEdit(args[1], args[2]);
+					d.unmergeRebaseEdit(args[1], args[2]);
 					return 0;
 				case "build":
-					runBuild();
+					d.runBuild();
 					return 0;
 				default:
 					assert(false);
