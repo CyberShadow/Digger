@@ -67,9 +67,8 @@ int doMain()
 					enforce(args.length == 3);
 					d.unmerge(args[1], args[2]);
 					return 0;
-				case "unmerge-rebase-edit":
-					enforce(args.length == 3);
-					d.unmergeRebaseEdit(args[1], args[2]);
+				case "callback":
+					d.callback(args[1..$]);
 					return 0;
 				case "build":
 					d.runBuild();

@@ -47,6 +47,11 @@ final class DiggerCustomizer : DCustomizer
 			dEnv[name] = oldEnv[name] = newValue;
 		}
 	}
+
+	override string getCallbackCommand()
+	{
+		return escapeShellFileName(thisExePath) ~ " do callback";
+	}
 }
 
 DiggerCustomizer d;
