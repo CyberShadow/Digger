@@ -8,8 +8,7 @@ $(function() {
 			$('#initialization .status').slideUp();
 			$('#initialization h1').text('Initialization ' + (success ? 'complete' : 'failed'));
 			if (success) {
-				$('#initialization').slideUp();
-				$('#pull-form').slideDown();
+				showPage('pull-form');
 				getData();
 			}
 		});
@@ -123,8 +122,7 @@ function getData() {
 
 	$('#build-button').click(function() {
 		$('input').prop('disabled', true);
-		$('#pull-form').slideUp();
-		$('#build-progress').slideDown();
+		showPage('build-progress');
 		$('#build-progress h1').text('Building...');
 		$.getJSON('/build', function() {
 			showTask($('#build-progress .log'), function(success) {
@@ -179,6 +177,11 @@ function getData() {
 		$("html, body").animate({ scrollTop: "0px" });
 		next();
 	});
+}
+
+function showPage(id) {
+	$('#pages > div').slideUp();
+	$('#' + id).slideDown();
 }
 
 var stateText = {

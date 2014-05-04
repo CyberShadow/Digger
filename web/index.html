@@ -7,35 +7,37 @@
 
 <link rel="stylesheet" href="style.css">
 
-<div id="pull-form" style="display: none">
-	<h1>Customize your D build</h1>
+<div id="pages">
+	<div id="pull-form" style="display: none">
+		<h1>Customize your D build</h1>
 
-	<div id="failing-box">
-		<input type="checkbox" id="show-failing" name="show-failing"><label for="show-failing">Show failing</label>
+		<div id="failing-box">
+			<input type="checkbox" id="show-failing" name="show-failing"><label for="show-failing">Show failing</label>
+		</div>
+
+		<div id="repos"></div>
+
+		<input type="submit" value="Make me one with everything" id="everything-button">
+
+		<table id="buttons"><tr>
+			<td><input type="submit" value="Build" id="build-button"></td>
+			<td><input type="submit" value="Exit"  id="exit-button"></td>
+		</tr></table>
 	</div>
 
-	<div id="repos"></div>
+	<div id="initialization">
+		<h1>Initializing</h1>
 
-	<input type="submit" value="Make me one with everything" id="everything-button">
+		<div class="log"></div>
 
-	<table id="buttons"><tr>
-		<td><input type="submit" value="Build" id="build-button"></td>
-		<td><input type="submit" value="Exit"  id="exit-button"></td>
-	</tr></table>
-</div>
+		<p class="status"><img src="loading.gif"> Initializing, please wait...</p>
+	</div>
 
-<div id="initialization">
-	<h1>Initializing</h1>
+	<div id="build-progress" style="display: none">
+		<h1>Starting build...</h1>
 
-	<div class="log"></div>
+		<div class="log"></div>
 
-	<p class="status"><img src="loading.gif"> Initializing, please wait...</p>
-</div>
-
-<div id="build-progress" style="display: none">
-	<h1>Starting build...</h1>
-
-	<div class="log"></div>
-
-	<p class="status"><img src="loading.gif"> Building, please wait...</p>
+		<p class="status"><img src="loading.gif"> Building, please wait...</p>
+	</div>
 </div>
