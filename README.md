@@ -1,7 +1,8 @@
 # Digger
 
-Digger is a tool for working with D's history.
-It can build old D versions, and find the exact pull request which introduced a regression (or fixed a bug).
+Digger is a tool for working with D's source code and its history.
+It can build D (including older D versions), customize the build with pending pull requests or forks,
+and find the exact pull request which introduced a regression (or fixed a bug).
 
 ### Requirements
 
@@ -14,13 +15,18 @@ Currently, you must have Microsoft Visual Studio 2010 and Windows SDK v7.0A inst
     $ git clone --recursive https://github.com/CyberShadow/Digger
     $ cd Digger
     $ rdmd --build-only digger
+    $ rdmd --build-only digger-web
+
+### Web interface
+
+Run digger-web to start the web interface, which allows interactively customizing a D version to build.
 
 ### Configuration
 
 You can optionally configure a few settings using a configuration file.
 To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by the comments.
 
-### Usage
+### Command-line usage
 
 ##### Building D
 

@@ -76,6 +76,14 @@ int handleWebTask(string[] args)
 			enforce(args.length == 3);
 			customizer.unmergePull(args[1], args[2]);
 			return 0;
+		case "merge-fork":
+			enforce(args.length == 4);
+			customizer.mergeFork(args[1], args[2], args[3]);
+			return 0;
+		case "unmerge-fork":
+			enforce(args.length == 4);
+			customizer.unmergeFork(args[1], args[2], args[3]);
+			return 0;
 		case "callback":
 			customizer.callback(args[1..$]);
 			return 0;

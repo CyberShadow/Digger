@@ -117,7 +117,7 @@ function createCustomizationForm() {
 							;
 
 							var name = repo + '-pull-' + pull.number;
-							var checkbox =
+							var $checkbox =
 								$('<input>')
 								.attr('type', 'checkbox')
 								.attr('id', name)
@@ -125,12 +125,12 @@ function createCustomizationForm() {
 								.data('repo', repo)
 								.data('pull', pull.number)
 								.click(function() {
-									togglePull(this.checked, $row, $logRow.find('div.log'), repo, pull.number);
+									togglePull(this.checked, $checkbox, $logRow.find('div.log'), repo, pull.number);
 								})
 							;
 							$row.append(
 								$('<td>')
-								.append(checkbox)
+								.append($checkbox)
 							);
 							$row.append(
 								$('<td>')
@@ -175,6 +175,75 @@ function createCustomizationForm() {
 
 		done();
 	}, true);
+
+	addSection($('#sections'), 'Forks', function($content, done) {
+		$.each(components, function(i, component) {
+			var repo = component.toLowerCase();
+			addSection($content, component, function($forks, done) {
+				githubGetAll('/repos/D-Programming-Language/'+repo+'/forks')
+					.then(function(forks) {
+						function cmp(a, b) { return a<b ? -1 : a>b ? 1 : 0; }
+						forks.sort(function(a, b) { return cmp(a.owner.login.toLowerCase(), b.owner.login.toLowerCase()); });
+						$.each(forks, function(i, fork) {
+							var $section = addSection($forks, fork.owner.login, function($fork, done) {
+								githubGetAll('/repos/'+fork.full_name+'/branches')
+									.then(function(branches) {
+										var $table = $('<table>');
+										$.each(branches, function(i, branch) {
+											var $logDiv = $('<div>').addClass('log');
+											var id = fork.owner.login + '-' + fork.name + '-' + branch.name;
+											$table.append(
+												$('<tr>')
+												.append(
+													$('<td>')
+													.append(
+														$('<input>')
+														.attr('type', 'checkbox')
+														.attr('id', id)
+														.click(function() {
+															toggleFork(this.checked, $(this), $logDiv,
+																fork.owner.login, fork.name, branch.name);
+														})
+													)
+												)
+												.append(
+													$('<td>')
+													.append(
+														$('<label>')
+														.attr('for', id)
+														.append(' ')
+														.append(
+															$('<a>')
+															.text(branch.name)
+															.attr('href', 'https://github.com/'+fork.full_name+'/compare/'+branch.name)
+														)
+													)
+												)
+											);
+											$table.append(
+												$('<tr>')
+												.append($('<td>'))
+												.append($('<td>').append($logDiv))
+											);
+										});
+										$fork.append($table);
+										done();
+									}, function() {
+										alert('Error retrieving data');
+									});
+							})
+							$section.children('.section-header')
+								.append(' (<a href="'+fork.html_url+'">'+fork.full_name+'</a>)');
+						});
+						done();
+					}, function() {
+						alert('Error retrieving data');
+					});
+			});
+		});
+
+		done();
+	}).attr('id', 'forks');
 
 	$('#build-button').click(function() {
 		$('input').prop('disabled', true);
@@ -229,7 +298,7 @@ function createCustomizationForm() {
 					next();
 				}
 				else
-					togglePull(true, $row, $logDiv, repo, pull, next);
+					togglePull(true, $checkbox, $logDiv, repo, pull, next);
 			} else {
 				$('#build-button').click();
 			}
@@ -289,22 +358,18 @@ function addSection($parent, title, generator, autoExpand) {
 	var $parentHeader = $parentSection.children('h1,h2,h3,h4,h5,h6,h7');
 	var tag = $parentHeader.prop('tagName');
 
-	var $a = $('<a>')
+	var $h = $('<' + tag[0] + ++tag[1] + '>')
+		.addClass('section-header')
 		.text(title)
-		.attr('href', '#')
 	;
 	var $button = $('<img>')
 		.attr('src', 'closed.png')
 	;
-	$a.prepend($button);
-
-	var $h = $('<' + tag[0] + ++tag[1] + '>');
-	$h.addClass('section-header');
-	$h.append($a);
+	$h.prepend($button);
 
 	var $content = $('<div>');
 
-	$a.click(function() {
+	$h.click(function() {
 		if (working)
 			return;
 
@@ -341,18 +406,17 @@ function addSection($parent, title, generator, autoExpand) {
 	$parent.append($div);
 
 	if (autoExpand)
-		$a.click();
+		$h.click();
 
 	return $div;
 }
 
 // ***************************************************************************
 
-function togglePull(add, $row, $logDiv, repo, number, complete) {
+function toggleMerge(add, $checkbox, $logDiv, resource, complete) {
 	$('input').prop('disabled', true);
 	$logDiv.empty();
 	$logDiv.show();
-	var $checkbox = $row.find('input[type=checkbox]');
 	$checkbox.hide();
 	var $spinner = $('<img>').attr('src', 'loading.gif');
 	$checkbox.after($spinner);
@@ -385,10 +449,66 @@ function togglePull(add, $row, $logDiv, repo, number, complete) {
 		}, 500);
 	}
 
-	var action = add ? 'merge' : 'unmerge';
-	$.getJSON('/' + action + '/' +  repo + '/' + number, function() {
+	$.getJSON('/' + resource, function() {
 		showTask($logDiv, completeHandler);
 	});
+}
+
+function togglePull(add, $checkbox, $logDiv, repo, number, complete) {
+	var action = add ? 'merge' : 'unmerge';
+	var resource = action + '/' + repo + '/' + number;
+	toggleMerge(add, $checkbox, $logDiv, resource, complete);
+}
+
+function toggleFork(add, $checkbox, $logDiv, user, repo, branch, complete) {
+	var action = add ? 'merge-fork' : 'unmerge-fork';
+	var resource = action + '/' + user + '/' + repo + '/' + branch;
+	toggleMerge(add, $checkbox, $logDiv, resource, complete);
+}
+
+// ***************************************************************************
+
+function hashString(s) {
+	// from http://stackoverflow.com/a/7616484/21501
+	var hash = 0, i, chr, len;
+	if (s.length == 0) return hash;
+	for (i = 0, len = s.length; i < len; i++) {
+		chr   = s.charCodeAt(i);
+		hash  = ((hash << 5) - hash) + chr;
+		hash |= 0; // Convert to 32bit integer
+	}
+	return hash;
+}
+
+function githubGetAll(resource, maxPages) {
+	var deferred = $.Deferred();
+
+	if (!maxPages)
+		maxPages = 20;
+
+	var page = 0;
+	var allData = [];
+
+	function getNextPage() {
+		page++;
+		var url = 'https://api.github.com' + resource + '?per_page=100&page=' + page;
+		$.ajax({
+			dataType: 'jsonp',
+			url: url,
+			cache: true,
+			jsonpCallback : 'jsonpCallback_' + Math.abs(hashString(url))
+		}).then(function(response) {
+			allData = allData.concat(response.data);
+			if (response.data.length == 100 && page < maxPages)
+				getNextPage();
+			else
+				deferred.resolve(allData);
+		}, deferred.reject.bind(deferred));
+	}
+
+	getNextPage();
+
+	return deferred.promise();
 }
 
 // ***************************************************************************

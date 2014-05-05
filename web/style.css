@@ -78,14 +78,15 @@ input[type=submit] {
 	padding: 0 0 16px 0;
 }
 
-.section-header a {
-	color: black;
-	text-decoration: none;
+.section-header {
+	cursor: pointer;
 }
 
 .section-header img {
 	margin-left:  0px;
 	margin-right: 8px;
+	vertical-align: middle;
+	margin-top: -0.2em;
 }
 
 .section > div {
@@ -98,4 +99,8 @@ input[type=submit] {
 
 #build-base td {
 	padding-left: 8px;
+}
+
+#forks table {
+	width: auto;
 }

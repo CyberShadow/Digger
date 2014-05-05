@@ -59,6 +59,8 @@ class WebFrontend
 			case "begin":
 			case "merge":
 			case "unmerge":
+			case "merge-fork":
+			case "unmerge-fork":
 			case "build":
 			{
 				auto paramsArray = params
