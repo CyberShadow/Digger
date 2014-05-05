@@ -65,11 +65,11 @@ int handleWebTask(string[] args)
 			return 0;
 		case "merge":
 			enforce(args.length == 3);
-			customizer.merge(args[1], args[2]);
+			customizer.mergePull(args[1], args[2]);
 			return 0;
 		case "unmerge":
 			enforce(args.length == 3);
-			customizer.unmerge(args[1], args[2]);
+			customizer.unmergePull(args[1], args[2]);
 			return 0;
 		case "callback":
 			customizer.callback(args[1..$]);
@@ -102,7 +102,14 @@ void buildCustom(string spec, BuildConfig buildConfig)
 		if (part.matchCaptures(re!`^(\w+)#(\d+)$`,
 			(string component, string pull)
 			{
-				customizer.merge(component, pull);
+				customizer.mergePull(component, pull);
+			}))
+			continue;
+
+		if (part.matchCaptures(re!`^(\w+)/(\w[\w\-]*)/(\w[\w\-]*)$`,
+			(string user, string repo, string branch)
+			{
+				customizer.mergeFork(user, repo, branch);
 			}))
 			continue;
 
