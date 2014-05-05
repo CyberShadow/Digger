@@ -8,14 +8,60 @@ $(function() {
 			$('#initialization .status').slideUp();
 			$('#initialization h1').text('Initialization ' + (success ? 'complete' : 'failed'));
 			if (success) {
-				createForm();
-				showPage('pull-form');
+				createRefForm();
+				showPage('ref-form');
 			}
 		});
 	});
 });
 
-function createForm() {
+function createRefForm() {
+	var $section = addSection($('#ref-form'), 'Base revision', function($content, done) {
+		$.getJSON('/refs.json', function(refs) {
+			function populateSelect($select, arr) {
+				$select.empty();
+				$.each(arr, function(i, ref) {
+					$select.append(
+						$('<option>')
+						.val(ref)
+						.text(ref)
+					);
+				});
+			}
+			populateSelect($('#build-base-branches'), refs.branches);
+			populateSelect($('#build-base-tags'), refs.tags);
+			$('#build-base-branches option[value=master]').prop('selected', true);
+			$content.append($('#build-base'));
+
+			$('#build-base').submit(function(event) {
+				event.preventDefault();
+				$section.slideUp();
+
+				var ref = $('#base-branch').prop('checked') ? $('#build-base-branches').val() : $('#build-base-tags').val();
+
+				$('#ref-form h1').text('Setting base...');
+				$.getJSON('/begin/' + ref, function() {
+					showTask($('#ref-form .log'), function(success) {
+						$('#ref-form h1').text('Setting base ' + (success ? 'complete' : 'failed'));
+						if (success) {
+							createCustomizationForm();
+							showPage('pull-form');
+						}
+					});
+				});
+			});
+
+			done();
+		});
+	}, true);
+}
+
+function createCustomizationForm() {
+	addSection($('#sections'), 'Build options', function($content, done) {
+		$content.append($('#build-options'));
+		done();
+	});
+
 	addSection($('#sections'), 'Open pull requests', function($content, done) {
 		var stateRequest;
 
@@ -128,13 +174,18 @@ function createForm() {
 		});
 
 		done();
-	}).children('.section-header').children('a').click();
+	}, true);
 
 	$('#build-button').click(function() {
 		$('input').prop('disabled', true);
+
+		var options = {
+			model : $('#build-model').val(),
+		};
+
 		showPage('build-progress');
 		$('#build-progress h1').text('Building...');
-		$.getJSON('/build', function() {
+		$.getJSON('/build', options, function() {
 			showTask($('#build-progress .log'), function(success) {
 				$('#build-progress .status').slideUp();
 				$('#build-progress h1').text('Build ' + (success ? 'complete' : 'failed'));
@@ -229,7 +280,7 @@ function showTask($logDiv, complete) {
 	});
 }
 
-function addSection($parent, title, generator) {
+function addSection($parent, title, generator, autoExpand) {
 	var generated = false;
 	var open = false;
 	var working = false;
@@ -288,6 +339,9 @@ function addSection($parent, title, generator) {
 	$content.hide();
 
 	$parent.append($div);
+
+	if (autoExpand)
+		$a.click();
 
 	return $div;
 }

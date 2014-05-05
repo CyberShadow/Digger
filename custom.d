@@ -4,7 +4,9 @@ import std.algorithm;
 import std.array;
 import std.exception;
 import std.file;
+import std.getopt;
 import std.path;
+import std.stdio;
 import std.string;
 
 import ae.sys.d.customizer;
@@ -60,7 +62,10 @@ int handleWebTask(string[] args)
 	{
 		case "initialize":
 			customizer.initialize();
-			customizer.begin(); // TODO: add starting branch to web UI
+			log("Ready.");
+			return 0;
+		case "begin":
+			customizer.begin(args.length == 1 ? null : args[1]);
 			log("Ready.");
 			return 0;
 		case "merge":
@@ -75,7 +80,27 @@ int handleWebTask(string[] args)
 			customizer.callback(args[1..$]);
 			return 0;
 		case "build":
-			customizer.runBuild(BuildConfig.init); // TODO: add build config to web UI
+		{
+			string model;
+			getopt(args,
+				"model", &model,
+			);
+			enforce(args.length == 1, "Unrecognized build option");
+
+			BuildConfig buildConfig;
+			if (model.length)
+				buildConfig.model = model;
+
+			customizer.runBuild(buildConfig);
+			return 0;
+		}
+		case "branches":
+			foreach (line; d.repo.query("branch", "--remotes").splitLines())
+				if (line.startsWith("  origin/") && line[2..$].indexOf(" ") < 0)
+					writeln(line[9..$]);
+			return 0;
+		case "tags":
+			d.repo.run("tag");
 			return 0;
 		default:
 			assert(false);

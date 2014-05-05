@@ -1,6 +1,7 @@
 module digger_web;
 
 import std.algorithm;
+import std.array;
 import std.conv;
 import std.datetime;
 import std.exception;
@@ -14,7 +15,9 @@ import ae.net.http.client;
 import ae.net.http.responseex;
 import ae.net.http.server;
 import ae.net.shutdown;
+import ae.sys.cmd;
 import ae.sys.timing;
+import ae.utils.aa;
 
 import common;
 
@@ -45,12 +48,27 @@ class WebFrontend
 		HttpResponseEx resp = new HttpResponseEx();
 		
 		string resource = request.resource;
+		auto queryTuple = resource.findSplit("?");
+		resource = queryTuple[0];
+		auto params = decodeUrlParameters(queryTuple[2]);
 		auto segments = resource.split("/")[1..$];
+
 		switch (segments[0])
 		{
 			case "initialize":
-				startTask("initialize");
+			case "begin":
+			case "merge":
+			case "unmerge":
+			case "build":
+			{
+				auto paramsArray = params
+					.pairs
+					.filter!(pair => !pair.value.empty)
+					.map!(pair => "--" ~ pair.key ~ "=" ~ pair.value)
+					.array;
+				startTask(segments ~ paramsArray);
 				return conn.sendResponse(resp.serveJson("OK"));
+			}
 			case "pull-state.json":
 				// Proxy request to GHDaemon, a daemon which caches GitHub
 				// pull request test results. Required to avoid GitHub API
@@ -65,6 +83,15 @@ class WebFrontend
 							conn.sendResponse(response);
 					}
 				);
+			case "refs.json":
+			{
+				struct Refs { string[] branches, tags; }
+				auto refs = Refs(
+					diggerQuery("branches").splitLines(),
+					diggerQuery("tags").splitLines(),
+				);
+				return conn.sendResponse(resp.serveJson(refs));
+			}
 			case "status.json":
 			{
 				enforce(currentTask, "No task was started");
@@ -85,11 +112,6 @@ class WebFrontend
 			case "exit":
 				log("Exit requested.");
 				shutdown();
-				return conn.sendResponse(resp.serveJson("OK"));
-			case "merge":
-			case "unmerge":
-			case "build":
-				startTask(segments);
 				return conn.sendResponse(resp.serveJson("OK"));
 			default:
 				return conn.sendResponse(resp.serveFile(resource[1..$], "web/"));
@@ -232,8 +254,16 @@ shared static this()
 		{
 			log("Waiting for current task to finish...");
 			currentTask.pid.wait();
+			log("Task finished, exiting.");
 		}
 	 });
+}
+
+// ***************************************************************************
+
+string diggerQuery(string[] args...)
+{
+	return query([absolutePath("digger"), "do"] ~ args);
 }
 
 // ***************************************************************************

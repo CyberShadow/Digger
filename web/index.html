@@ -8,6 +8,20 @@
 <link rel="stylesheet" href="style.css">
 
 <div id="pages">
+	<div id="initialization">
+		<h1>Initializing</h1>
+
+		<div class="log"></div>
+
+		<p class="status"><img src="loading.gif"> Initializing, please wait...</p>
+	</div>
+
+	<div id="ref-form" style="display: none">
+		<h1>Select base revision</h1>
+
+		<div class="log"></div>
+	</div>
+
 	<div id="pull-form" style="display: none">
 		<h1>Customize your D build</h1>
 
@@ -17,14 +31,6 @@
 			<td><input type="submit" value="Build" id="build-button"></td>
 			<td><input type="submit" value="Exit"  id="exit-button"></td>
 		</tr></table>
-	</div>
-
-	<div id="initialization">
-		<h1>Initializing</h1>
-
-		<div class="log"></div>
-
-		<p class="status"><img src="loading.gif"> Initializing, please wait...</p>
 	</div>
 
 	<div id="build-progress" style="display: none">
@@ -37,6 +43,42 @@
 </div>
 
 <div id="fragments">
+	<form id="build-base">
+		<table>
+			<tr>
+				<td>
+					<input type="radio" name="base" id="base-branch" value="branch" checked>
+					<label for="base-branch">Branch:</label>
+				</td>
+				<td>
+					<select id="build-base-branches">
+						<option value="master" selected>master</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<input type="radio" name="base" id="base-tag" value="tag">
+					<label for="base-tag">Tag:</label>
+				</td>
+				<td>
+					<select id="build-base-tags"></select>
+				</td>
+			</tr>
+		</table>
+
+		<input type="submit" value="Continue">
+	</form>
+
+	<form id="build-options">
+		<label for="build-model">Model: </label>
+		<select id="build-model" name="build-model">
+			<option value="" selected>default</option>
+			<option value="32">32-bit</option>
+			<option value="64">64-bit</option>
+		</select>
+	</form>
+
 	<div id="failing-box">
 		<input type="checkbox" id="show-failing" name="show-failing"><label for="show-failing">Show failing</label>
 	</div>

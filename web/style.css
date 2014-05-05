@@ -91,3 +91,11 @@ input[type=submit] {
 .section > div {
 	margin: 16px 24px 0 24px;
 }
+
+#build-base table {
+	width: auto;
+}
+
+#build-base td {
+	padding-left: 8px;
+}
