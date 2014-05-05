@@ -11,13 +11,7 @@
 	<div id="pull-form" style="display: none">
 		<h1>Customize your D build</h1>
 
-		<div id="failing-box">
-			<input type="checkbox" id="show-failing" name="show-failing"><label for="show-failing">Show failing</label>
-		</div>
-
-		<div id="repos"></div>
-
-		<input type="submit" value="Make me one with everything" id="everything-button">
+		<div id="sections"></div>
 
 		<table id="buttons"><tr>
 			<td><input type="submit" value="Build" id="build-button"></td>
@@ -40,4 +34,12 @@
 
 		<p class="status"><img src="loading.gif"> Building, please wait...</p>
 	</div>
+</div>
+
+<div id="fragments">
+	<div id="failing-box">
+		<input type="checkbox" id="show-failing" name="show-failing"><label for="show-failing">Show failing</label>
+	</div>
+
+	<input type="submit" value="Make me one with everything" id="everything-button">
 </div>

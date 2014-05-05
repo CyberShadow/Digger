@@ -8,117 +8,127 @@ $(function() {
 			$('#initialization .status').slideUp();
 			$('#initialization h1').text('Initialization ' + (success ? 'complete' : 'failed'));
 			if (success) {
+				createForm();
 				showPage('pull-form');
-				getData();
 			}
 		});
 	});
 });
 
-function getData() {
-	var stateRequest = $.getJSON('/pull-state.json');
-	$.each(components, function(i, component) {
-		var repo = component.toLowerCase();
-		var $div = $('<div>');
-		$div.append($('<h2>').text(component));
-		var $pulls = $('<div><img src="loading.gif"> Loading pull requests...</div>');
-		$div.append($pulls);
-		$('#repos').append($div);
-		var pullsRequest = $.ajax({
-			dataType: 'jsonp',
-			url: 'https://api.github.com/repos/D-Programming-Language/'+repo+'/pulls?per_page=100',
-			cache: true,
-			jsonpCallback : 'jsonpCallback_' + repo
-		});
-		$.when(pullsRequest, stateRequest)
-			.then(function(pullsResult, stateResult) {
-				var stateData = stateResult[0][repo] || {};
+function createForm() {
+	addSection($('#sections'), 'Open pull requests', function($content, done) {
+		var stateRequest;
 
-				$pulls.html('');
-				var $table = $('<table>');
-				$pulls.append($table);
-				$.each(pullsResult[0].data, function(j, pull) {
-					var state = stateData[pull.number] || 'unknown';
-					if (!pull.mergeable && !pull.merge_commit_sha)
-						return;
-					var $row = $('<tr>');
-					$row.attr('title',
-						'Created by ' + pull.user.login + ' on ' + pull.created_at.substr(0, 10) + '. ' +
-						'Last updated on ' + pull.updated_at.substr(0, 10) + '.' +
-						'\n\n' +
-						pull.body
-					);
-					if (state.state != 'success')
-						$row.addClass('bad');
+		$content.append($('#failing-box'));
 
-					var $logRow =
-						$('<tr>')
-						.append(
-							$('<td>')
-							.css('padding', 0)
-						)
-						.append(
-							$('<td>')
-							.attr('colspan', 2)
-							.css('padding', 0)
-							.append(
-								$('<div>')
-								.addClass('log')
-							)
-						)
-					;
-
-					var name = repo + '-pull-' + pull.number;
-					var checkbox =
-						$('<input>')
-						.attr('type', 'checkbox')
-						.attr('id', name)
-						.attr('name', name)
-						.data('repo', repo)
-						.data('pull', pull.number)
-						.click(function() {
-							togglePull(this.checked, $row, $logRow.find('div.log'), repo, pull.number);
-						})
-					;
-					$row.append(
-						$('<td>')
-						.append(checkbox)
-					);
-					$row.append(
-						$('<td>')
-						.append(
-							$('<label>')
-							.attr('for', name)
-							.text('#' + pull.number + ': ')
-						)
-						.append(
-							$('<a>')
-							.attr('href', pull.html_url)
-							.text(pull.title)
-						)
-					);
-					$row.append(
-						$('<td>')
-						.attr('class', 'status')
-						.append(
-							$('<a>')
-							.attr('class', 'test ' + state.state)
-							.attr('href', state.targetUrl)
-							.attr('title', state.description)
-							.text(stateText[state.state] || state.state)
-						)
-					);
-					$table.append($row);
-					$table.append($logRow);
+		$.each(components, function(i, component) {
+			var repo = component.toLowerCase();
+			addSection($content, component, function($pulls, done) {
+				var pullsRequest = $.ajax({
+					dataType: 'jsonp',
+					url: 'https://api.github.com/repos/D-Programming-Language/'+repo+'/pulls?per_page=100',
+					cache: true,
+					jsonpCallback : 'jsonpCallback_' + repo
 				});
-			}, function() {
-				alert('Error retrieving data');
-			});
-	});
+				if (!stateRequest)
+					stateRequest = $.getJSON('/pull-state.json');
 
-	$('#show-failing').click(function() {
-		$('.bad').toggle(this.checked);
-	});
+				$.when(pullsRequest, stateRequest)
+					.then(function(pullsResult, stateResult) {
+						var stateData = stateResult[0][repo] || {};
+
+						var $table = $('<table>');
+						$pulls.append($table);
+						$.each(pullsResult[0].data, function(j, pull) {
+							var state = stateData[pull.number] || 'unknown';
+							if (!pull.mergeable && !pull.merge_commit_sha)
+								return;
+							var $row = $('<tr>');
+							$row.attr('title',
+								'Created by ' + pull.user.login + ' on ' + pull.created_at.substr(0, 10) + '. ' +
+								'Last updated on ' + pull.updated_at.substr(0, 10) + '.' +
+								'\n\n' +
+								pull.body
+							);
+							if (state.state != 'success')
+								$row.addClass('bad');
+
+							var $logRow =
+								$('<tr>')
+								.append(
+									$('<td>')
+									.css('padding', 0)
+								)
+								.append(
+									$('<td>')
+									.attr('colspan', 2)
+									.css('padding', 0)
+									.append(
+										$('<div>')
+										.addClass('log')
+									)
+								)
+							;
+
+							var name = repo + '-pull-' + pull.number;
+							var checkbox =
+								$('<input>')
+								.attr('type', 'checkbox')
+								.attr('id', name)
+								.attr('name', name)
+								.data('repo', repo)
+								.data('pull', pull.number)
+								.click(function() {
+									togglePull(this.checked, $row, $logRow.find('div.log'), repo, pull.number);
+								})
+							;
+							$row.append(
+								$('<td>')
+								.append(checkbox)
+							);
+							$row.append(
+								$('<td>')
+								.append(
+									$('<label>')
+									.attr('for', name)
+									.text('#' + pull.number + ': ')
+								)
+								.append(
+									$('<a>')
+									.attr('href', pull.html_url)
+									.text(pull.title)
+								)
+							);
+							$row.append(
+								$('<td>')
+								.attr('class', 'status')
+								.append(
+									$('<a>')
+									.attr('class', 'test ' + state.state)
+									.attr('href', state.targetUrl)
+									.attr('title', state.description)
+									.text(stateText[state.state] || state.state)
+								)
+							);
+							$table.append($row);
+							$table.append($logRow);
+						});
+						done();
+					}, function() {
+						alert('Error retrieving data');
+					});
+			});
+
+		});
+
+		//$content.append($('#everything-button'));
+
+		$('#show-failing').click(function() {
+			$('.bad').toggle(this.checked);
+		});
+
+		done();
+	}).children('.section-header').children('a').click();
 
 	$('#build-button').click(function() {
 		$('input').prop('disabled', true);
@@ -141,7 +151,7 @@ function getData() {
 
 	$('#everything-button').click(function() {
 		$('#everything-button').val('Meditating...');
-		var $checkboxes = $('#repos input:checkbox:visible:not(:checked)');
+		var $checkboxes = $('#pulls input:checkbox:visible:not(:checked)');
 		var n = 0;
 
 		var enabled = {};
@@ -179,16 +189,18 @@ function getData() {
 	});
 }
 
-function showPage(id) {
-	$('#pages > div').slideUp();
-	$('#' + id).slideDown();
-}
-
 var stateText = {
 	'success' : 'Tests OK',
 	'failure' : 'Tests fail',
 	'unknown' : 'Unknown',
 };
+
+// ***************************************************************************
+
+function showPage(id) {
+	$('#pages > div').slideUp();
+	$('#' + id).slideDown();
+}
 
 function showTask($logDiv, complete) {
 	$.getJSON('/status.json', function(status) {
@@ -216,6 +228,71 @@ function showTask($logDiv, complete) {
 		}
 	});
 }
+
+function addSection($parent, title, generator) {
+	var generated = false;
+	var open = false;
+	var working = false;
+
+	var $parentSection = $parent.closest('.section, #pages > div');
+	var $parentHeader = $parentSection.children('h1,h2,h3,h4,h5,h6,h7');
+	var tag = $parentHeader.prop('tagName');
+
+	var $a = $('<a>')
+		.text(title)
+		.attr('href', '#')
+	;
+	var $button = $('<img>')
+		.attr('src', 'closed.png')
+	;
+	$a.prepend($button);
+
+	var $h = $('<' + tag[0] + ++tag[1] + '>');
+	$h.addClass('section-header');
+	$h.append($a);
+
+	var $content = $('<div>');
+
+	$a.click(function() {
+		if (working)
+			return;
+
+		if (open) {
+			$content.slideUp();
+			$button.attr('src', 'closed.png');
+			open = false;
+		} else {
+			if (generated) {
+				$content.slideDown();
+				$button.attr('src', 'open.png');
+				open = true;
+			} else {
+				working = true;
+				$button.attr('src', 'loading.gif');
+				generator($content, function() {
+					$content.slideDown();
+					$button.attr('src', 'open.png');
+					open = true;
+					generated = true;
+					working = false;
+				});
+			}
+		}
+	});
+
+	var $div = $('<div>')
+		.addClass('section')
+		.append($h)
+		.append($content);
+
+	$content.hide();
+
+	$parent.append($div);
+
+	return $div;
+}
+
+// ***************************************************************************
 
 function togglePull(add, $row, $logDiv, repo, number, complete) {
 	$('input').prop('disabled', true);

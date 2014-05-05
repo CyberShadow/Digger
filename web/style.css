@@ -3,7 +3,7 @@ html {
 }
 
 body {
-	width: 42em;
+	width: 760px;
 	margin: 0 auto 36pt auto;
 }
 
@@ -11,6 +11,14 @@ h1 {
 	text-align: center;
 	font-size: 36pt;
 	margin: 36pt 0;
+}
+
+h2,h3,h4,h5,h6 {
+	margin: 0;
+}
+
+#fragments {
+	display: none;
 }
 
 #failing-box {
@@ -64,4 +72,22 @@ input[type=submit] {
 
 .log .error {
 	color: black;
+}
+
+.section {
+	padding: 0 0 16px 0;
+}
+
+.section-header a {
+	color: black;
+	text-decoration: none;
+}
+
+.section-header img {
+	margin-left:  0px;
+	margin-right: 8px;
+}
+
+.section > div {
+	margin: 16px 24px 0 24px;
 }
