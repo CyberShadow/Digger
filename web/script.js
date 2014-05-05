@@ -51,6 +51,10 @@ function createRefForm() {
 				});
 			});
 
+			setTimeout(function() {
+				$('#build-base-submit').focus();
+			}, 1);
+
 			done();
 		});
 	}, true);
