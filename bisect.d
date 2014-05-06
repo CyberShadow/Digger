@@ -116,6 +116,8 @@ int doBisect()
 
 int doBisectStep()
 {
+	d.prepareEnv();
+
 	auto oldEnv = d.dEnv.dup;
 	scope(exit) d.dEnv = oldEnv;
 	d.applyEnv(bisectConfig.environment);
@@ -127,6 +129,9 @@ int doBisectStep()
 		log("Build failed: " ~ e.toString());
 		return EXIT_UNTESTABLE;
 	}
+
+	auto oldPath = environment["PATH"];
+	scope(exit) environment["PATH"] = oldPath;
 
 	// Add the final DMD to the environment PATH
 	d.dEnv["PATH"] = buildPath(currentDir, "bin").absolutePath() ~ pathSeparator ~ d.dEnv["PATH"];
