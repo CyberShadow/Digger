@@ -171,14 +171,14 @@ function createCustomizationForm() {
 
 		});
 
-		//$content.append($('#everything-button'));
+		$content.append($('#everything-button'));
 
 		$('#show-failing').click(function() {
 			$('.bad').toggle(this.checked);
 		});
 
 		done();
-	}, true);
+	}, true).attr('id', 'pulls');
 
 	addSection($('#sections'), 'Forks', function($content, done) {
 		$.each(components, function(i, component) {
@@ -274,42 +274,48 @@ function createCustomizationForm() {
 	});
 
 	$('#everything-button').click(function() {
+		$('input').prop('disabled', true);
 		$('#everything-button').val('Meditating...');
-		var $checkboxes = $('#pulls input:checkbox:visible:not(:checked)');
-		var n = 0;
 
-		var enabled = {};
+		var expandings = $('#pulls .section').map(function() { return expandSection($(this)); }).get();
+		$.when.apply($, expandings).then(function() {
+			var $checkboxes = $('#pulls input:checkbox:visible:not(:checked)');
+			var n = 0;
 
-		function next() {
-			if (n < $checkboxes.length) {
-				var $checkbox = $checkboxes.eq(n++);
-				var $row = $checkbox.closest('tr');
-				var $logRow = $row.next();
-				var $logDiv = $logRow.find('div.log');
-				var repo = $checkbox.data('repo');
-				var pull = $checkbox.data('pull');
+			var enabled = {};
 
-				var id = repo+'#'+pull;
-				enabled[id] = 1;
-				var conflict = haveConflict(enabled);
-				if (conflict) {
-					delete enabled[id];
-					$logDiv.append(
-						$('<a>')
-						.text('Skipping - known conflict ('+conflict+')')
-						.attr('href', 'http://wiki.dlang.org/Pull_request_conflicts')
-					);
-					next();
+			function next() {
+				if (n < $checkboxes.length) {
+					var $checkbox = $checkboxes.eq(n++);
+					var $row = $checkbox.closest('tr');
+					var $logRow = $row.next();
+					var $logDiv = $logRow.find('div.log');
+					var repo = $checkbox.data('repo');
+					var pull = $checkbox.data('pull');
+
+					var id = repo+'#'+pull;
+					enabled[id] = 1;
+					var conflict = haveConflict(enabled);
+					if (conflict) {
+						delete enabled[id];
+						$logDiv.append(
+							$('<a>')
+							.text('Skipping - known conflict ('+conflict+')')
+							.attr('href', 'http://wiki.dlang.org/Pull_request_conflicts')
+						);
+						next();
+					}
+					else
+						togglePull(true, $checkbox, $logDiv, repo, pull, next);
+				} else {
+					$('#build-button').click();
 				}
-				else
-					togglePull(true, $checkbox, $logDiv, repo, pull, next);
-			} else {
-				$('#build-button').click();
 			}
-		}
 
-		$("html, body").animate({ scrollTop: "0px" });
-		next();
+			next();
+		});
+
+		//$("html, body").animate({ scrollTop: "0px" });
 	});
 }
 
@@ -413,6 +419,25 @@ function addSection($parent, title, generator, autoExpand) {
 		$h.click();
 
 	return $div;
+}
+
+function expandSection($section) {
+	var deferred = $.Deferred();
+	var $content = $section.children('div');
+	if ($content.filter(":visible").length) {
+		deferred.resolve();
+	} else {
+		var $h = $section.children('.section-header');
+		$h.click();
+		function check() {
+			if ($content.filter(":visible").length)
+				deferred.resolve();
+			else
+				setTimeout(check, 100);
+		}
+		check();
+	}
+	return deferred.promise();
 }
 
 // ***************************************************************************
