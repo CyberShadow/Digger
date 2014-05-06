@@ -148,7 +148,11 @@ string getRev(bool good)()
 {
 	static string result;
 	if (!result)
-		result = parseRev(good ? bisectConfig.good : bisectConfig.bad);
+	{
+		auto rev = good ? bisectConfig.good : bisectConfig.bad;
+		result = parseRev(rev);
+		log("Resolved %s revision `%s` to %s.".format(good ? "GOOD" : "BAD", rev, result));
+	}
 	return result;
 }
 
