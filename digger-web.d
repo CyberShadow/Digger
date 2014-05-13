@@ -183,6 +183,7 @@ class Task
 					synchronized(this)
 						lines ~= OutputLine(s, error);
 				}
+				f.close();
 			}
 
 			auto t = new Thread(&run);
