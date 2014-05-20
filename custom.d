@@ -16,6 +16,8 @@ import ae.utils.regex;
 import common;
 import repo;
 
+alias indexOf = std.string.indexOf;
+
 alias subDir!"result" resultDir;
 
 class DiggerCustomizer : DCustomizer
