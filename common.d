@@ -32,13 +32,18 @@ immutable ConfigFile config;
 
 shared static this()
 {
+	bool help;
 	Opts opts;
 	auto args = Runtime.args;
 	getopt(args,
 		"dir"        , &opts.dir,
 		"config-file", &opts.configFile,
+		"h|help"     , &help,
 		std.getopt.config.stopOnFirstNonOption
 	);
+	if (help)
+		log("Please see the README.md file for documentation.");
+	
 	if (args.length > 1)
 		opts.args = args[1..$].idup;
 
