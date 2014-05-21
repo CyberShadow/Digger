@@ -136,8 +136,12 @@ void buildCustom(string spec, BuildConfig buildConfig)
 {
 	log("Building spec: " ~ spec);
 
-	auto customizer = new DiggerCustomizer();
-	customizer.initialize();
+	static DiggerCustomizer customizer;
+	if (!customizer)
+	{
+		customizer = new DiggerCustomizer();
+		customizer.initialize();
+	}
 
 	auto parts = spec.split("+");
 	parts = parts.map!strip().array();
