@@ -22,9 +22,14 @@ alias subDir!"result" resultDir;
 
 class DiggerCustomizer : DCustomizer
 {
-	this() { super(repo.d); }
+	this()
+	{
+		super(repo.d);
+		if (opts.offline)
+			needUpdate = false;
+	}
 
-	static bool updated = false;
+	static bool needUpdate = true;
 
 	override void initialize(bool update = true)
 	{
@@ -32,8 +37,13 @@ class DiggerCustomizer : DCustomizer
 			d.log("First run detected.\nPlease be patient, " ~
 				"cloning everything might take a few minutes...\n");
 
-		super.initialize(update && !updated);
-		updated |= update;
+		if (needUpdate && update)
+		{
+			super.initialize(true);
+			needUpdate = false;
+		}
+		else
+			super.initialize(false);
 	}
 
 	/// Build the customized D version.

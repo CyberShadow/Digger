@@ -19,6 +19,7 @@ struct Opts
 
 	string dir;
 	string configFile;
+	bool offline;
 }
 immutable Opts opts;
 
@@ -38,6 +39,7 @@ shared static this()
 	getopt(args,
 		"dir"        , &opts.dir,
 		"config-file", &opts.configFile,
+		"offline"    , &opts.offline,
 		"h|help"     , &help,
 		std.getopt.config.stopOnFirstNonOption
 	);
