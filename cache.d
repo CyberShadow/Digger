@@ -21,9 +21,7 @@ void cached(string commit, BuildConfig buildConfig, string buildDir, void delega
 
 	if (common.config.cache)
 	{
-		auto buildID = "%s-%s".format(commit, buildConfig);
-
-		currentCacheDir = buildPath(cacheDir, buildID);
+		currentCacheDir = cacheLocation(commit, buildConfig);
 		if (currentCacheDir.exists)
 		{
 			log("Found in cache: " ~ currentCacheDir);
@@ -57,6 +55,17 @@ void cached(string commit, BuildConfig buildConfig, string buildDir, void delega
 	}
 
 	buildAction();
+}
+
+bool isCached(string commit, BuildConfig buildConfig)
+{
+	return common.config.cache && cacheLocation(commit, buildConfig).exists;
+}
+
+string cacheLocation(string commit, BuildConfig buildConfig)
+{
+	auto buildID = "%s-%s".format(commit, buildConfig);
+	return buildPath(cacheDir, buildID);
 }
 
 // ---------------------------------------------------------------------------
