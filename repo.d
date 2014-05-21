@@ -73,12 +73,17 @@ final class DiggerManager : DManager
 				enforce(!buildPath(buildDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
 				return;
 			}
+			else
+				log("Cache miss: " ~ currentCacheDir);
 		}
+		else
+			log("Build caching is not enabled.");
 
 		scope (exit)
 		{
 			if (currentCacheDir && buildDir.exists)
 			{
+				log("Saving to cache: " ~ currentCacheDir);
 				ensurePathExists(currentCacheDir);
 				buildDir.rename(currentCacheDir);
 				currentCacheDir.dirLink(buildDir);
