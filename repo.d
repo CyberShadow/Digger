@@ -123,7 +123,7 @@ string parseRev(string rev)
 	auto args = ["log", "--pretty=format:%H"];
 
 	// git's approxidate accepts anything, so a disambiguating prefix is required
-	if (rev.canFind('@'))
+	if (rev.canFind('@') && !rev.canFind("@{"))
 	{
 		auto parts = rev.findSplit("@");
 		args ~= ["--until", parts[2].strip()];
