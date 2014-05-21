@@ -191,7 +191,7 @@ int doDelve()
 				return EXIT_UNTESTABLE;
 			}
 
-		d.inDelve = true;
+		inDelve = true;
 		try
 		{
 			prepareBuild(bisectConfig.build);

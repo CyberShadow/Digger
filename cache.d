@@ -1,5 +1,6 @@
 module cache;
 
+import std.exception;
 import std.file;
 import std.path;
 import std.string;
@@ -10,6 +11,55 @@ import common;
 import repo;
 
 alias cacheDir = subDir!"cache";
+
+/// Run a build process, but only if necessary.
+/// Throws an exception if the build was cached as unbuildable.
+void cached(string commit, BuildConfig buildConfig, string buildDir, void delegate() buildAction)
+{
+	assert(commit.length == 40, "Bad commit SHA1");
+	string currentCacheDir; // this build's cache location
+
+	if (common.config.cache)
+	{
+		auto buildID = "%s-%s".format(commit, buildConfig);
+
+		currentCacheDir = buildPath(cacheDir, buildID);
+		if (currentCacheDir.exists)
+		{
+			log("Found in cache: " ~ currentCacheDir);
+			currentCacheDir.dirLink(buildDir);
+			enforce(!buildPath(buildDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
+			return;
+		}
+		else
+			log("Cache miss: " ~ currentCacheDir);
+	}
+	else
+		log("Build caching is not enabled.");
+
+	scope (exit)
+	{
+		if (currentCacheDir && buildDir.exists)
+		{
+			log("Saving to cache: " ~ currentCacheDir);
+			ensurePathExists(currentCacheDir);
+			buildDir.rename(currentCacheDir);
+			currentCacheDir.dirLink(buildDir);
+			optimizeRevision(commit);
+		}
+	}
+
+	scope (failure)
+	{
+		// Don't cache failed build results during delve
+		if (inDelve)
+			currentCacheDir = null;
+	}
+
+	buildAction();
+}
+
+// ---------------------------------------------------------------------------
 
 /// Replace all files that have duplicate subpaths and content 
 /// which exist under both dirA and dirB with hard links.

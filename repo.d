@@ -18,6 +18,8 @@ import cache;
 import common;
 
 alias BuildConfig = DBuilder.Config.Build;
+enum UNBUILDABLE_MARKER = "unbuildable";
+bool inDelve;
 
 final class DiggerManager : DManager
 {
@@ -52,62 +54,28 @@ final class DiggerManager : DManager
 		}
 	}
 
-	enum UNBUILDABLE_MARKER = "unbuildable";
-	bool inDelve;
-
 	/// This override adds caching.
 	override void build()
 	{
+		void doBuild()
+		{
+			// An incomplete build is useless, nuke the directory
+			// and create a new one just for the UNBUILDABLE_MARKER.
+			scope (failure)
+			{
+				if (buildDir.exists)
+				{
+					rmdirRecurse(buildDir);
+					mkdir(buildDir);
+					buildPath(buildDir, UNBUILDABLE_MARKER).touch();
+				}
+			}
+
+			super.build();
+		}
+
 		auto commit = d.repo.query("rev-parse", "HEAD");
-		string currentCacheDir; // this build's cache location
-
-		if (common.config.cache)
-		{
-			auto buildID = "%s-%s".format(commit, config.build);
-
-			currentCacheDir = buildPath(cacheDir, buildID);
-			if (currentCacheDir.exists)
-			{
-				log("Found in cache: " ~ currentCacheDir);
-				currentCacheDir.dirLink(buildDir);
-				enforce(!buildPath(buildDir, UNBUILDABLE_MARKER).exists, "This build was cached as unbuildable.");
-				return;
-			}
-			else
-				log("Cache miss: " ~ currentCacheDir);
-		}
-		else
-			log("Build caching is not enabled.");
-
-		scope (exit)
-		{
-			if (currentCacheDir && buildDir.exists)
-			{
-				log("Saving to cache: " ~ currentCacheDir);
-				ensurePathExists(currentCacheDir);
-				buildDir.rename(currentCacheDir);
-				currentCacheDir.dirLink(buildDir);
-				optimizeRevision(commit);
-			}
-		}
-
-		scope (failure)
-		{
-			if (buildDir.exists)
-			{
-				// An incomplete build is useless, nuke the directory
-				// and create a new one just for the UNBUILDABLE_MARKER.
-				rmdirRecurse(buildDir);
-				mkdir(buildDir);
-				buildPath(buildDir, UNBUILDABLE_MARKER).touch();
-
-				// Don't cache failed build results during delve
-				if (inDelve)
-					currentCacheDir = null;
-			}
-		}
-
-		super.build();
+		cached(commit, config.build, buildDir, &doBuild);
 	}
 }
 
