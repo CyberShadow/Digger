@@ -126,7 +126,11 @@ string parseRev(string rev)
 	if (rev.canFind('@') && !rev.canFind("@{"))
 	{
 		auto parts = rev.findSplit("@");
-		args ~= ["--until", parts[2].strip()];
+		auto at = parts[2].strip();
+		if (at.startsWith("#"))
+			args ~= ["--skip", at[1..$]];
+		else
+			args ~= ["--until", at];
 		rev = parts[0].strip();
 	}
 

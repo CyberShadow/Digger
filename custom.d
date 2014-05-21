@@ -24,13 +24,16 @@ class DiggerCustomizer : DCustomizer
 {
 	this() { super(repo.d); }
 
-	override void initialize()
+	static bool updated = false;
+
+	override void initialize(bool update = true)
 	{
 		if (!d.repoDir.exists)
 			d.log("First run detected.\nPlease be patient, " ~
 				"cloning everything might take a few minutes...\n");
 
-		super.initialize();
+		super.initialize(update && !updated);
+		updated |= update;
 	}
 
 	/// Build the customized D version.
@@ -121,6 +124,8 @@ int handleWebTask(string[] args)
 /// (e.g. master+dmd#123).
 void buildCustom(string spec, BuildConfig buildConfig)
 {
+	log("Building spec: " ~ spec);
+
 	auto customizer = new DiggerCustomizer();
 	customizer.initialize();
 
@@ -152,4 +157,14 @@ void buildCustom(string spec, BuildConfig buildConfig)
 	}
 
 	customizer.runBuild(buildConfig);
+}
+
+/// Build D versions successively, for the purpose of caching them.
+void buildAll(string spec, BuildConfig buildConfig, int step = 1)
+{
+	for (int n=0;; n += step)
+		try
+			buildCustom("%s@#%d".format(spec, n), buildConfig);
+		catch (Exception e)
+			log(e.toString());
 }
