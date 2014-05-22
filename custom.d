@@ -176,7 +176,8 @@ void buildCustom(string spec, BuildConfig buildConfig)
 /// Build D versions successively, for the purpose of caching them.
 void buildAll(string spec, BuildConfig buildConfig, int step = 1)
 {
-	for (int n=0;; n += step)
+	auto commits = d.getLog().length;
+	for (int n=0; n < commits; n += step)
 		try
 			buildCustom("%s@#%d".format(spec, n), buildConfig);
 		catch (Exception e)
