@@ -88,7 +88,13 @@ void dedupDirectories(string dirA, string dirB)
 			{
 				debug log(pathB ~ " = " ~ pathA);
 				pathB.remove();
-				pathA.hardLink(pathB);
+				try
+					pathA.hardLink(pathB);
+				catch (FileException e)
+				{
+					log(" -- Hard link failed: " ~ e.msg);
+					pathA.copy(pathB);
+				}
 			}
 		}
 }
