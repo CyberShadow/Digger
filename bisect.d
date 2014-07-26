@@ -59,7 +59,7 @@ int doBisect()
 		return result;
 	}
 
-	d.initialize(true);
+	d.initialize(!opts.offline);
 
 	void test(bool good, string rev)
 	{
