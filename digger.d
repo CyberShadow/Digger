@@ -3,7 +3,7 @@ module digger;
 import std.exception;
 import std.getopt;
 
-static import ae.sys.net.system;
+version(Windows) static import ae.sys.net.wininet;
 
 import bisect;
 import cache;
