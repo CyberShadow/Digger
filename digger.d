@@ -3,6 +3,8 @@ module digger;
 import std.exception;
 import std.getopt;
 
+static import ae.sys.net.system;
+
 import bisect;
 import cache;
 import common;
