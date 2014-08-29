@@ -29,7 +29,7 @@
 # The environment is calculated in this order:
 # 1. Clear entirely
 # 2. Build minimal environment
-# 3. Apply dsector.ini settings
+# 3. Apply digger.ini settings
 # 4. Apply bisect.ini settings, if we are bisecting
 [environment]
 
