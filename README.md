@@ -17,6 +17,12 @@ Currently, you must have Microsoft Visual Studio 2010 and Windows SDK v7.0A inst
     $ rdmd --build-only digger
     $ rdmd --build-only digger-web
 
+On Windows, you may see:
+
+    Warning 2: File Not Found version.lib
+
+This is a benign warning.
+
 ### Web interface
 
 Run digger-web to start the web interface, which allows interactively customizing a D version to build.
