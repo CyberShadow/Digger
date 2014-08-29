@@ -6,9 +6,14 @@ and find the exact pull request which introduced a regression (or fixed a bug).
 
 ### Requirements
 
-Git is required.
+On non-Windows systems, Git and C development tools (compiler, linker, make) are required.
 
-Currently, you must have Microsoft Visual Studio 2010 and Windows SDK v7.0A installed to build for Windows/64.
+On Windows, Digger may download and locally install (unpack) required software, as needed:
+
+ - Git
+ - DigitalMars C++ compiler
+ - A number of Visual Studio 2013 Express and Windows SDK components (for 64-bit builds)
+ - 7-Zip and WiX (necessary for unpacking Visual Studio Express components)
 
 ### Building
 
