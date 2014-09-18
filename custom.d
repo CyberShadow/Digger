@@ -118,11 +118,13 @@ int handleWebTask(string[] args)
 			return 0;
 		}
 		case "branches":
+			d.prepareRepoPrerequisites();
 			foreach (line; d.repo.query("branch", "--remotes").splitLines())
 				if (line.startsWith("  origin/") && line[2..$].indexOf(" ") < 0)
 					writeln(line[9..$]);
 			return 0;
 		case "tags":
+			d.prepareRepoPrerequisites();
 			d.repo.run("tag");
 			return 0;
 		default:
