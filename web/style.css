@@ -68,6 +68,7 @@ input[type=submit] {
 
 	max-height: 400pt;
 	overflow-y: auto;
+	word-wrap: break-word;
 }
 
 .log .error {
