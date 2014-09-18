@@ -18,6 +18,7 @@ import ae.net.shutdown;
 import ae.sys.cmd;
 import ae.sys.timing;
 import ae.utils.aa;
+import ae.utils.meta.misc;
 
 import common;
 
@@ -205,7 +206,7 @@ class Task
 			outPipe.writeEnd,
 			errPipe.writeEnd,
 			null,
-			Config.suppressConsole,
+			isDebug ? Config.none : Config.suppressConsole,
 		);
 	}
 
