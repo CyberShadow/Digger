@@ -91,8 +91,8 @@ class WebFrontend
 			{
 				struct Refs { string[] branches, tags; }
 				auto refs = Refs(
-					diggerQuery("branches").splitLines(),
-					diggerQuery("tags").splitLines(),
+					diggerQuery("branches"),
+					diggerQuery("tags"),
 				);
 				return conn.sendResponse(resp.serveJson(refs));
 			}
@@ -266,9 +266,13 @@ shared static this()
 
 // ***************************************************************************
 
-string diggerQuery(string[] args...)
+string[] diggerQuery(string[] args...)
 {
-	return query([absolutePath("digger"), "do"] ~ args);
+	return query([absolutePath("digger"), "do"] ~ args)
+		.splitLines()
+		// filter out log lines
+		.filter!(line => !line.startsWith("digger: "))
+		.array();
 }
 
 // ***************************************************************************
