@@ -46,7 +46,8 @@ class WebFrontend
 	void onRequest(HttpRequest request, HttpServerConnection conn)
 	{
 		HttpResponseEx resp = new HttpResponseEx();
-		
+		resp.disableCache();
+
 		string resource = request.resource;
 		auto queryTuple = resource.findSplit("?");
 		resource = queryTuple[0];
