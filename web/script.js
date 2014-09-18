@@ -603,6 +603,7 @@ var pongTimer = setInterval(function() {
 	$.ajax('/ping', {
 		timeout : 1000,
 		success : function() { pongFailCount = 0; },
+		global : false,
 		error : function() {
 			pongFailCount++;
 			if (pongFailCount == 10)
@@ -612,3 +613,7 @@ var pongTimer = setInterval(function() {
 		}
 	});
 }, debug ? 1e9 : 100);
+
+$(document).ajaxError(function(event, request, settings, errorThrown) {
+	alert('HTTP error with request to ' + settings.url + ':\n\n' + errorThrown);
+});
