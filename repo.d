@@ -74,6 +74,7 @@ final class DiggerManager : DManager
 			super.build();
 		}
 
+		d.prepareRepoPrerequisites();
 		auto commit = d.repo.query("rev-parse", "HEAD");
 		cached(commit, config.build, buildDir, &doBuild);
 	}
