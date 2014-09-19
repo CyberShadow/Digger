@@ -6,6 +6,8 @@
 /result/
 /cache/
 /dl/
+/digger
+/digger-web
 
 *.exe
 *.pdb
