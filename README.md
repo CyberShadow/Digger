@@ -15,6 +15,10 @@ On Windows, Digger may download and locally install (unpack) required software, 
  - A number of Visual Studio 2013 Express and Windows SDK components (for 64-bit builds)
  - 7-Zip and WiX (necessary for unpacking Visual Studio Express components)
 
+### Download
+
+You can find Windows binaries on the [GitHub releases](https://github.com/CyberShadow/Digger/releases) page.
+
 ### Building
 
     $ git clone --recursive https://github.com/CyberShadow/Digger
