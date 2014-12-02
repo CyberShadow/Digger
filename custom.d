@@ -185,3 +185,19 @@ void buildAll(string spec, BuildConfig buildConfig, int step = 1)
 		catch (Exception e)
 			log(e.toString());
 }
+
+/// Perform an incremental build, i.e. don't fetch anything from remote repos
+void incrementalBuild(BuildConfig buildConfig)
+{
+	repo.d.log("Moving...");
+	if (resultDir.exists)
+		resultDir.rmdirRecurse();
+
+	repo.d.config.build = buildConfig;
+	repo.d.incrementalBuild();
+
+	rename(repo.d.buildDir, resultDir);
+	repo.d.log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
+		resultDir.buildPath("bin").absolutePath()
+		));
+}

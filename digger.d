@@ -37,16 +37,22 @@ int doMain()
 			BuildConfig buildConfig;
 			bool model64;
 			int step = 1;
+			bool incremental = false;
 			getopt(args,
 				"64", &model64,
 				"step", &step,
+				"incremental", &incremental
 			);
 			if (model64)
 				buildConfig.model = "64";
 			string spec = args.length > 1 ? args[1] : "master";
 
-			if (command == "build")
+			if (command == "build" && !incremental)
 				buildCustom(spec, buildConfig);
+			else if (command == "build" && incremental)
+				incrementalBuild(buildConfig);
+			else if (command == "build-all" && incremental)
+				throw new Exception("--incremental flag is incompatible with build-all command");
 			else
 				buildAll(spec, buildConfig, step);
 			return 0;
