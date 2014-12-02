@@ -69,6 +69,9 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
     # build with added GitHub fork branch
     $ digger build "master + Username/dmd/awesome-feature"
 
+    # perform incremental build (after changing a few source files)
+    $ digger rebuild
+
 ##### Bisecting
 
 To bisect D's history to find which pull request introduced a bug, first copy `bisect.ini.sample` to `bisect.ini`, adjust as instructed by the comments, then run:

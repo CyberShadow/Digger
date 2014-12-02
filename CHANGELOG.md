@@ -1,6 +1,12 @@
 Digger Changelog
 ================
 
+Digger Next
+-----------
+
+ * Add `rebuild` command, for incremental rebuilds
+   (thanks to Sergei Nosov)
+
 Digger v1.0 (2014-09-18)
 ------------------------
 
