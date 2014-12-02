@@ -33,28 +33,25 @@ int doMain()
 		}
 		case "build":
 		case "build-all":
+		case "rebuild":
 		{
 			BuildConfig buildConfig;
 			bool model64;
 			int step = 1;
-			bool incremental = false;
 			getopt(args,
 				"64", &model64,
 				"step", &step,
-				"incremental", &incremental
 			);
 			if (model64)
 				buildConfig.model = "64";
 			string spec = args.length > 1 ? args[1] : "master";
 
-			if (command == "build" && !incremental)
+			if (command == "build")
 				buildCustom(spec, buildConfig);
-			else if (command == "build" && incremental)
-				incrementalBuild(buildConfig);
-			else if (command == "build-all" && incremental)
-				throw new Exception("--incremental flag is incompatible with build-all command");
-			else
+			else if (command == "build-all")
 				buildAll(spec, buildConfig, step);
+			else if (command == "rebuild")
+				incrementalBuild(buildConfig);
 			return 0;
 		}
 		case "compact":
