@@ -1,5 +1,6 @@
 module bisect;
 
+import std.algorithm;
 import std.exception;
 import std.file;
 import std.getopt : getopt;
@@ -100,7 +101,7 @@ int doBisect()
 
 	auto startPoints = [getRev!false(), getRev!true()];
 	if (bisectConfig.reverse)
-		startPoints.reverse;
+		startPoints.reverse();
 	d.repo.run(["bisect", "start"] ~ startPoints);
 	d.repo.run("bisect", "run",
 		thisExePath,

@@ -1,5 +1,6 @@
 module cache;
 
+import std.algorithm;
 import std.exception;
 import std.file;
 import std.path;
@@ -103,7 +104,7 @@ private void optimizeCacheImpl(bool reverse = false, string onlyRev = null)
 {
 	string[] history = d.repo.query("log", "--pretty=format:%H", "origin/master").splitLines();
 	if (reverse)
-		history.reverse;
+		history.reverse();
 	
 	string[][string] cacheContent;
 	foreach (de; dirEntries(cacheDir, SpanMode.shallow))

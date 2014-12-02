@@ -27,7 +27,7 @@ struct ConfigFile
 {
 	string workDir;
 	bool cache;
-	immutable string[string] environment;
+	string[string] environment;
 }
 immutable ConfigFile config;
 
@@ -67,7 +67,8 @@ shared static this()
 
 	if (opts.configFile.exists)
 	{
-		config = opts.configFile
+		config = cast(immutable)
+			opts.configFile
 			.readText()
 			.splitLines()
 			.parseStructuredIni!ConfigFile();
