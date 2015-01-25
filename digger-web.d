@@ -18,7 +18,7 @@ import ae.net.shutdown;
 import ae.sys.cmd;
 import ae.sys.timing;
 import ae.utils.aa;
-import ae.utils.meta.misc;
+import ae.utils.meta : isDebug;
 
 import common;
 
