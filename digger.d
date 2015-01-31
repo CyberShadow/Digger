@@ -40,6 +40,7 @@ int doMain()
 			int step = 1;
 			getopt(args,
 				"64", &model64,
+				"make-arg", &buildConfig.makeArgs,
 				"step", &step,
 			);
 			if (model64)
