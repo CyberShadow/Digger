@@ -11,7 +11,7 @@ Digger has a simple command-line interface, as well as a web interface for custo
 
 ### Requirements
 
-On POSIX, Digger needs git, gcc, binutils and make.
+On POSIX, Digger needs git, g++, binutils and make.
 
 On Windows, Digger will download and unpack everything it needs (Git, DMC, 7-Zip, WiX, VS2013 and Windows SDK components).
 
