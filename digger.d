@@ -91,14 +91,29 @@ int doMain()
 
 	static void usageFun(string usage)
 	{
-		import std.string, std.array, std.stdio;
+		import std.algorithm, std.array, std.stdio, std.string;
 		auto lines = usage.splitLines();
-		lines =
-			[lines[0].replace(" ACTION ", " [OPTION]... ACTION ")] ~
-			getUsageFormatString!(structFun!Opts).splitLines()[1..$] ~
-			lines[1..$];
 
-		stderr.writefln("%-(%s\n%)\n", lines);
+		stderr.writeln("Digger - a D source code building and archaeology tool");
+		stderr.writeln("Created by Vladimir Panteleev <vladimir@thecybershadow.net>");
+		stderr.writeln("https://github.com/CyberShadow/Digger");
+		stderr.writeln();
+
+		if (lines[0].canFind("ACTION [ACTION-ARGUMENTS]"))
+		{
+			lines =
+				[lines[0].replace(" ACTION ", " [OPTION]... ACTION ")] ~
+				getUsageFormatString!(structFun!Opts).splitLines()[1..$] ~
+				lines[1..$];
+
+			stderr.writefln("%-(%s\n%)", lines);
+			stderr.writeln();
+			stderr.writeln("For help on a specific action, run: digger ACTION --help");
+			stderr.writeln("For more information, see README.md.");
+			stderr.writeln();
+		}
+		else
+			stderr.writefln("%-(%s\n%)", lines);
 	}
 
 	return funoptDispatch!(Digger, FunOptConfig.init, usageFun)([thisExePath] ~ (opts.action ? [opts.action] ~ opts.actionArguments : []));
