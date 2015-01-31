@@ -82,6 +82,11 @@ static:
 		d.repo.run("log", "-n1", "--pretty=format:t=%ct", revision);
 		return 0;
 	}
+
+	int help()
+	{
+		throw new Exception("For help, run digger without any arguments.");
+	}
 }
 
 int doMain()
