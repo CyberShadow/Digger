@@ -8,18 +8,21 @@ import std.string;
 import core.runtime;
 
 import std.file;
-import std.getopt;
+static import std.getopt;
 import std.path;
 
+import ae.utils.funopt;
+import ae.utils.meta;
 import ae.utils.sini;
 
 struct Opts
 {
-	immutable(string)[] args;
+	Option!(string, hiddenOption) dir;
+	Option!(string, "Path to the configuration file to use", "PATH") configFile;
+	Switch!("Do not update D repositories from GitHub") offline;
 
-	string dir;
-	string configFile;
-	bool offline;
+	string action;
+	Parameter!(immutable(string)[]) actionArguments;
 }
 immutable Opts opts;
 
@@ -33,21 +36,10 @@ immutable ConfigFile config;
 
 shared static this()
 {
-	bool help;
-	Opts opts;
-	auto args = Runtime.args;
-	getopt(args,
-		"dir"        , &opts.dir,
-		"config-file", &opts.configFile,
-		"offline"    , &opts.offline,
-		"h|help"     , &help,
-		std.getopt.config.stopOnFirstNonOption
-	);
-	if (help)
-		log("Please see the README.md file for documentation.");
-	
-	if (args.length > 1)
-		opts.args = args[1..$].idup;
+	alias fun = structFun!Opts;
+	enum funOpts = FunOptConfig([std.getopt.config.stopOnFirstNonOption]);
+	void usageFun(string) {}
+	auto opts = funopt!(fun, funOpts, usageFun)(Runtime.args);
 
 	if (opts.dir)
 		chdir(opts.dir);

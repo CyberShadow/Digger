@@ -33,19 +33,8 @@ BisectConfig bisectConfig;
 /// Final build directory for bisect tests.
 alias currentDir = subDir!"current";
 
-int doBisect()
+int doBisect(bool inBisect, bool noVerify, string bisectConfigFile)
 {
-	bool inBisect, noVerify;
-
-	auto args = opts.args.dup;
-	getopt(args,
-		"in-bisect", &inBisect,
-		"no-verify", &noVerify,
-	);
-
-	enforce(args.length >= 2, "Specify bisect.ini");
-	enforce(args.length == 2, "Too many arguments");
-	bisectConfigFile = args[1];
 	bisectConfig = bisectConfigFile
 		.readText()
 		.splitLines()
@@ -170,15 +159,8 @@ const CommitRange[] badCommits =
 
 /// Find the earliest revision that Digger can build.
 /// Used during development to extend Digger's range.
-int doDelve()
+int doDelve(bool inBisect)
 {
-	bool inBisect;
-
-	auto args = opts.args.dup;
-	getopt(args,
-		"in-bisect", &inBisect,
-	);
-
 	if (inBisect)
 	{
 		log("Invoked by git-bisect - performing bisect step.");
