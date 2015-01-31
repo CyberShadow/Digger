@@ -18,6 +18,7 @@ import ae.net.shutdown;
 import ae.sys.cmd;
 import ae.sys.timing;
 import ae.utils.aa;
+import ae.utils.funopt;
 import ae.utils.meta : isDebug;
 
 import common;
@@ -35,11 +36,11 @@ class WebFrontend
 	HttpServer httpd;
 	ushort port;
 
-	this()
+	this(string host, ushort port)
 	{
 		httpd = new HttpServer();
 		httpd.handleRequest = &onRequest;
-		port = httpd.listen(0, "localhost");
+		port = httpd.listen(port, host);
 
 		addShutdownHandler(&httpd.close);
 	}
@@ -282,9 +283,9 @@ string[] diggerQuery(string[] args...)
 /// headless machine which can't.
 /// Either open the URL directly, or just print it
 /// and invite the user to do so themselves.
-void showURL(ushort port)
+void showURL(string host, ushort port)
 {
-	auto url = "http://localhost:%s/".format(port);
+	auto url = "http://%s:%s/".format(host, port);
 
 	version (Windows)
 		enum desktop = true;
@@ -309,22 +310,24 @@ void showURL(ushort port)
 
 WebFrontend web;
 
-void doMain()
+void doMain(
+	Option!(string, "Interface to listen on.\nDefault is \"localhost\" (local connections only).", "HOST") host = "localhost",
+	Option!(ushort, "Port to listen on. Default is 0 (random unused port).") port = 0)
 {
-	web = new WebFrontend();
+	web = new WebFrontend(host, port);
 
-	showURL(web.port);
+	showURL(host, web.port);
 
 	startWatchdog();
 
 	socketManager.loop();
 }
 
-int main()
+int main(string[] args)
 {
 	debug
 	{
-		doMain();
+		funopt!doMain(args);
 		return 0;
 	}
 	else

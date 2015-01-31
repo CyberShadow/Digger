@@ -8,6 +8,7 @@ Digger Next
    (thanks to Sergei Nosov)
  * Add `--help` text
  * Add `--make-args` option
+ * Add `--host` and `--port` to `digger-web`
  * Various smaller improvements
 
 Digger v1.0 (2014-09-18)
