@@ -1,45 +1,23 @@
 # Digger
 
-Digger is a tool for working with D's source code and its history.
-It can build D (including older D versions), customize the build with pending pull requests or forks,
-and find the exact pull request which introduced a regression (or fixed a bug).
+Digger can:
+
+- build D from [git](https://github.com/D-Programming-Language)
+- build older versions of D
+- build D plus forks and pending pull requests
+- bisect D's history to find where regressions are introduced (or bugs fixed)
+
+Digger has a simple command-line interface, as well as a web interface for customizing your custom D build.
 
 ### Requirements
 
-On non-Windows systems, Git and C development tools (compiler, linker, make) are required.
+On POSIX, Digger needs git, gcc, binutils and make.
 
-On Windows, Digger may download and locally install (unpack) required software, as needed:
+On Windows, Digger will download and unpack everything it needs (Git, DMC, 7-Zip, WiX, VS2013 and Windows SDK components).
 
- - Git
- - DigitalMars C++ compiler
- - A number of Visual Studio 2013 Express and Windows SDK components (for 64-bit builds)
- - 7-Zip and WiX (necessary for unpacking Visual Studio Express components)
+### Get Digger
 
-### Download
-
-You can find Windows binaries on the [GitHub releases](https://github.com/CyberShadow/Digger/releases) page.
-
-### Building
-
-    $ git clone --recursive https://github.com/CyberShadow/Digger
-    $ cd Digger
-    $ rdmd --build-only digger
-    $ rdmd --build-only digger-web
-
-On Windows, you may see:
-
-    Warning 2: File Not Found version.lib
-
-This is a benign warning.
-
-### Web interface
-
-Run digger-web to start the web interface, which allows interactively customizing a D version to build.
-
-### Configuration
-
-You can optionally configure a few settings using a configuration file.
-To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by the comments.
+You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Digger/releases) page.
 
 ### Command-line usage
 
@@ -77,3 +55,25 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
 To bisect D's history to find which pull request introduced a bug, first copy `bisect.ini.sample` to `bisect.ini`, adjust as instructed by the comments, then run:
 
     $ digger bisect path/to/bisect.ini
+
+### Web interface
+
+Run digger-web to start the web interface, which allows interactively customizing a D version to build.
+
+### Configuration
+
+You can optionally configure a few settings using a configuration file.
+To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by the comments.
+
+### Building
+
+    $ git clone --recursive https://github.com/CyberShadow/Digger
+    $ cd Digger
+    $ rdmd --build-only digger
+    $ rdmd --build-only digger-web
+
+On Windows, you may see:
+
+    Warning 2: File Not Found version.lib
+
+This is a benign warning.
