@@ -334,7 +334,7 @@ int main(string[] args)
 	{
 		try
 		{
-			doMain();
+			funopt!doMain(args);
 			return 0;
 		}
 		catch (Exception e)
