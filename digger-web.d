@@ -341,13 +341,10 @@ int main(string[] args)
 		{
 			version (Windows)
 			{
-				if (opts.args.length == 0)
-				{
-					import ae.sys.windows : messageBox;
-					import core.sys.windows.windows : MB_ICONERROR;
-					messageBox(e.msg, "Fatal error", MB_ICONERROR);
-					return 1;
-				}
+				import ae.sys.windows : messageBox;
+				import core.sys.windows.windows : MB_ICONERROR;
+				messageBox(e.msg, "Fatal error", MB_ICONERROR);
+				return 1;
 			}
 			else
 			{
