@@ -40,7 +40,7 @@ class WebFrontend
 	{
 		httpd = new HttpServer();
 		httpd.handleRequest = &onRequest;
-		port = httpd.listen(port, host);
+		this.port = httpd.listen(port, host);
 
 		addShutdownHandler(&httpd.close);
 	}
