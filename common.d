@@ -77,7 +77,7 @@ shared static this()
 	.opts = opts;
 }
 
-@property string subDir(string name)() { return buildPath(config.workDir, name); }
+@property string subDir(string name)() { return buildPath(config.workDir.expandTilde(), name); }
 
 // ****************************************************************************
 

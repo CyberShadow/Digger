@@ -25,7 +25,7 @@ final class DiggerManager : DManager
 {
 	this()
 	{
-		this.config.workDir = common.config.workDir;
+		this.config.workDir = common.config.workDir.expandTilde();
 	}
 
 	override void log(string s)
