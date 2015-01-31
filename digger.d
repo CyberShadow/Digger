@@ -24,6 +24,9 @@ alias BuildOptions = TypeTuple!(
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, null, 0, "makeArgs"),
 );
 
+alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests.\n"
+	"Example: \"master @ 3 weeks ago + dmd#123 + Username/dmd/awesome-feature\"");
+
 BuildConfig parseBuildOptions(BuildOptions options)
 {
 	BuildConfig buildConfig;
@@ -37,7 +40,7 @@ struct Digger
 {
 static:
 	@(`Build D from source code`)
-	int build(BuildOptions options, string spec = "master")
+	int build(BuildOptions options, Spec spec = "master")
 	{
 		buildCustom(spec, parseBuildOptions(options));
 		return 0;
