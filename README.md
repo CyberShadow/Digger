@@ -58,7 +58,7 @@ To bisect D's history to find which pull request introduced a bug, first copy `b
 
 ### Web interface
 
-Run digger-web to start the web interface, which allows interactively customizing a D version to build.
+Run `digger-web` to start the web interface, which allows interactively customizing a D version to build.
 
 ### Configuration
 
@@ -93,6 +93,9 @@ It is split up in the following layers (bottom first):
   manage a D checkout and its dependencies
 - [`ae.sys.d.customizer`](https://github.com/CyberShadow/ae/blob/master/sys/d/customizer.d) -
   manage a customized D checkout (handles merging forks and pull requests).
+
+`ae.sys.d.manager` clones [a meta-repository on BitBucket](https://bitbucket.org/cybershadow/d), which contains the major D components as submodules.
+The meta-repository is created and maintained by another program, [D-dot-git](https://github.com/CyberShadow/D-dot-git).
 
 The build requirements are fulfilled by the [`ae.sys.install`](https://github.com/CyberShadow/ae/tree/master/sys/install) package.
 
