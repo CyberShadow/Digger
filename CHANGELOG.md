@@ -6,6 +6,9 @@ Digger Next
 
  * Add `rebuild` command, for incremental rebuilds
    (thanks to Sergei Nosov)
+ * Add `--help` text
+ * Add `--make-args` option
+ * Various smaller improvements
 
 Digger v1.0 (2014-09-18)
 ------------------------
