@@ -77,3 +77,35 @@ On Windows, you may see:
     Warning 2: File Not Found version.lib
 
 This is a benign warning.
+
+### Hacking
+
+##### Backend
+
+The code which builds D and manages the git repository is located in the [ae library](https://github.com/CyberShadow/ae)
+(`ae.sys.d` package), so as to be reusable.
+
+It is split up in the following layers (bottom first):
+
+- [`ae.sys.d.builder`](https://github.com/CyberShadow/ae/blob/master/sys/d/builder.d) -
+  build D from source code located in a directory
+- [`ae.sys.d.manager`](https://github.com/CyberShadow/ae/blob/master/sys/d/manager.d) -
+  manage a D checkout and its dependencies
+- [`ae.sys.d.customizer`](https://github.com/CyberShadow/ae/blob/master/sys/d/customizer.d) -
+  manage a customized D checkout (handles merging forks and pull requests).
+
+The build requirements are fulfilled by the [`ae.sys.install`](https://github.com/CyberShadow/ae/tree/master/sys/install) package.
+
+##### Frontend
+
+Digger is the frontend to the above library code, implementing configuration, bisecting, etc.
+
+Module list is as follows:
+
+- `common` - configuration and miscellanea
+- `repo` - customized D repository management, revision parsing
+- `cache` - build caching
+- `bisect` - history bisection
+- `custom` - custom build management
+- `digger` - entry point and command-line UI
+- `digger-web` - web interface, works by launching `digger` sub-processes
