@@ -21,7 +21,7 @@ struct Opts
 	Option!(string, "Path to the configuration file to use", "PATH") configFile;
 	Switch!("Do not update D repositories from GitHub") offline;
 
-	string action;
+	Parameter!(string, "Action to perform (see list below)") action;
 	Parameter!(immutable(string)[]) actionArguments;
 }
 immutable Opts opts;

@@ -124,7 +124,7 @@ int doMain()
 			stderr.writefln("%-(%s\n%)", lines);
 	}
 
-	return funoptDispatch!(Digger, FunOptConfig.init, usageFun)([thisExePath] ~ (opts.action ? [opts.action] ~ opts.actionArguments : []));
+	return funoptDispatch!(Digger, FunOptConfig.init, usageFun)([thisExePath] ~ (opts.action ? [opts.action.value] ~ opts.actionArguments : []));
 }
 
 int main()
