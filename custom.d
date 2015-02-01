@@ -14,6 +14,7 @@ import ae.utils.array;
 import ae.utils.regex;
 
 import common;
+import config;
 import repo;
 
 alias indexOf = std.string.indexOf;

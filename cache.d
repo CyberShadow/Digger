@@ -9,6 +9,7 @@ import std.string;
 import ae.sys.file;
 
 import common;
+import config;
 import repo;
 
 alias cacheDir = subDir!"cache";
@@ -20,7 +21,7 @@ void cached(string commit, BuildConfig buildConfig, string buildDir, void delega
 	assert(commit.length == 40, "Bad commit SHA1");
 	string currentCacheDir; // this build's cache location
 
-	if (common.config.cache)
+	if (.config.config.cache)
 	{
 		currentCacheDir = cacheLocation(commit, buildConfig);
 		if (currentCacheDir.exists)
@@ -60,7 +61,7 @@ void cached(string commit, BuildConfig buildConfig, string buildDir, void delega
 
 bool isCached(string commit, BuildConfig buildConfig)
 {
-	return common.config.cache && cacheLocation(commit, buildConfig).exists;
+	return .config.config.cache && cacheLocation(commit, buildConfig).exists;
 }
 
 string cacheLocation(string commit, BuildConfig buildConfig)

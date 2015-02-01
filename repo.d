@@ -16,6 +16,7 @@ import ae.sys.d.manager;
 
 import cache;
 import common;
+import config : config;
 
 alias BuildConfig = DBuilder.Config.Build;
 enum UNBUILDABLE_MARKER = "unbuildable";
@@ -25,7 +26,7 @@ final class DiggerManager : DManager
 {
 	this()
 	{
-		this.config.workDir = common.config.workDir.expandTilde();
+		this.config.workDir = .config.workDir.expandTilde();
 	}
 
 	override void log(string s)
@@ -37,7 +38,7 @@ final class DiggerManager : DManager
 	{
 		super.prepareEnv();
 
-		applyEnv(common.config.environment);
+		applyEnv(.config.environment);
 	}
 
 	void applyEnv(in string[string] env)

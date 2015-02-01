@@ -105,10 +105,11 @@ Digger is the frontend to the above library code, implementing configuration, bi
 
 Module list is as follows:
 
-- `common` - configuration and miscellanea
+- `config` - configuration
 - `repo` - customized D repository management, revision parsing
 - `cache` - build caching
 - `bisect` - history bisection
 - `custom` - custom build management
 - `digger` - entry point and command-line UI
 - `digger-web` - web interface, works by launching `digger` sub-processes
+- `common` - helpers shared by `digger` and `digger-web`

@@ -13,6 +13,7 @@ import ae.sys.file;
 import ae.utils.sini;
 
 import common;
+import config;
 import repo;
 
 enum EXIT_UNTESTABLE = 125;

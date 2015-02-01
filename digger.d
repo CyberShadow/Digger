@@ -12,7 +12,7 @@ import ae.utils.text : eatLine;
 
 import bisect;
 import cache;
-import common;
+import config;
 import custom;
 import repo;
 
