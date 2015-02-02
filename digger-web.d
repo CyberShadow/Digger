@@ -19,6 +19,7 @@ import ae.sys.cmd;
 import ae.sys.timing;
 import ae.utils.aa;
 import ae.utils.funopt;
+import ae.utils.main;
 import ae.utils.meta : isDebug;
 
 import common;
@@ -310,7 +311,7 @@ void showURL(string host, ushort port)
 
 WebFrontend web;
 
-void doMain(
+void diggerWeb(
 	Option!(string, "Interface to listen on.\nDefault is \"localhost\" (local connections only).", "HOST") host = "localhost",
 	Option!(ushort, "Port to listen on. Default is 0 (random unused port).") port = 0)
 {
@@ -323,35 +324,4 @@ void doMain(
 	socketManager.loop();
 }
 
-int main(string[] args)
-{
-	debug
-	{
-		funopt!doMain(args);
-		return 0;
-	}
-	else
-	{
-		try
-		{
-			funopt!doMain(args);
-			return 0;
-		}
-		catch (Exception e)
-		{
-			version (Windows)
-			{
-				import ae.sys.windows : messageBox;
-				import core.sys.windows.windows : MB_ICONERROR;
-				messageBox(e.msg, "Fatal error", MB_ICONERROR);
-				return 1;
-			}
-			else
-			{
-				import std.stdio;
-				stderr.writefln("Fatal error: %s", e.msg);
-			}
-			return 1;
-		}
-	}
-}
+mixin main!(funopt!diggerWeb);

@@ -7,6 +7,7 @@ import std.typetuple;
 version(Windows) static import ae.sys.net.wininet;
 
 import ae.utils.funopt;
+import ae.utils.main;
 import ae.utils.meta : structFun;
 import ae.utils.text : eatLine;
 
@@ -92,7 +93,7 @@ static:
 	}
 }
 
-int doMain()
+int digger()
 {
 	if (opts.action == "do")
 		return handleWebTask(opts.actionArguments.dup);
@@ -127,19 +128,4 @@ int doMain()
 	return funoptDispatch!(Digger, FunOptConfig.init, usageFun)([thisExePath] ~ (opts.action ? [opts.action.value] ~ opts.actionArguments : []));
 }
 
-int main()
-{
-	debug
-		return doMain();
-	else
-	{
-		try
-			return doMain();
-		catch (Exception e)
-		{
-			import std.stdio : stderr;
-			stderr.writefln("Fatal error: %s", e.msg);
-			return 1;
-		}
-	}
-}
+mixin main!digger;
