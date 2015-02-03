@@ -11,6 +11,7 @@ import std.string;
 
 import ae.sys.d.customizer;
 import ae.utils.array;
+import ae.utils.json;
 import ae.utils.regex;
 
 import common;
@@ -20,6 +21,15 @@ import repo;
 alias indexOf = std.string.indexOf;
 
 alias subDir!"result" resultDir;
+
+/// We save a JSON file to the result directory with the build parameters.
+struct BuildInfo
+{
+	string spec;
+	BuildConfig config;
+}
+
+enum buildInfoFileName = "build-info.json";
 
 class DiggerCustomizer : DCustomizer
 {
@@ -174,6 +184,8 @@ void buildCustom(string spec, BuildConfig buildConfig)
 	}
 
 	customizer.runBuild(buildConfig);
+
+	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(spec, buildConfig).toJson());
 }
 
 /// Build D versions successively, for the purpose of caching them.
