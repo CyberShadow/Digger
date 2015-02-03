@@ -10,6 +10,8 @@ import std.path;
 import std.process;
 import std.string;
 
+static if(!is(typeof({import ae.net.asockets;}))) static assert(false, "ae library not found, did you clone with --recursive?"); else:
+
 import ae.net.asockets;
 import ae.net.http.client;
 import ae.net.http.responseex;

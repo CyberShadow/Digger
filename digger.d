@@ -4,6 +4,8 @@ import std.exception;
 import std.file : thisExePath;
 import std.typetuple;
 
+static if(!is(typeof({import ae.utils.text;}))) static assert(false, "ae library not found, did you clone with --recursive?"); else:
+
 version(Windows) static import ae.sys.net.wininet;
 
 import ae.utils.funopt;
