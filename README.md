@@ -50,6 +50,8 @@ You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Di
     # perform incremental build (after changing a few source files)
     $ digger rebuild
 
+Run `digger` with no arguments for detailed usage help.
+
 ##### Bisecting
 
 To bisect D's history to find which pull request introduced a bug, first copy `bisect.ini.sample` to `bisect.ini`, adjust as instructed by the comments, then run:
