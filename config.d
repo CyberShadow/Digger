@@ -67,4 +67,5 @@ shared static this()
 	.opts = opts;
 }
 
-@property string subDir(string name)() { return buildPath(config.workDir.expandTilde(), name); }
+@property string workDir() { return config.workDir.expandTilde(); }
+@property string subDir(string name)() { return buildPath(workDir, name); }

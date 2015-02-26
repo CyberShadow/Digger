@@ -4,8 +4,9 @@ Digger Changelog
 Digger Next
 -----------
 
- * Add `rebuild` command, for incremental rebuilds
+ * Add `rebuild` action, for incremental rebuilds
    (thanks to Sergei Nosov)
+ * Add `install` and `uninstall` actions
  * Add `--help` text
  * Add `--make-args` option
  * Add `--host` and `--port` to `digger-web`

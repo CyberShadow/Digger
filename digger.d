@@ -18,6 +18,7 @@ import cache;
 import common;
 import config;
 import custom;
+import install;
 import repo;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
@@ -54,6 +55,27 @@ static:
 	int rebuild(BuildOptions options)
 	{
 		incrementalBuild(parseBuildOptions(options));
+		return 0;
+	}
+
+	@(`Install Digger's build result on top of an existing stable DMD installation`)
+	int install(
+		Switch!("Do not prompt", 'y') yes,
+		Switch!("Only print what would be done", 'n') dryRun,
+		Parameter!(string, "Directory to install to. Default is to find one in PATH.") installLocation = null,
+	)
+	{
+		enforce(!yes || !dryRun, "--yes and --dry-run are mutually exclusive");
+		.install.install(yes, dryRun, installLocation);
+		return 0;
+	}
+
+	@(`Undo the "install" action`)
+	int uninstall(
+		Parameter!(string, "Directory to uninstall from. Default is to search PATH.") installLocation = null,
+	)
+	{
+		.uninstall(installLocation);
 		return 0;
 	}
 

@@ -52,6 +52,18 @@ You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Di
 
 Run `digger` with no arguments for detailed usage help.
 
+##### Installing
+
+Digger does not build all D components - only those that change frequently and depend on one another.
+You can get a full package by upgrading an installation of a stable DMD release with Digger's build result:
+
+    # upgrade the DMD in your PATH with Digger's result
+    $ digger install
+
+You can undo this at any time by running:
+
+    $ digger uninstall
+
 ##### Bisecting
 
 To bisect D's history to find which pull request introduced a bug, first copy `bisect.ini.sample` to `bisect.ini`, adjust as instructed by the comments, then run:
@@ -112,6 +124,7 @@ Module list is as follows:
 - `cache` - build caching
 - `bisect` - history bisection
 - `custom` - custom build management
+- `install` - installation
 - `digger` - entry point and command-line UI
 - `digger-web` - web interface, works by launching `digger` sub-processes
 - `common` - helpers shared by `digger` and `digger-web`
