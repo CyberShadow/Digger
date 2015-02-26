@@ -22,8 +22,8 @@ Digger v1.0 (2014-09-18)
    - 7-Zip and WiX (necessary for unpacking Visual Studio Express components)
  * Various smaller improvements
 
-2014-05-22 (DConf)
-------------------
+Digger @ DConf (2014-05-22)
+---------------------------
 
  * Allow merging arbitrary GitHub forks
  * Add `--offline`, which suppresses updating the D repositories.
