@@ -15,6 +15,7 @@ import ae.utils.text : eatLine;
 
 import bisect;
 import cache;
+import common;
 import config;
 import custom;
 import repo;
@@ -105,7 +106,7 @@ int digger()
 		import std.algorithm, std.array, std.stdio, std.string;
 		auto lines = usage.splitLines();
 
-		stderr.writeln("Digger - a D source code building and archaeology tool");
+		stderr.writeln("Digger v" ~ diggerVersion ~ " - a D source code building and archaeology tool");
 		stderr.writeln("Created by Vladimir Panteleev <vladimir@thecybershadow.net>");
 		stderr.writeln("https://github.com/CyberShadow/Digger");
 		stderr.writeln();

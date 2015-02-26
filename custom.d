@@ -25,6 +25,7 @@ alias subDir!"result" resultDir;
 /// We save a JSON file to the result directory with the build parameters.
 struct BuildInfo
 {
+	string diggerVersion;
 	string spec;
 	BuildConfig config;
 }
@@ -185,7 +186,7 @@ void buildCustom(string spec, BuildConfig buildConfig)
 
 	customizer.runBuild(buildConfig);
 
-	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(spec, buildConfig).toJson());
+	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
 }
 
 /// Build D versions successively, for the purpose of caching them.
