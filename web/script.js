@@ -165,7 +165,7 @@ function createCustomizationForm() {
 						});
 						done();
 					}, function() {
-						alert('Error retrieving data');
+						alert('Error retrieving pull/state data');
 					});
 			});
 
@@ -233,7 +233,7 @@ function createCustomizationForm() {
 										$fork.append($table);
 										done();
 									}, function() {
-										alert('Error retrieving data');
+										alert('Error retrieving branch data');
 									});
 							})
 							$section.children('.section-header')
@@ -241,7 +241,7 @@ function createCustomizationForm() {
 						});
 						done();
 					}, function() {
-						alert('Error retrieving data');
+						alert('Error retrieving fork data');
 					});
 			});
 		});
