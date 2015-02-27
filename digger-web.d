@@ -53,78 +53,87 @@ class WebFrontend
 		HttpResponseEx resp = new HttpResponseEx();
 		resp.disableCache();
 
-		string resource = request.resource;
-		auto queryTuple = resource.findSplit("?");
-		resource = queryTuple[0];
-		auto params = decodeUrlParameters(queryTuple[2]);
-		auto segments = resource.split("/")[1..$];
-
-		switch (segments[0])
+		try
 		{
-			case "initialize":
-			case "begin":
-			case "merge":
-			case "unmerge":
-			case "merge-fork":
-			case "unmerge-fork":
-			case "build":
-			case "install-preview":
-			case "install":
-			{
-				auto paramsArray = params
-					.pairs
-					.filter!(pair => !pair.value.empty)
-					.map!(pair => "--" ~ pair.key ~ "=" ~ pair.value)
-					.array;
-				startTask(segments ~ paramsArray);
-				return conn.sendResponse(resp.serveJson("OK"));
-			}
-			case "pull-state.json":
-				// Proxy request to GHDaemon, a daemon which caches GitHub
-				// pull request test results. Required to avoid GitHub API
-				// throttling without exposing a secret authentication token.
-				// https://github.com/CyberShadow/GHDaemon
-				enforce(resource.startsWith("/"), "Invalid resource");
-				return httpRequest(
-					new HttpRequest("http://ghdaemon.k3.1azy.net" ~ resource),
-					(HttpResponse response, string disconnectReason)
-					{
-						if (conn.conn.connected)
-							conn.sendResponse(response);
-					}
-				);
-			case "refs.json":
-			{
-				struct Refs { string[] branches, tags; }
-				auto refs = Refs(
-					diggerQuery("branches"),
-					diggerQuery("tags"),
-				);
-				return conn.sendResponse(resp.serveJson(refs));
-			}
-			case "status.json":
-			{
-				enforce(currentTask, "No task was started");
+			string resource = request.resource;
+			auto queryTuple = resource.findSplit("?");
+			resource = queryTuple[0];
+			auto params = decodeUrlParameters(queryTuple[2]);
+			auto segments = resource.split("/")[1..$];
 
-				struct Status
+			switch (segments[0])
+			{
+				case "initialize":
+				case "begin":
+				case "merge":
+				case "unmerge":
+				case "merge-fork":
+				case "unmerge-fork":
+				case "build":
+				case "install-preview":
+				case "install":
 				{
-					immutable(Task.OutputLine)[] lines;
-					string state;
+					auto paramsArray = params
+						.pairs
+						.filter!(pair => !pair.value.empty)
+						.map!(pair => "--" ~ pair.key ~ "=" ~ pair.value)
+						.array;
+					startTask(segments ~ paramsArray);
+					return conn.sendResponse(resp.serveJson("OK"));
 				}
-				Status status;
-				status.lines = currentTask.flushLines();
-				status.state = text(currentTask.getState()).split(".")[$-1];
-				return conn.sendResponse(resp.serveJson(status));
+				case "pull-state.json":
+					// Proxy request to GHDaemon, a daemon which caches GitHub
+					// pull request test results. Required to avoid GitHub API
+					// throttling without exposing a secret authentication token.
+					// https://github.com/CyberShadow/GHDaemon
+					enforce(resource.startsWith("/"), "Invalid resource");
+					return httpRequest(
+						new HttpRequest("http://ghdaemon.k3.1azy.net" ~ resource),
+						(HttpResponse response, string disconnectReason)
+						{
+							if (conn.conn.connected)
+								conn.sendResponse(response);
+						}
+					);
+				case "refs.json":
+				{
+					struct Refs { string[] branches, tags; }
+					auto refs = Refs(
+						diggerQuery("branches"),
+						diggerQuery("tags"),
+					);
+					return conn.sendResponse(resp.serveJson(refs));
+				}
+				case "status.json":
+				{
+					enforce(currentTask, "No task was started");
+
+					struct Status
+					{
+						immutable(Task.OutputLine)[] lines;
+						string state;
+					}
+					Status status;
+					status.lines = currentTask.flushLines();
+					status.state = text(currentTask.getState()).split(".")[$-1];
+					return conn.sendResponse(resp.serveJson(status));
+				}
+				case "ping":
+					lastPing = Clock.currTime;
+					return conn.sendResponse(resp.serveJson("OK"));
+				case "exit":
+					log("Exit requested.");
+					shutdown();
+					return conn.sendResponse(resp.serveJson("OK"));
+				default:
+					return conn.sendResponse(resp.serveFile(resource[1..$], "web/"));
 			}
-			case "ping":
-				lastPing = Clock.currTime;
-				return conn.sendResponse(resp.serveJson("OK"));
-			case "exit":
-				log("Exit requested.");
-				shutdown();
-				return conn.sendResponse(resp.serveJson("OK"));
-			default:
-				return conn.sendResponse(resp.serveFile(resource[1..$], "web/"));
+		}
+		catch (Exception e)
+		{
+			resp.serveText(e.msg);
+			resp.setStatus(HttpStatusCode.InternalServerError);
+			conn.sendResponse(resp);
 		}
 	}
 }

@@ -646,5 +646,5 @@ var pongTimer = setInterval(function() {
 }, debug ? 1e9 : 100);
 
 $(document).ajaxError(function(event, request, settings, errorThrown) {
-	alert('HTTP error with request to ' + settings.url + ':\n\n' + errorThrown);
+	alert('HTTP error with request to ' + settings.url + ':\n\n' + errorThrown + '\n\n' + request.responseText);
 });
