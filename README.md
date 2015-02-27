@@ -74,6 +74,8 @@ To bisect D's history to find which pull request introduced a bug, first copy `b
 
 Run `digger-web` to start the web interface, which allows interactively customizing a D version to build.
 
+If you built `digger-web` from source, you also need to build `digger` itself.
+
 ### Configuration
 
 You can optionally configure a few settings using a configuration file.
