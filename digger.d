@@ -73,10 +73,11 @@ static:
 	@(`Undo the "install" action`)
 	int uninstall(
 		Switch!("Only print what would be done", 'n') dryRun,
+		Switch!("Do not verify files to be deleted; ignore errors") force,
 		Parameter!(string, "Directory to uninstall from. Default is to search PATH.") installLocation = null,
 	)
 	{
-		.uninstall(dryRun, installLocation);
+		.uninstall(dryRun, force, installLocation);
 		return 0;
 	}
 

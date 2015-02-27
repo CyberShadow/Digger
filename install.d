@@ -496,7 +496,7 @@ void install(bool yes, bool dryRun, string location = null)
 	log("You can undo this action by running `digger uninstall`.");
 }
 
-void uninstall(bool dryRun, string location = null)
+void uninstall(bool dryRun, bool force, string location = null)
 {
 	auto dmdPath = selectInstallPath(location);
 	auto binPath = dmdPath.dirName();
@@ -505,15 +505,19 @@ void uninstall(bool dryRun, string location = null)
 	enforce(uninstallFileName.exists, "Can't find uninstallation data: " ~ uninstallFileName);
 	auto uninstallData = uninstallFileName.readText.jsonParse!UninstallData;
 
-	log("Verifying files to be uninstalled...");
+	if (!force)
+	{
+		log("Verifying files to be uninstalled...");
 
-	foreach (obj; uninstallData.objects)
-		verifyObject(obj, uninstallPath, "uninstall");
+		foreach (obj; uninstallData.objects)
+			verifyObject(obj, uninstallPath, "uninstall");
 
-	log("Verify OK.");
+		log("Verify OK.");
+	}
+
 	log(dryRun ? "Actions to run:" : "Uninstalling...");
 
-	foreach (obj; uninstallData.objects)
+	void uninstallObject(InstalledObject* obj)
 	{
 		auto src = buildNormalizedPath(uninstallPath, obj.name);
 		auto dst = buildNormalizedPath(uninstallPath, obj.path);
@@ -532,12 +536,24 @@ void uninstall(bool dryRun, string location = null)
 		}
 	}
 
+	foreach (obj; uninstallData.objects)
+		if (!force)
+			uninstallObject(obj);
+		else
+			try
+				uninstallObject(obj);
+			catch (Exception e)
+				log("Ignoring error: " ~ e.msg);
+
 	if (dryRun)
 		return;
 
 	remove(uninstallFileName);
 
-	rmdir(uninstallPath); // should be empty now
+	if (!force)
+		rmdir(uninstallPath); // should be empty now
+	else
+		rmdirRecurse(uninstallPath);
 
 	log("Uninstall OK.");
 }
