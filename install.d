@@ -247,13 +247,13 @@ ComponentPaths parseConfig(string dmdPath, BuildInfo buildInfo)
 
 	ComponentPaths result;
 	result.binPath = dmdPath.dirName();
-	result.libPath = findPath(libPaths, "Phobos static library", getLibName(buildInfo));
+	result.libPath = findPath(libPaths, "Phobos static library", getLibFileName(buildInfo));
 	result.phobosPath = findPath(importPaths, "Phobos source code", "std/stdio.d");
 	result.druntimePath = findPath(importPaths, "Druntime import files", "object.di");
 	return result;
 }
 
-string getLibName(BuildInfo buildInfo)
+string getLibFileName(BuildInfo buildInfo)
 {
 	version (Windows)
 		return "phobos%s.lib".format(buildInfo.config.model == "32" ? "" : buildInfo.config.model);
@@ -279,7 +279,7 @@ struct InstalledObject
 
 struct UninstallData
 {
-	InstalledObject[] objects;
+	InstalledObject*[] objects;
 }
 
 void install(bool yes, bool dryRun, string location = null)
@@ -303,10 +303,17 @@ void install(bool yes, bool dryRun, string location = null)
 
 	auto uninstallPath = buildPath(componentPaths.binPath, ".digger-install");
 	auto uninstallFileName = buildPath(uninstallPath, "uninstall.json");
-	if (uninstallFileName.exists)
-		log("Uninstallation data exists - %s uninstall first.".format(verb));
+	bool updating = uninstallFileName.exists;
+	if (updating)
+	{
+		log("Found previous installation data in " ~ uninstallPath);
+		log("%s update existing installation.".format(verb));
+	}
+	else
+		log("This %s be a new Digger installation.".format(verb.toLower));
 
-	auto libName = getLibName(buildInfo);
+	auto libFileName = getLibFileName(buildInfo);
+	auto libName = libFileName.stripExtension ~ "-" ~ buildInfo.config.model ~ libFileName.extension;
 
 	static struct Item
 	{
@@ -317,19 +324,63 @@ void install(bool yes, bool dryRun, string location = null)
 	[
 		Item("dmd"  ~ binExt, buildPath(resultDir, "bin", "dmd"  ~ binExt), dmdPath),
 		Item("rdmd" ~ binExt, buildPath(resultDir, "bin", "rdmd" ~ binExt), buildPath(componentPaths.binPath, "rdmd" ~ binExt)),
-		Item(libName        , buildPath(resultDir, "lib", libName)        , buildPath(componentPaths.libPath, libName)),
+		Item(libName        , buildPath(resultDir, "lib", libFileName)    , buildPath(componentPaths.libPath, libFileName)),
 		Item("object.di"    , buildPath(resultDir, "import", "object.di") , buildPath(componentPaths.druntimePath, "object.di")),
 		Item("core"         , buildPath(resultDir, "import", "core")      , buildPath(componentPaths.druntimePath, "core")),
 		Item("std"          , buildPath(resultDir, "import", "std")       , buildPath(componentPaths.phobosPath, "std")),
 		Item("etc"          , buildPath(resultDir, "import", "etc")       , buildPath(componentPaths.phobosPath, "etc")),
 	];
 
+	InstalledObject*[string] existingComponents;
+	bool[string] updateNeeded;
+
+	UninstallData uninstallData;
+
+	if (updating)
+	{
+		uninstallData = uninstallFileName.readText.jsonParse!UninstallData;
+		foreach (obj; uninstallData.objects)
+			existingComponents[obj.name] = obj;
+	}
+
+	log("Preparing object list...");
+
+	foreach (item; items)
+	{
+		log(" - " ~ item.name);
+
+		auto obj = new InstalledObject(item.name, item.dstPath.relativePath(uninstallPath), mdObject(item.srcPath));
+		auto pexistingComponent = item.name in existingComponents;
+		if (pexistingComponent)
+		{
+			auto existingComponent = *pexistingComponent;
+
+			enforce(existingComponent.path == obj.path,
+				"Updated component has a different path (%s vs %s), aborting."
+				.format(existingComponents[item.name].path, obj.path));
+
+			verifyObject(existingComponent, uninstallPath, "update");
+
+			updateNeeded[item.name] = existingComponent.hash != obj.hash;
+			existingComponent.hash = obj.hash;
+		}
+		else
+			uninstallData.objects ~= obj;
+	}
+
 	log("Actions to run:");
+
 	foreach (item; items)
 	{
 		enforce(item.srcPath.exists, "Can't find source for component %s: %s".format(item.name, item.srcPath));
 		enforce(item.dstPath.exists, "Can't find target for component %s: %s".format(item.name, item.dstPath));
-		log(" - Install component %s from %s to %s".format(item.name, item.srcPath, item.dstPath));
+
+		string action;
+		if (updating && item.name in existingComponents)
+			action = updateNeeded[item.name] ? "Update" : "Skip unchanged";
+		else
+			action = "Install";
+		log(" - %s component %s from %s to %s".format(action, item.name, item.srcPath, item.dstPath));
 	}
 
 	if (dryRun)
@@ -347,53 +398,51 @@ void install(bool yes, bool dryRun, string location = null)
 		string result;
 		do
 		{
-			stderr.write("Continue? [Y/n] "); stderr.flush();
+			stderr.write("Proceed with installation? [Y/n] "); stderr.flush();
 			result = stdin.readln().chomp().toLower();
 		} while (result != "y" && result != "n" && result != "");
 		if (result == "n")
 			return;
 	}
 
-	if (uninstallFileName.exists)
-	{
-		log("First uninstalling previous installed version, using data in " ~ uninstallPath);
-		scope(failure) log("Uninstallation error. You may delete " ~ uninstallPath ~ " to remove installation information.");
-		uninstall(location);
-	}
-
-	assert(!uninstallFileName.exists);
-	enforce(!uninstallPath.exists, "Uninstallation directory exists without uninstall.json: " ~ uninstallPath);
-
-	log("Preparing object list...");
-
-	UninstallData uninstallData;
-	foreach (item; items)
-	{
-		log(" - " ~ item.name);
-		uninstallData.objects ~= InstalledObject(item.name, item.dstPath.relativePath(uninstallPath), mdObject(item.srcPath));
-	}
+	enforce(updating || !uninstallPath.exists, "Uninstallation directory exists without uninstall.json: " ~ uninstallPath);
 
 	log("Saving uninstall information...");
 
-	mkdir(uninstallPath);
+	if (!updating)
+		mkdir(uninstallPath);
 	std.file.write(uninstallFileName, toJson(uninstallData));
 
-	log("Backing up old files...");
+	log("Backing up original files...");
 
 	foreach (item; items)
+		if (item.name !in existingComponents)
+		{
+			log(" - " ~ item.name);
+			auto backupPath = buildPath(uninstallPath, item.name);
+			rename(item.dstPath, backupPath);
+		}
+
+	if (updating)
 	{
-		log(" - " ~ item.name);
-		auto backupPath = buildPath(uninstallPath, item.name);
-		rename(item.dstPath, backupPath);
+		log("Cleaning up existing Digger-installed files...");
+
+		foreach (item; items)
+			if (item.name in existingComponents && updateNeeded[item.name])
+			{
+				log(" - " ~ item.name);
+				rmObject(item.dstPath);
+			}
 	}
 
 	log("Installing new files...");
 
 	foreach (item; items)
-	{
-		log(" - " ~ item.name);
-		atomic!cpObject(item.srcPath, item.dstPath);
-	}
+		if (item.name !in existingComponents || updateNeeded[item.name])
+		{
+			log(" - " ~ item.name);
+			atomic!cpObject(item.srcPath, item.dstPath);
+		}
 
 	log("Install OK.");
 	log("You can undo this action by running `digger uninstall`.");
@@ -411,20 +460,15 @@ void uninstall(string location = null)
 	log("Verifying files to be uninstalled...");
 
 	foreach (obj; uninstallData.objects)
-	{
-		auto path = buildPath(uninstallPath, obj.path);
-		enforce(path.exists, "Can't find item to uninstall: " ~ path);
-		auto hash = mdObject(path);
-		enforce(hash == obj.hash, "Object changed since it was installed: " ~ path ~ "\nPlease uninstall manually.");
-	}
+		verifyObject(obj, uninstallPath, "uninstall");
 
 	log("Verify OK, uninstalling...");
 
 	foreach (obj; uninstallData.objects)
 	{
-		auto src = buildPath(uninstallPath, obj.name);
-		auto dst = buildPath(uninstallPath, obj.path);
-		log(" > Removing " ~ dst);
+		auto src = buildNormalizedPath(uninstallPath, obj.name);
+		auto dst = buildNormalizedPath(uninstallPath, obj.path);
+		log(" - Removing " ~ dst);
 		rmObject(dst);
 		log("   Moving " ~ src ~ " to " ~ dst);
 		rename(src, dst);
@@ -435,6 +479,15 @@ void uninstall(string location = null)
 	rmdir(uninstallPath); // should be empty now
 
 	log("Uninstall OK.");
+}
+
+void verifyObject(InstalledObject* obj, string uninstallPath, string verb)
+{
+	auto path = buildPath(uninstallPath, obj.path);
+	enforce(path.exists, "Can't find item to %s: %s".format(verb, path));
+	auto hash = mdObject(path);
+	enforce(hash == obj.hash,
+		"Object changed since it was installed: %s\nPlease %s manually.".format(path, verb));
 }
 
 string mdDir(string dir)
