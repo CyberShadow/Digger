@@ -481,6 +481,7 @@ void install(bool yes, bool dryRun, string location = null)
 		foreach (item; items)
 			if (item.name !in existingComponents || updateNeeded[item.name])
 			{
+				log(" - " ~ item.name);
 				item.dstPath.recursive!setMode(mode);
 
 				if (isRoot)
