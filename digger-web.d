@@ -68,6 +68,8 @@ class WebFrontend
 			case "merge-fork":
 			case "unmerge-fork":
 			case "build":
+			case "install-preview":
+			case "install":
 			{
 				auto paramsArray = params
 					.pairs

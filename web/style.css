@@ -105,3 +105,7 @@ input[type=submit] {
 #forks table {
 	width: auto;
 }
+
+#preview-install-button, #install-button {
+	display: none;
+}

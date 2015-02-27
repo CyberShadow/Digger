@@ -262,6 +262,10 @@ function createCustomizationForm() {
 			showTask($('#build-progress .log'), function(success) {
 				$('#build-progress .status').slideUp();
 				$('#build-progress h1').text('Build ' + (success ? 'complete' : 'failed'));
+				if (success) {
+					$('input').prop('disabled', false);
+					$('#preview-install-button').slideDown();
+				}
 			});
 		});
 	});
@@ -316,6 +320,33 @@ function createCustomizationForm() {
 		});
 
 		//$("html, body").animate({ scrollTop: "0px" });
+	});
+
+	$('#preview-install-button').click(function() {
+		$('#preview-install-button').slideUp();
+
+		$('#build-progress h1').text('Install preview');
+		$('#build-progress .log').empty().show();
+
+		$.getJSON('/install-preview', function() {
+			showTask($('#build-progress .log'), function(success) {
+				if (success)
+					$('#install-button').slideDown();
+			});
+		});
+	});
+
+	$('#install-button').click(function() {
+		$('#install-button').slideUp();
+
+		$('#build-progress h1').text('Installing...');
+		$('#build-progress .log').empty();
+
+		$.getJSON('/install', function() {
+			showTask($('#build-progress .log'), function(success) {
+				$('#build-progress h1').text(success ? 'Install complete' : 'Install error');
+			});
+		});
 	});
 }
 

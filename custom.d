@@ -16,6 +16,7 @@ import ae.utils.regex;
 
 import common;
 import config;
+import install;
 import repo;
 
 alias indexOf = std.string.indexOf;
@@ -40,6 +41,8 @@ class DiggerCustomizer : DCustomizer
 		if (opts.offline)
 			needUpdate = false;
 	}
+
+	string spec; // informational
 
 	static bool needUpdate = true;
 
@@ -70,6 +73,8 @@ class DiggerCustomizer : DCustomizer
 			resultDir.rmdirRecurse();
 		rename(d.buildDir, resultDir);
 
+		std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
+
 		d.log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
 			resultDir.buildPath("bin").absolutePath()
 		));
@@ -92,6 +97,7 @@ int handleWebTask(string[] args)
 			log("Ready.");
 			return 0;
 		case "begin":
+			customizer.spec = "digger-web @ " ~ (args.length == 1 ? "(master)" : args[1]);
 			customizer.begin(args.length == 1 ? null : args[1]);
 			log("Ready.");
 			return 0;
@@ -139,6 +145,12 @@ int handleWebTask(string[] args)
 			d.prepareRepoPrerequisites();
 			d.repo.run("tag");
 			return 0;
+		case "install-preview":
+			install.install(false, true);
+			return 0;
+		case "install":
+			install.install(true, false);
+			return 0;
 		default:
 			assert(false);
 	}
@@ -184,9 +196,8 @@ void buildCustom(string spec, BuildConfig buildConfig)
 		throw new Exception("Don't know how to apply customization: " ~ spec);
 	}
 
+	customizer.spec = spec;
 	customizer.runBuild(buildConfig);
-
-	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
 }
 
 /// Build D versions successively, for the purpose of caching them.
@@ -213,5 +224,5 @@ void incrementalBuild(BuildConfig buildConfig)
 	rename(repo.d.buildDir, resultDir);
 	repo.d.log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
 		resultDir.buildPath("bin").absolutePath()
-		));
+	));
 }
