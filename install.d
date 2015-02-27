@@ -368,6 +368,17 @@ void install(bool yes, bool dryRun, string location = null)
 			uninstallData.objects ~= obj;
 	}
 
+	log("Testing write access:");
+
+	string[] dirs = items.map!(item => item.dstPath.dirName).array.sort().uniq().array;
+	foreach (dir; dirs)
+	{
+		log(" - %s".format(dir));
+		auto testFile = dir.buildPath(".digger-test");
+		std.file.write(testFile, "");
+		remove(testFile);
+	}
+
 	log("Actions to run:");
 
 	foreach (item; items)
