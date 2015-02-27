@@ -496,7 +496,7 @@ void install(bool yes, bool dryRun, string location = null)
 	log("You can undo this action by running `digger uninstall`.");
 }
 
-void uninstall(string location = null)
+void uninstall(bool dryRun, string location = null)
 {
 	auto dmdPath = selectInstallPath(location);
 	auto binPath = dmdPath.dirName();
@@ -516,11 +516,23 @@ void uninstall(string location = null)
 	{
 		auto src = buildNormalizedPath(uninstallPath, obj.name);
 		auto dst = buildNormalizedPath(uninstallPath, obj.path);
-		log(" - Removing " ~ dst);
-		rmObject(dst);
-		log("   Moving " ~ src ~ " to " ~ dst);
-		rename(src, dst);
+
+		if (dryRun)
+		{
+			log(" - Would remove " ~ dst);
+			log("   Would move " ~ src ~ " to " ~ dst);
+		}
+		else
+		{
+			log(" - Removing " ~ dst);
+			rmObject(dst);
+			log("   Moving " ~ src ~ " to " ~ dst);
+			rename(src, dst);
+		}
 	}
+
+	if (dryRun)
+		return;
 
 	remove(uninstallFileName);
 

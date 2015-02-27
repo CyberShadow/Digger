@@ -72,10 +72,11 @@ static:
 
 	@(`Undo the "install" action`)
 	int uninstall(
+		Switch!("Only print what would be done", 'n') dryRun,
 		Parameter!(string, "Directory to uninstall from. Default is to search PATH.") installLocation = null,
 	)
 	{
-		.uninstall(installLocation);
+		.uninstall(dryRun, installLocation);
 		return 0;
 	}
 
