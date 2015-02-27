@@ -26,6 +26,12 @@ else
 	enum string dmdConfigName = "dmd.conf";
 }
 
+version (Posix)
+{
+	import core.sys.posix.unistd;
+	import std.conv : octal;
+}
+
 version (Windows)
 	enum string platformDir = "windows";
 else
@@ -382,6 +388,14 @@ void install(bool yes, bool dryRun, string location = null)
 		remove(testFile);
 	}
 
+	version (Posix)
+	{
+		int owner = dmdPath.getOwner();
+		int group = dmdPath.getGroup();
+		int mode = items.front.dstPath.getAttributes() & octal!666;
+		log("UID=%d GID=%d Mode=%03o".format(owner, group, mode));
+	}
+
 	log("Actions to run:");
 
 	foreach (item; items)
@@ -458,6 +472,25 @@ void install(bool yes, bool dryRun, string location = null)
 			atomic!cpObject(item.srcPath, item.dstPath);
 		}
 
+	version (Posix)
+	{
+		log("Applying attributes...");
+
+		bool isRoot = geteuid()==0;
+
+		foreach (item; items)
+			if (item.name !in existingComponents || updateNeeded[item.name])
+			{
+				item.dstPath.recursive!setMode(mode);
+
+				if (isRoot)
+					item.dstPath.recursive!setOwner(owner, group);
+				else
+					if (item.dstPath.getOwner() != owner || item.dstPath.getGroup() != group)
+						log("Warning: UID/GID mismatch for " ~ item.dstPath);
+			}
+	}
+
 	log("Install OK.");
 	log("You can undo this action by running `digger uninstall`.");
 }
@@ -504,6 +537,49 @@ void verifyObject(InstalledObject* obj, string uninstallPath, string verb)
 		"Object changed since it was installed: %s\nPlease %s manually.".format(path, verb));
 }
 
+version(Posix) bool attrIsExec(int attr) { return (attr & octal!111) != 0; }
+
+/// Set access modes while preserving executable bit.
+version(Posix)
+void setMode(string fn, int mode)
+{
+	auto attr = fn.getAttributes();
+	mode |= attr & ~octal!777;
+	if (attr.attrIsExec || attr.attrIsDir)
+		mode = mode | ((mode & octal!444) >> 2); // executable iff readable
+	fn.setAttributes(mode);
+}
+
+/// Apply a function recursively to all files and directories under given path.
+template recursive(alias fun)
+{
+	void recursive(Args...)(string fn, auto ref Args args)
+	{
+		fun(fn, args);
+		if (fn.isDir)
+			foreach (de; fn.dirEntries(SpanMode.shallow))
+				recursive(de.name, args);
+	}
+}
+
+void rmObject(string path) { path.isDir ? path.rmdirRecurse() : path.remove(); }
+
+void cpObject(string src, string dst)
+{
+	if (src.isDir)
+	{
+		mkdir(dst);
+		dst.setAttributes(src.getAttributes());
+		foreach (de; src.dirEntries(SpanMode.shallow))
+			cpObject(de.name, buildPath(dst, de.baseName));
+	}
+	else
+	{
+		src.copy(dst);
+		dst.setAttributes(src.getAttributes());
+	}
+}
+
 string mdDir(string dir)
 {
 	import std.stdio : File;
@@ -526,20 +602,6 @@ string mdDir(string dir)
 	// https://issues.dlang.org/show_bug.cgi?id=9279
 	auto str = result.toHexString();
 	return str[].idup;
-}
-
-void rmObject(string path) { path.isDir ? path.rmdirRecurse() : path.remove(); }
-
-void cpObject(string src, string dst)
-{
-	if (src.isDir)
-	{
-		mkdir(dst);
-		foreach (de; src.dirEntries(SpanMode.shallow))
-			cpObject(de.name, buildPath(dst, de.baseName));
-	}
-	else
-		copy(src, dst);
 }
 
 string mdObject(string path)
