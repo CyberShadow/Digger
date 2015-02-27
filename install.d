@@ -510,7 +510,8 @@ void uninstall(bool dryRun, string location = null)
 	foreach (obj; uninstallData.objects)
 		verifyObject(obj, uninstallPath, "uninstall");
 
-	log("Verify OK, uninstalling...");
+	log("Verify OK.");
+	log(dryRun ? "Actions to run:" : "Uninstalling...");
 
 	foreach (obj; uninstallData.objects)
 	{
