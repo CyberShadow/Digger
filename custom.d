@@ -75,7 +75,7 @@ class DiggerCustomizer : DCustomizer
 
 		std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
 
-		d.log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
+		d.log("Build successful.\n\nTo start using it, run `digger install`, or add %s to your PATH.".format(
 			resultDir.buildPath("bin").absolutePath()
 		));
 	}
