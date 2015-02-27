@@ -310,7 +310,10 @@ void install(bool yes, bool dryRun, string location = null)
 		log("%s update existing installation.".format(verb));
 	}
 	else
+	{
 		log("This %s be a new Digger installation.".format(verb.toLower));
+		log("Uninstall data %s be saved in %s".format(verb.toLower, uninstallPath));
+	}
 
 	auto libFileName = getLibFileName(buildInfo);
 	auto libName = libFileName.stripExtension ~ "-" ~ buildInfo.config.model ~ libFileName.extension;
