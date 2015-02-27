@@ -64,6 +64,21 @@ You can undo this at any time by running:
 
     $ digger uninstall
 
+Successive installs will not clobber the backups created by the first `digger install` invocation,
+so `digger uninstall` will revert to the state from before you first ran `digger install`.
+
+You can also simultaneously install 32-bit and 64-bit versions of Phobos by first building and installing a 32-bit DMD,
+then a 64-bit DMD (`--64`). `digger uninstall` will revert both actions.
+
+`digger install` should be compatible with [DVM](https://github.com/jacob-carlborg/dvm) or any other DMD installation.
+To upgrade a system install of DMD on POSIX, simply run `digger install` as root.
+
+Installation and uninstallation are designed with safety in mind.
+When installing, Digger will provide detailed information and ask for confirmation before making any changes
+(you can use the `--dry-run` / `--yes` switches to suppress the prompt).
+Uninstallation will refuse to remove files if they were modified since they were installed,
+to prevent accidentally clobbering user work (you can use `--force` to override this).
+
 ##### Bisecting
 
 To bisect D's history to find which pull request introduced a bug, first copy `bisect.ini.sample` to `bisect.ini`, adjust as instructed by the comments, then run:
