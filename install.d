@@ -377,15 +377,21 @@ void install(bool yes, bool dryRun, string location = null)
 			uninstallData.objects ~= obj;
 	}
 
-	log("Testing write access:");
+	log("Testing write access and filesystem boundaries:");
 
 	string[] dirs = items.map!(item => item.dstPath.dirName).array.sort().uniq().array;
 	foreach (dir; dirs)
 	{
 		log(" - %s".format(dir));
-		auto testFile = dir.buildPath(".digger-test");
-		std.file.write(testFile, "");
-		remove(testFile);
+		auto testPathA = dir.buildPath(".digger-test");
+		auto testPathB = componentPaths.binPath.buildPath(".digger-test2");
+
+		std.file.write(testPathA, "test");
+		{
+			scope(failure) remove(testPathA);
+			rename(testPathA, testPathB);
+		}
+		remove(testPathB);
 	}
 
 	version (Posix)
