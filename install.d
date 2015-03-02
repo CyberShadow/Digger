@@ -318,7 +318,7 @@ void install(bool yes, bool dryRun, string location = null)
 	else
 	{
 		log("This %s be a new Digger installation.".format(verb.toLower));
-		log("Uninstall data %s be saved in %s".format(verb.toLower, uninstallPath));
+		log("Backups and uninstall data %s be saved in %s".format(verb.toLower, uninstallPath));
 	}
 
 	auto libFileName = getLibFileName(buildInfo);
@@ -402,7 +402,7 @@ void install(bool yes, bool dryRun, string location = null)
 		log("UID=%d GID=%d Mode=%03o".format(owner, group, mode));
 	}
 
-	log("Actions to run:");
+	log("Things to do:");
 
 	foreach (item; items)
 	{
@@ -416,6 +416,8 @@ void install(bool yes, bool dryRun, string location = null)
 			action = "Install";
 		log(" - %s component %s from %s to %s".format(action, item.name, item.srcPath, item.dstPath));
 	}
+
+	log("You %s be able to undo this action by running `digger uninstall`.".format(verb.toLower));
 
 	if (dryRun)
 	{
