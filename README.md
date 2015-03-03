@@ -30,7 +30,7 @@ You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Di
     $ digger build v2.064.2
 
     # build for x86-64
-    $ digger build --64 v2.064.2
+    $ digger build --model=64 v2.064.2
 
     # build commit from a point in time
     $ digger build "@ 3 weeks ago"
@@ -68,7 +68,7 @@ Successive installs will not clobber the backups created by the first `digger in
 so `digger uninstall` will revert to the state from before you first ran `digger install`.
 
 You can also simultaneously install 32-bit and 64-bit versions of Phobos by first building and installing a 32-bit DMD,
-then a 64-bit DMD (`--64`). `digger uninstall` will revert both actions.
+then a 64-bit DMD (`--model=64`). `digger uninstall` will revert both actions.
 
 `digger install` should be compatible with [DVM](https://github.com/jacob-carlborg/dvm) or any other DMD installation.
 To upgrade a system install of DMD on POSIX, simply run `digger install` as root.

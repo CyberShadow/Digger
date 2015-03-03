@@ -9,6 +9,7 @@ Digger Next
  * Add `install` and `uninstall` actions
  * Add `--help` text
  * Add `--make-args` option
+ * Add `--model` option to replace the `--64` switch
  * Add `--host` and `--port` to `digger-web`
  * Various smaller improvements
 

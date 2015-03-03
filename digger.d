@@ -25,7 +25,8 @@ import repo;
 version(Windows) static import ae.sys.windows;
 
 alias BuildOptions = TypeTuple!(
-	Switch!("Build a 64-bit compiler", 0, "64"),
+	Switch!(hiddenOption, 0, "64"),
+	Option!(string, "Select model (32 or 64). On this system, the default is " ~ BuildConfig.defaultModel, null, 0, "model"),
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
 );
 
@@ -37,7 +38,9 @@ BuildConfig parseBuildOptions(BuildOptions options)
 	BuildConfig buildConfig;
 	if (options[0])
 		buildConfig.model = "64";
-	buildConfig.makeArgs = options[1];
+	if (options[1])
+		buildConfig.model = options[1];
+	buildConfig.makeArgs = options[2];
 	return buildConfig;
 }
 
