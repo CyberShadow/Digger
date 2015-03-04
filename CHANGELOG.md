@@ -1,8 +1,8 @@
 Digger Changelog
 ================
 
-Digger Next
------------
+Digger v1.1 (2015-03-04)
+------------------------
 
  * Add `rebuild` action, for incremental rebuilds
    (thanks to Sergei Nosov)
