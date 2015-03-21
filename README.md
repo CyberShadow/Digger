@@ -13,7 +13,7 @@ Digger has a simple command-line interface, as well as a web interface for custo
 
 On POSIX, Digger needs git, g++, binutils and make.
 
-On Windows, Digger will download and unpack everything it needs (Git, DMC, 7-Zip, WiX, VS2013 and Windows SDK components).
+On Windows, Digger will download and unpack everything it needs (Git, DMC, DMD, 7-Zip, WiX, VS2013 and Windows SDK components).
 
 ### Get Digger
 
@@ -116,14 +116,7 @@ This is a benign warning.
 The code which builds D and manages the git repository is located in the [ae library](https://github.com/CyberShadow/ae)
 (`ae.sys.d` package), so as to be reusable.
 
-It is split up in the following layers (bottom first):
-
-- [`ae.sys.d.builder`](https://github.com/CyberShadow/ae/blob/master/sys/d/builder.d) -
-  build D from source code located in a directory
-- [`ae.sys.d.manager`](https://github.com/CyberShadow/ae/blob/master/sys/d/manager.d) -
-  manage a D checkout and its dependencies
-- [`ae.sys.d.customizer`](https://github.com/CyberShadow/ae/blob/master/sys/d/customizer.d) -
-  manage a customized D checkout (handles merging forks and pull requests).
+Currently, the bulk of the code is in [`ae.sys.d.manager`](https://github.com/CyberShadow/ae/blob/master/sys/d/manager.d).
 
 `ae.sys.d.manager` clones [a meta-repository on BitBucket](https://bitbucket.org/cybershadow/d), which contains the major D components as submodules.
 The meta-repository is created and maintained by another program, [D-dot-git](https://github.com/CyberShadow/D-dot-git).
@@ -138,7 +131,6 @@ Module list is as follows:
 
 - `config` - configuration
 - `repo` - customized D repository management, revision parsing
-- `cache` - build caching
 - `bisect` - history bisection
 - `custom` - custom build management
 - `install` - installation

@@ -17,7 +17,6 @@ import ae.utils.meta : structFun;
 import ae.utils.text : eatLine;
 
 import bisect;
-import cache;
 import common;
 import config;
 import custom;
@@ -29,7 +28,7 @@ version(Windows) static import ae.sys.windows;
 
 alias BuildOptions = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
-	Option!(string, "Select model (32 or 64). On this system, the default is " ~ BuildConfig.defaultModel, null, 0, "model"),
+	Option!(string, "Select model (32 or 64). On this system, the default is " ~ BuildConfig.components.common.defaultModel, null, 0, "model"),
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
 );
 
@@ -40,10 +39,10 @@ BuildConfig parseBuildOptions(BuildOptions options)
 {
 	BuildConfig buildConfig;
 	if (options[0])
-		buildConfig.model = "64";
+		buildConfig.components.common.model = "64";
 	if (options[1])
-		buildConfig.model = options[1];
-	buildConfig.makeArgs = options[2];
+		buildConfig.components.common.model = options[1];
+	buildConfig.components.common.makeArgs = options[2];
 	return buildConfig;
 }
 
@@ -96,7 +95,7 @@ static:
 	@(`Compact the cache (replace identical files with hard links)`)
 	int compact()
 	{
-		optimizeCache();
+		d.optimizeCache();
 		return 0;
 	}
 
@@ -115,8 +114,9 @@ static:
 
 	int show(string revision)
 	{
-		d.repo.run("log", "-n1", revision);
-		d.repo.run("log", "-n1", "--pretty=format:t=%ct", revision);
+		d.getMetaRepo().needRepo();
+		d.getMetaRepo().git.run("log", "-n1", revision);
+		d.getMetaRepo().git.run("log", "-n1", "--pretty=format:t=%ct", revision);
 		return 0;
 	}
 

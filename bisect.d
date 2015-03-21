@@ -8,7 +8,6 @@ import std.path;
 import std.process;
 import std.string;
 
-import ae.sys.d.builder;
 import ae.sys.file;
 import ae.utils.sini;
 
@@ -41,23 +40,25 @@ int doBisect(bool inBisect, bool noVerify, string bisectConfigFile)
 		.splitLines()
 		.parseStructuredIni!BisectConfig();
 
+	d.getMetaRepo().needRepo();
+	auto repo = &d.getMetaRepo().git;
+
 	if (inBisect)
 	{
 		log("Invoked by git-bisect - performing bisect step.");
-		auto result = doBisectStep();
+		auto result = doBisectStep(d.getMetaRepo().getRef("BISECT_HEAD"));
 		if (bisectConfig.reverse && result != EXIT_UNTESTABLE)
 			result = result ? 0 : 1;
 		return result;
 	}
 
-	d.initialize(!opts.offline);
+	d.update();
 
 	void test(bool good, string rev)
 	{
 		auto name = good ? "GOOD" : "BAD";
 		log("Sanity-check, testing %s revision %s...".format(name, rev));
-		d.repo.run("checkout", rev);
-		auto result = doBisectStep();
+		auto result = doBisectStep(rev);
 		enforce(result != EXIT_UNTESTABLE,
 			"%s revision %s is not testable"
 			.format(name, rev));
@@ -73,8 +74,8 @@ int doBisect(bool inBisect, bool noVerify, string bisectConfigFile)
 
 		enforce(good != bad, "Good and bad revisions are both " ~ bad);
 
-		auto nGood = d.repo.query(["log", "--format=oneline", good]).splitLines().length;
-		auto nBad  = d.repo.query(["log", "--format=oneline", bad ]).splitLines().length;
+		auto nGood = repo.query(["log", "--format=oneline", good]).splitLines().length;
+		auto nBad  = repo.query(["log", "--format=oneline", bad ]).splitLines().length;
 		if (bisectConfig.reverse)
 		{
 			enforce(nBad < nGood, "Bad commit is newer than good commit (and reverse search is enabled)");
@@ -92,8 +93,8 @@ int doBisect(bool inBisect, bool noVerify, string bisectConfigFile)
 	auto startPoints = [getRev!false(), getRev!true()];
 	if (bisectConfig.reverse)
 		startPoints.reverse();
-	d.repo.run(["bisect", "start"] ~ startPoints);
-	d.repo.run("bisect", "run",
+	repo.run(["bisect", "start", "--no-checkout"] ~ startPoints);
+	repo.run("bisect", "run",
 		thisExePath,
 		"--dir", getcwd(),
 		"--config-file", opts.configFile,
@@ -104,31 +105,40 @@ int doBisect(bool inBisect, bool noVerify, string bisectConfigFile)
 	return 0;
 }
 
-int doBisectStep()
+int doBisectStep(string rev)
 {
-	d.prepareEnv();
-
-	auto oldEnv = d.dEnv.dup;
-	scope(exit) d.dEnv = oldEnv;
-	d.applyEnv(bisectConfig.environment);
+	log("Testing revision: " ~ rev);
 
 	try
-		prepareBuild(bisectConfig.build);
+	{
+		if (currentDir.exists)
+			currentDir.rmdirRecurse();
+
+		auto state = d.begin(rev);
+
+		scope (exit)
+			if (d.buildDir.exists)
+				rename(d.buildDir, currentDir);
+
+		d.build(state, bisectConfig.build);
+	}
 	catch (Exception e)
 	{
 		log("Build failed: " ~ e.toString());
 		return EXIT_UNTESTABLE;
 	}
 
+	d.applyEnv(bisectConfig.environment);
+
 	auto oldPath = environment["PATH"];
 	scope(exit) environment["PATH"] = oldPath;
 
 	// Add the final DMD to the environment PATH
-	d.dEnv["PATH"] = buildPath(currentDir, "bin").absolutePath() ~ pathSeparator ~ d.dEnv["PATH"];
-	environment["PATH"] = d.dEnv["PATH"];
+	d.config.env["PATH"] = buildPath(currentDir, "bin").absolutePath() ~ pathSeparator ~ d.config.env["PATH"];
+	environment["PATH"] = d.config.env["PATH"];
 
 	d.logProgress("Running test command...");
-	auto result = spawnShell(bisectConfig.tester, d.dEnv, Config.newEnv).wait();
+	auto result = spawnShell(bisectConfig.tester, d.config.env, Config.newEnv).wait();
 	d.logProgress("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
 	return result;
 }
@@ -167,7 +177,9 @@ int doDelve(bool inBisect)
 		log("Invoked by git-bisect - performing bisect step.");
 
 		import std.conv;
-		auto t = d.repo.query("log", "-n1", "--pretty=format:%ct").to!int();
+		d.getMetaRepo().needRepo();
+		auto rev = d.getMetaRepo().getRef("BISECT_HEAD");
+		auto t = d.getMetaRepo().git.query("log", "-n1", "--pretty=format:%ct", rev).to!int();
 		foreach (r; badCommits)
 			if (r.startTime <= t && t < r.endTime)
 			{
@@ -175,10 +187,11 @@ int doDelve(bool inBisect)
 				return EXIT_UNTESTABLE;
 			}
 
-		inDelve = true;
+		d.config.cacheFailures = false;
+		auto state = d.begin(rev);
 		try
 		{
-			prepareBuild(bisectConfig.build);
+			d.build(state, bisectConfig.build);
 			return 1;
 		}
 		catch (Exception e)
@@ -189,10 +202,10 @@ int doDelve(bool inBisect)
 	}
 	else
 	{
-		d.initialize(false);
-		auto root = d.repo.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
-		d.repo.run(["bisect", "start", "master", root]);
-		d.repo.run("bisect", "run",
+		d.getMetaRepo.needRepo();
+		auto root = d.getMetaRepo().git.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
+		d.getMetaRepo().git.run(["bisect", "start", "--no-checkout", "master", root]);
+		d.getMetaRepo().git.run("bisect", "run",
 			thisExePath,
 			"--dir", getcwd(),
 			"--config-file", opts.configFile,
@@ -200,24 +213,4 @@ int doDelve(bool inBisect)
 		);
 		return 0;
 	}
-}
-
-// ---------------------------------------------------------------------------
-
-/// Builds D from whatever is checked out in the repo directory.
-/// If caching is enabled, will save to or retrieve from cache.
-void prepareBuild(BuildConfig buildConfig)
-{
-	d.config.build = buildConfig;
-
-	if (currentDir.exists)
-		currentDir.rmdirRecurse();
-
-	d.reset();
-
-	scope (exit)
-		if (d.buildDir.exists)
-			rename(d.buildDir, currentDir);
-
-	d.build();
 }

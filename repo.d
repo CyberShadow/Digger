@@ -11,27 +11,52 @@ import std.regex;
 import std.string;
 
 import ae.sys.file;
-import ae.sys.d.builder;
 import ae.sys.d.manager;
 
-import cache;
 import common;
-import config : config;
+import config : config, opts;
 
-alias BuildConfig = DBuilder.Config.Build;
-enum UNBUILDABLE_MARKER = "unbuildable";
-bool inDelve;
+//alias BuildConfig = DManager.Config.Build;
+
+// Wrapper type for compatibility with 1.x INI files.
+struct BuildConfig
+{
+	DManager.Config.Build.Components components;
+
+	string model;
+	bool debugDMD;
+
+	@property DManager.Config.Build convert()
+	{
+		DManager.Config.Build build;
+		build.components = components;
+		if (model)
+			build.components.common.model = model;
+		if (debugDMD)
+			build.components.dmd.debugDMD = true;
+		return build;
+	}
+
+	alias convert this;
+}
 
 final class DiggerManager : DManager
 {
 	this()
 	{
-		this.config.workDir = .config.workDir.expandTilde();
+		this.config.local.workDir = .config.workDir.expandTilde();
+		this.config.offline = .opts.offline;
+		this.config.persistentCache = .config.cache;
 	}
 
 	override void log(string s)
 	{
 		common.log(s);
+	}
+
+	void logProgress(string s)
+	{
+		log((" " ~ s ~ " ").center(70, '-'));
 	}
 
 	override void prepareEnv()
@@ -44,40 +69,28 @@ final class DiggerManager : DManager
 	void applyEnv(in string[string] env)
 	{
 		auto oldEnv = environment.toAA();
-		foreach (name, value; dEnv)
+		foreach (name, value; this.config.env)
 			oldEnv[name] = value;
 		foreach (name, value; env)
 		{
 			string newValue = value;
 			foreach (oldName, oldValue; oldEnv)
 				newValue = newValue.replace("%" ~ oldName ~ "%", oldValue);
-			dEnv[name] = oldEnv[name] = newValue;
+			config.env[name] = oldEnv[name] = newValue;
 		}
 	}
 
-	/// This override adds caching.
-	override void build()
+	override MetaRepository getMetaRepo()
 	{
-		void doBuild()
-		{
-			// An incomplete build is useless, nuke the directory
-			// and create a new one just for the UNBUILDABLE_MARKER.
-			scope (failure)
-			{
-				if (buildDir.exists)
-				{
-					rmdirRecurse(buildDir);
-					mkdir(buildDir);
-					buildPath(buildDir, UNBUILDABLE_MARKER).touch();
-				}
-			}
+		if (!repoDir.exists)
+			log("First run detected.\nPlease be patient, " ~
+				"cloning everything might take a few minutes...\n");
+		return super.getMetaRepo();
+	}
 
-			super.build();
-		}
-
-		d.prepareRepoPrerequisites();
-		auto commit = d.repo.query("rev-parse", "HEAD");
-		cached(commit, config.build, buildDir, &doBuild);
+	override string getCallbackCommand()
+	{
+		return escapeShellFileName(thisExePath) ~ " do callback";
 	}
 }
 
@@ -107,19 +120,24 @@ string parseRev(string rev)
 	if (rev.empty)
 		rev = "origin/master";
 
+	auto metaRepo = d.getMetaRepo();
+	metaRepo.needRepo();
+	metaRepo.update();
+	auto repo = &metaRepo.git;
+
 	try
-		return d.repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
+		return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
 	catch (Exception e)
 	try
-		return d.repo.query(args ~ ["-n", "1", rev]);
+		return repo.query(args ~ ["-n", "1", rev]);
 	catch (Exception e)
 		{}
 
-	auto grep = d.repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
+	auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
 	if (grep.length == 1)
 		return grep[0];
 
-	auto pickaxe = d.repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
+	auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
 	if (pickaxe.length && pickaxe.length <= 2) // removed <- added
 		return pickaxe[$-1];   // the one where it was added
 

@@ -49,12 +49,12 @@ tester = cd C:\Temp && dmd -o- test.d
 # Target model.
 # Whether to target 32 or 64 bits when building D components.
 
-model = 32
+components.common.model = 32
 
 # Whether to build a debug compiler.
 # Debug compilers are built quicker, but compile D code slower.
 
-debugDMD = false
+components.dmd.debugDMD = false
 
 # Build/test environment.
 # See digger.ini.sample for an explanation.

@@ -169,7 +169,7 @@ ComponentPaths parseConfig(string dmdPath, BuildInfo buildInfo)
 		{
 			auto sectionName = line[1..$-1];
 			parsing = sectionName == "Environment"
-			       || sectionName == "Environment" ~ buildInfo.config.model;
+			       || sectionName == "Environment" ~ buildInfo.config.components.common.model;
 		}
 		else
 		if (parsing && line.canFind("="))
@@ -262,7 +262,10 @@ ComponentPaths parseConfig(string dmdPath, BuildInfo buildInfo)
 string getLibFileName(BuildInfo buildInfo)
 {
 	version (Windows)
-		return "phobos%s.lib".format(buildInfo.config.model == "32" ? "" : buildInfo.config.model);
+	{
+		auto model = buildInfo.config.components.common.model;
+		return "phobos%s.lib".format(model == "32" ? "" : model);
+	}
 	else
 		return "libphobos2.a";
 }
@@ -322,7 +325,7 @@ void install(bool yes, bool dryRun, string location = null)
 	}
 
 	auto libFileName = getLibFileName(buildInfo);
-	auto libName = libFileName.stripExtension ~ "-" ~ buildInfo.config.model ~ libFileName.extension;
+	auto libName = libFileName.stripExtension ~ "-" ~ buildInfo.config.components.common.model ~ libFileName.extension;
 
 	static struct Item
 	{

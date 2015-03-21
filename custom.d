@@ -2,6 +2,7 @@ module custom;
 
 import std.algorithm;
 import std.array;
+import std.conv;
 import std.exception;
 import std.file;
 import std.getopt;
@@ -9,7 +10,7 @@ import std.path;
 import std.stdio;
 import std.string;
 
-import ae.sys.d.customizer;
+import ae.sys.d.manager;
 import ae.utils.array;
 import ae.utils.json;
 import ae.utils.regex;
@@ -33,95 +34,128 @@ struct BuildInfo
 
 enum buildInfoFileName = "build-info.json";
 
-class DiggerCustomizer : DCustomizer
+void prepareResult()
 {
-	this()
+	log("Moving...");
+	if (resultDir.exists)
+		resultDir.rmdirRecurse();
+	rename(d.buildDir, resultDir);
+
+	log("Build successful.\n\nTo start using it, run `digger install`, or add %s to your PATH.".format(
+		resultDir.buildPath("bin").absolutePath()
+	));
+}
+
+/// Build the customized D version.
+/// The result will be in resultDir.
+void runBuild(string spec, DManager.SubmoduleState submoduleState, BuildConfig buildConfig, in string[] components = DManager.defaultComponents)
+{
+	d.build(submoduleState, buildConfig, components);
+	prepareResult();
+	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
+}
+
+/// Perform an incremental build, i.e. don't clean or fetch anything from remote repos
+void incrementalBuild(BuildConfig buildConfig)
+{
+	d.rebuild(buildConfig);
+	prepareResult();
+}
+
+/// Implements transient persistence for the current customization state.
+struct DCustomizer
+{
+	struct CustomizationState
 	{
-		super(repo.d);
-		if (opts.offline)
-			needUpdate = false;
+		string spec;
+		DManager.SubmoduleState submoduleState;
+		string[string][string] pulls;
+		string[string][string][string] forks;
+	}
+	CustomizationState state;
+
+	enum fileName = "customization-state.json";
+
+	void load()
+	{
+		state = fileName.readText().jsonParse!CustomizationState();
 	}
 
-	string spec; // informational
-
-	static bool needUpdate = true;
-
-	override void initialize(bool update = true)
+	void save()
 	{
-		if (!d.repoDir.exists)
-			d.log("First run detected.\nPlease be patient, " ~
-				"cloning everything might take a few minutes...\n");
-
-		if (needUpdate && update)
-		{
-			super.initialize(true);
-			needUpdate = false;
-		}
-		else
-			super.initialize(false);
+		std.file.write(fileName, state.toJson());
 	}
 
-	/// Build the customized D version.
-	/// The result will be in resultDir.
-	void runBuild(BuildConfig buildConfig)
+	void finish()
 	{
-		d.config.build = buildConfig;
-		d.build();
-
-		d.log("Moving...");
-		if (resultDir.exists)
-			resultDir.rmdirRecurse();
-		rename(d.buildDir, resultDir);
-
-		std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
-
-		d.log("Build successful.\n\nTo start using it, run `digger install`, or add %s to your PATH.".format(
-			resultDir.buildPath("bin").absolutePath()
-		));
+		std.file.remove(fileName);
 	}
 
-	override string getCallbackCommand()
+	string getPull(string submoduleName, string pullNumber)
 	{
-		return escapeShellFileName(thisExePath) ~ " do callback";
+		string rev = state.pulls.get(submoduleName, null).get(pullNumber, null);
+		if (!rev)
+			state.pulls[submoduleName][pullNumber] = rev = d.getPull(submoduleName, pullNumber.to!int);
+		return rev;
+	}
+
+	string getFork(string submoduleName, string user, string branch)
+	{
+		string rev = state.forks.get(submoduleName, null).get(user, null).get(branch, null);
+		if (!rev)
+			state.forks[submoduleName][user][branch] = rev = d.getFork(submoduleName, user, branch);
+		return rev;
 	}
 }
+
+DCustomizer customizer;
 
 int handleWebTask(string[] args)
 {
 	enforce(args.length, "No task specified");
-	auto customizer = new DiggerCustomizer();
 	switch (args[0])
 	{
 		case "initialize":
-			customizer.initialize();
+			d.update();
 			log("Ready.");
 			return 0;
 		case "begin":
-			customizer.spec = "digger-web @ " ~ (args.length == 1 ? "(master)" : args[1]);
-			customizer.begin(args.length == 1 ? null : args[1]);
+			customizer.state.spec = "digger-web @ " ~ (args.length == 1 ? "(master)" : args[1]);
+			customizer.state.submoduleState = d.begin(parseRev(args.length == 1 ? null : args[1]));
+			customizer.save();
 			log("Ready.");
 			return 0;
 		case "merge":
 			enforce(args.length == 3);
-			customizer.mergePull(args[1], args[2]);
+			customizer.load();
+			d.merge(customizer.state.submoduleState, args[1], customizer.getPull(args[1], args[2]));
+			customizer.save();
 			return 0;
 		case "unmerge":
 			enforce(args.length == 3);
-			customizer.unmergePull(args[1], args[2]);
+			customizer.load();
+			d.unmerge(customizer.state.submoduleState, args[1], customizer.getPull(args[1], args[2]));
+			customizer.save();
 			return 0;
 		case "merge-fork":
 			enforce(args.length == 4);
-			customizer.mergeFork(args[1], args[2], args[3]);
+			customizer.load();
+			d.merge(customizer.state.submoduleState, args[2], customizer.getFork(args[2], args[1], args[3]));
+			customizer.save();
 			return 0;
 		case "unmerge-fork":
 			enforce(args.length == 4);
-			customizer.unmergeFork(args[1], args[2], args[3]);
+			customizer.load();
+			d.unmerge(customizer.state.submoduleState, args[2], customizer.getFork(args[2], args[1], args[3]));
+			customizer.save();
 			return 0;
 		case "callback":
-			customizer.callback(args[1..$]);
+			d.callback(args[1..$]);
 			return 0;
 		case "build":
 		{
+			customizer.load();
+
 			string model;
 			getopt(args,
 				"model", &model,
@@ -130,20 +164,21 @@ int handleWebTask(string[] args)
 
 			BuildConfig buildConfig;
 			if (model.length)
-				buildConfig.model = model;
+				buildConfig.components.common.model = model;
 
-			customizer.runBuild(buildConfig);
+			runBuild(customizer.state.spec, customizer.state.submoduleState, buildConfig);
+			customizer.finish();
 			return 0;
 		}
 		case "branches":
-			d.prepareRepoPrerequisites();
-			foreach (line; d.repo.query("branch", "--remotes").splitLines())
+			d.getMetaRepo().needRepo();
+			foreach (line; d.getMetaRepo().git.query("branch", "--remotes").splitLines())
 				if (line.startsWith("  origin/") && line[2..$].indexOf(" ") < 0)
 					writeln(line[9..$]);
 			return 0;
 		case "tags":
-			d.prepareRepoPrerequisites();
-			d.repo.run("tag");
+			d.getMetaRepo().needRepo();
+			d.getMetaRepo().git.run("tag");
 			return 0;
 		case "install-preview":
 			install.install(false, true);
@@ -162,42 +197,34 @@ void buildCustom(string spec, BuildConfig buildConfig)
 {
 	log("Building spec: " ~ spec);
 
-	static DiggerCustomizer customizer;
-	if (!customizer)
-	{
-		customizer = new DiggerCustomizer();
-		customizer.initialize();
-	}
-
 	auto parts = spec.split("+");
 	parts = parts.map!strip().array();
 	if (parts.empty)
 		parts = [null];
 	auto rev = parseRev(parts.shift());
 
-	customizer.begin(rev);
+	auto state = d.begin(rev);
 
 	foreach (part; parts)
 	{
 		if (part.matchCaptures(re!`^(\w+)#(\d+)$`,
-			(string component, string pull)
+			(string component, int pull)
 			{
-				customizer.mergePull(component, pull);
+				d.merge(state, component, d.getPull(component, pull));
 			}))
 			continue;
 
 		if (part.matchCaptures(re!`^(\w+)/(\w[\w\-]*)/(\w[\w\-]*)$`,
-			(string user, string repo, string branch)
+			(string user, string component, string branch)
 			{
-				customizer.mergeFork(user, repo, branch);
+				d.merge(state, component, d.getFork(component, user, branch));
 			}))
 			continue;
 
 		throw new Exception("Don't know how to apply customization: " ~ spec);
 	}
 
-	customizer.spec = spec;
-	customizer.runBuild(buildConfig);
+	runBuild(spec, state, buildConfig);
 }
 
 /// Build D versions successively, for the purpose of caching them.
@@ -209,20 +236,4 @@ void buildAll(string spec, BuildConfig buildConfig, int step = 1)
 			buildCustom("%s@#%d".format(spec, n), buildConfig);
 		catch (Exception e)
 			log(e.toString());
-}
-
-/// Perform an incremental build, i.e. don't fetch anything from remote repos
-void incrementalBuild(BuildConfig buildConfig)
-{
-	repo.d.log("Moving...");
-	if (resultDir.exists)
-		resultDir.rmdirRecurse();
-
-	repo.d.config.build = buildConfig;
-	repo.d.incrementalBuild();
-
-	rename(repo.d.buildDir, resultDir);
-	repo.d.log("Build successful.\n\nAdd %s to your PATH to start using it.".format(
-		resultDir.buildPath("bin").absolutePath()
-	));
 }

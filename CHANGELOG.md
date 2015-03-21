@@ -1,6 +1,13 @@
 Digger Changelog
 ================
 
+Digger v1.2 (????-??-??)
+------------------------
+
+ * `idgen.d` update (DMD now requires DMD to build)
+ * Full core overhaul, for improved performance, granularity and extensibility.
+   A fresh install is recommended.
+
 Digger v1.1 (2015-03-04)
 ------------------------
 
