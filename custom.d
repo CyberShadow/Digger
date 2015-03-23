@@ -116,10 +116,11 @@ int handleWebTask(string[] args)
 	switch (args[0])
 	{
 		case "initialize":
-			d.update();
+			d.needUpdate();
 			log("Ready.");
 			return 0;
 		case "begin":
+			d.haveUpdate = true; // already updated in "initialize"
 			customizer.state.spec = "digger-web @ " ~ (args.length == 1 ? "(master)" : args[1]);
 			customizer.state.submoduleState = d.begin(parseRev(args.length == 1 ? null : args[1]));
 			customizer.save();

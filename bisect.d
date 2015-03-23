@@ -52,7 +52,7 @@ int doBisect(bool inBisect, bool noVerify, string bisectConfigFile)
 		return result;
 	}
 
-	d.update();
+	d.needUpdate();
 
 	void test(bool good, string rev)
 	{

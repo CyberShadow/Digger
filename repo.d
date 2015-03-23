@@ -92,6 +92,17 @@ final class DiggerManager : DManager
 	{
 		return escapeShellFileName(thisExePath) ~ " do callback";
 	}
+
+	bool haveUpdate;
+
+	void needUpdate()
+	{
+		if (!haveUpdate)
+		{
+			d.update();
+			haveUpdate = true;
+		}
+	}
 }
 
 DiggerManager d;
@@ -120,9 +131,10 @@ string parseRev(string rev)
 	if (rev.empty)
 		rev = "origin/master";
 
+	d.needUpdate();
+
 	auto metaRepo = d.getMetaRepo();
 	metaRepo.needRepo();
-	metaRepo.update();
 	auto repo = &metaRepo.git;
 
 	try
