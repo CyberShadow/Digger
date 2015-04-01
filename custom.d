@@ -233,12 +233,13 @@ void buildCustom(string spec, BuildConfig buildConfig)
 void buildAll(string spec, BuildConfig buildConfig)
 {
 	d.needUpdate();
+	auto commits = d.getLog("refs/remotes/origin/" ~ spec);
+	commits.reverse(); // oldest first
+
 	for (int step = 1 << 30; step; step >>= 1)
 	{
-		auto commits = d.getLog("refs/remotes/origin/" ~ spec);
 		if (step >= commits.length)
 			continue;
-		commits.reverse(); // oldest first
 
 		log("Building all revisions with step %d (%d/%d revisions)".format(step, commits.length/step, commits.length));
 
