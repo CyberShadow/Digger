@@ -112,6 +112,12 @@ static:
 		return doDelve(inBisect);
 	}
 
+	int purgeUnbuildable()
+	{
+		d.purgeUnbuildable();
+		return 0;
+	}
+
 	int show(string revision)
 	{
 		d.getMetaRepo().needRepo();
