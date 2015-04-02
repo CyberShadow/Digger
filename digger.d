@@ -101,9 +101,9 @@ static:
 
 	// hidden actions
 
-	int buildAll(BuildOptions options, int step = 1, string spec = "master")
+	int buildAll(BuildOptions options, string spec = "master")
 	{
-		.buildAll(spec, parseBuildOptions(options), step);
+		.buildAll(spec, parseBuildOptions(options));
 		return 0;
 	}
 

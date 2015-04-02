@@ -228,13 +228,31 @@ void buildCustom(string spec, BuildConfig buildConfig)
 	runBuild(spec, state, buildConfig);
 }
 
-/// Build D versions successively, for the purpose of caching them.
-void buildAll(string spec, BuildConfig buildConfig, int step = 1)
+/// Build all D versions (for the purpose of caching them).
+/// Build order is in steps of decreasing powers of two.
+void buildAll(string spec, BuildConfig buildConfig)
 {
-	auto commits = d.getLog().length;
-	for (int n=0; n < commits; n += step)
-		try
-			buildCustom("%s@#%d".format(spec, n), buildConfig);
-		catch (Exception e)
-			log(e.toString());
+	d.needUpdate();
+	for (int step = 1 << 30; step; step >>= 1)
+	{
+		auto commits = d.getLog("refs/remotes/origin/" ~ spec);
+		if (step >= commits.length)
+			continue;
+		commits.reverse(); // oldest first
+
+		log("Building all revisions with step %d (%d/%d revisions)".format(step, commits.length/step, commits.length));
+
+		for (int n = step; n < commits.length; n += step)
+		{
+			auto state = d.begin(commits[n].hash);
+			if (d.isCached(state, buildConfig))
+				continue;
+
+			log("Building revision %d/%d".format(n/step, commits.length/step));
+			try
+				d.build(state, buildConfig);
+			catch (Exception e)
+				log(e.toString());
+		}
+	}
 }
