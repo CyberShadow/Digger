@@ -243,16 +243,16 @@ void buildAll(string spec, BuildConfig buildConfig)
 		log("Building all revisions with step %d (%d/%d revisions)".format(step, commits.length/step, commits.length));
 
 		for (int n = step; n < commits.length; n += step)
-		{
-			auto state = d.begin(commits[n].hash);
-			if (d.isCached(state, buildConfig))
-				continue;
-
-			log("Building revision %d/%d".format(n/step, commits.length/step));
 			try
-				d.build(state, buildConfig);
+			{
+				auto state = d.begin(commits[n].hash);
+				if (!d.isCached(state, buildConfig))
+				{
+					log("Building revision %d/%d".format(n/step, commits.length/step));
+					d.build(state, buildConfig);
+				}
+			}
 			catch (Exception e)
 				log(e.toString());
-		}
 	}
 }
