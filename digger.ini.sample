@@ -2,7 +2,9 @@
 # changes below.
 # Digger looks for digger.ini in these locations, in order:
 # current directory, EXE directory, source directory, and
-# ~/.digger/digger.ini.
+# ~/.digger/digger.ini
+# On Posix systems it also looks for /etc/digger.ini as
+# option of last resort
 
 # Working directory.
 # This directory will contain all of Digger's working files:
