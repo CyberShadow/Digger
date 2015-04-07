@@ -53,6 +53,11 @@ shared static this()
 			opts.configFile = buildPath(__FILE__.dirName, CONFIG_FILE);
 		if (!opts.configFile.exists)
 			opts.configFile = buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger", CONFIG_FILE);
+		version (Posix)
+		{
+			if (!opts.configFile.exists)
+				opts.configFile = buildPath("/etc/", CONFIG_FILE);
+		}
 	}
 
 	if (opts.configFile.exists)
