@@ -46,7 +46,7 @@ final class DiggerManager : DManager
 	{
 		this.config.local.workDir = .config.workDir.expandTilde();
 		this.config.offline = .opts.offline;
-		this.config.persistentCache = .config.cache;
+		this.config.cache = .config.cache;
 	}
 
 	override void log(string s)
