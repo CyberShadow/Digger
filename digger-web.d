@@ -328,6 +328,13 @@ void diggerWeb(
 	Option!(string, "Interface to listen on.\nDefault is \"localhost\" (local connections only).", "HOST") host = "localhost",
 	Option!(ushort, "Port to listen on. Default is 0 (random unused port).") port = 0)
 {
+	// Adjust working directory.
+	{
+		import std.file;
+		if (!"web".exists && thisExePath.dirName.buildPath("web").exists)
+			thisExePath.dirName.chdir();
+	}
+
 	web = new WebFrontend(host, port);
 
 	showURL(host, web.port);
