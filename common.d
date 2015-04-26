@@ -2,7 +2,7 @@ module common;
 
 import std.stdio;
 
-enum diggerVersion = "2.0";
+enum diggerVersion = "2.1 alpha";
 
 /// Send to stderr iff we have a console to write to
 void writeToConsole(string s)
