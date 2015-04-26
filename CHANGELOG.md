@@ -1,7 +1,7 @@
 Digger Changelog
 ================
 
-Digger v1.2 (????-??-??)
+Digger v2.0 (2015-04-26)
 ------------------------
 
  * `idgen.d` update (DMD now requires DMD to build)
