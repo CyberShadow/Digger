@@ -18,10 +18,18 @@
 # Build cache.
 # To speed up successive runs, Digger can save the results of
 # each commit's build. The downside is that this uses up disk
-# space (although note that Digger uses hard links to minimize
-# disk usage).
+# space. The following cache engines are available:
+# - none       No persistent cache.
+# - directory  Store built files in a directory tree.
+#              Saves some disk space by hard-linking identical
+#              files.
+# - git        Use a git repository (and git's deduplication /
+#              compression mechanisms). Uses much less disk
+#              space than "directory", but is a little slower.
+# You can periodically run "digger compact" to optimize disk
+# space used by the cache.
 
-# cache = true
+# cache = git
 
 # Build/test environment.
 # By default, Digger completely clears the environment and
