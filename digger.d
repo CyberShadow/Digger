@@ -118,6 +118,12 @@ static:
 		return 0;
 	}
 
+	int migrateCache(string source, string target)
+	{
+		d.migrateCache(source, target);
+		return 0;
+	}
+
 	int show(string revision)
 	{
 		d.getMetaRepo().needRepo();
