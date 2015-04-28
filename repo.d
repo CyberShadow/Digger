@@ -66,20 +66,6 @@ final class DiggerManager : DManager
 		applyEnv(.config.environment);
 	}
 
-	void applyEnv(in string[string] env)
-	{
-		auto oldEnv = environment.toAA();
-		foreach (name, value; this.config.env)
-			oldEnv[name] = value;
-		foreach (name, value; env)
-		{
-			string newValue = value;
-			foreach (oldName, oldValue; oldEnv)
-				newValue = newValue.replace("%" ~ oldName ~ "%", oldValue);
-			config.env[name] = oldEnv[name] = newValue;
-		}
-	}
-
 	override MetaRepository getMetaRepo()
 	{
 		if (!repoDir.exists)
