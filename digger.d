@@ -92,11 +92,35 @@ static:
 		return doBisect(inBisect, noVerify, bisectConfigFile);
 	}
 
-	@(`Compact the cache (replace identical files with hard links)`)
-	int compact()
+	@(`Cache maintenance actions (run with no arguments for details)`)
+	int cache(string[] args)
 	{
-		d.optimizeCache();
-		return 0;
+		static struct CacheActions
+		{
+		static:
+			@(`Compact the cache (replace identical files with hard links)`)
+			int compact()
+			{
+				d.optimizeCache();
+				return 0;
+			}
+
+			@(`Delete entries cached as unbuildable`)
+			int purgeUnbuildable()
+			{
+				d.purgeUnbuildable();
+				return 0;
+			}
+
+			@(`Migrate cached entries from one cache engine to another`)
+			int migrate(string source, string target)
+			{
+				d.migrateCache(source, target);
+				return 0;
+			}
+		}
+
+		return funoptDispatch!CacheActions(["digger cache"] ~ args);
 	}
 
 	// hidden actions
@@ -110,18 +134,6 @@ static:
 	int delve(bool inBisect)
 	{
 		return doDelve(inBisect);
-	}
-
-	int purgeUnbuildable()
-	{
-		d.purgeUnbuildable();
-		return 0;
-	}
-
-	int migrateCache(string source, string target)
-	{
-		d.migrateCache(source, target);
-		return 0;
 	}
 
 	int show(string revision)
