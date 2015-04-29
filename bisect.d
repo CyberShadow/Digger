@@ -46,10 +46,18 @@ int doBisect(bool inBisect, bool noVerify, string bisectConfigFile)
 	if (inBisect)
 	{
 		log("Invoked by git-bisect - performing bisect step.");
-		auto result = doBisectStep(d.getMetaRepo().getRef("BISECT_HEAD"));
-		if (bisectConfig.reverse && result != EXIT_UNTESTABLE)
-			result = result ? 0 : 1;
-		return result;
+		try
+		{
+			auto result = doBisectStep(d.getMetaRepo().getRef("BISECT_HEAD"));
+			if (bisectConfig.reverse && result != EXIT_UNTESTABLE)
+				result = result ? 0 : 1;
+			return result;
+		}
+		catch (Throwable e)
+		{
+			std.stdio.stderr.writeln(e);
+			return 254;
+		}
 	}
 
 	d.needUpdate();
