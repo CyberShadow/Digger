@@ -2,6 +2,7 @@ module digger;
 
 import std.exception;
 import std.file : thisExePath;
+import std.stdio;
 import std.typetuple;
 
 static if(!is(typeof({import ae.utils.text;}))) static assert(false, "ae library not found, did you clone with --recursive?"); else:
@@ -134,6 +135,12 @@ static:
 	int delve(bool inBisect)
 	{
 		return doDelve(inBisect);
+	}
+
+	int parseRev(string rev)
+	{
+		stdout.writeln(.parseRev(rev));
+		return 0;
 	}
 
 	int show(string revision)
