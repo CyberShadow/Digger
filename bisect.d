@@ -1,5 +1,7 @@
 module bisect;
 
+import core.thread;
+
 import std.algorithm;
 import std.exception;
 import std.file;
@@ -120,7 +122,20 @@ int doBisectStep(string rev)
 	try
 	{
 		if (currentDir.exists)
-			currentDir.rmdirRecurse();
+			version (Windows)
+			{
+				try
+					currentDir.rmdirRecurse();
+				catch (Exception e)
+				{
+					log("Failed to clean up %s: %s".format(currentDir, e.msg));
+					Thread.sleep(500.msecs);
+					log("Retrying...");
+					currentDir.rmdirRecurse();
+				}
+			}
+			else
+				currentDir.rmdirRecurse();
 
 		auto state = d.begin(rev);
 
