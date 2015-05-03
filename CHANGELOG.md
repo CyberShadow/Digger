@@ -1,10 +1,14 @@
 Digger Changelog
 ================
 
-Digger v2.1 (????-??-??)
+Digger v2.1 (2015-05-03)
 ------------------------
 
+ * Add [license](LICENSE.md)
  * Add `git` cache engine
+ * Add `cache` action and subcommands
+ * Fix starting `digger-web` in OS X
+   (auto-correct working directory)
 
 Digger v2.0 (2015-04-26)
 ------------------------
