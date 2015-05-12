@@ -31,6 +31,7 @@ alias BuildOptions = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
 	Option!(string, "Select model (32 or 64). On this system, the default is " ~ BuildConfig.components.common.defaultModel, null, 0, "model"),
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
+	Switch!("Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package", 0, "bootstrap"),
 );
 
 alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n"
@@ -44,6 +45,7 @@ BuildConfig parseBuildOptions(BuildOptions options)
 	if (options[1])
 		buildConfig.components.common.model = options[1];
 	buildConfig.components.common.makeArgs = options[2];
+	buildConfig.bootstrap = options[3];
 	return buildConfig;
 }
 

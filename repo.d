@@ -24,7 +24,7 @@ struct BuildConfig
 	DManager.Config.Build.Components components;
 
 	string model;
-	bool debugDMD;
+	bool debugDMD, bootstrap;
 
 	@property DManager.Config.Build convert()
 	{
@@ -34,6 +34,8 @@ struct BuildConfig
 			build.components.common.model = model;
 		if (debugDMD)
 			build.components.dmd.debugDMD = true;
+		if (bootstrap)
+			build.bootstrap = true;
 		return build;
 	}
 
