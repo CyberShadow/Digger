@@ -27,9 +27,6 @@ good = @ 1 month ago
 # will mean "already fixed". This option causes Digger to
 # reverse the test command output, as well as diagnostic
 # messages.
-# Note that git still uses the reversed meanings, so e.g. it
-# will still state "<SHA1> is the first bad commit" at the end,
-# when referring to the commit that actually fixed the bug.
 
 reverse = false
 

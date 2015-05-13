@@ -90,9 +90,9 @@ static:
 	}
 
 	@(`Bisect D history according to a bisect.ini file`)
-	int bisect(bool inBisect, bool noVerify, string bisectConfigFile)
+	int bisect(bool noVerify, string bisectConfigFile)
 	{
-		return doBisect(inBisect, noVerify, bisectConfigFile);
+		return doBisect(noVerify, bisectConfigFile);
 	}
 
 	@(`Cache maintenance actions (run with no arguments for details)`)
