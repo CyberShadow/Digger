@@ -122,6 +122,7 @@ int doBisectStep(string rev)
 	try
 	{
 		if (currentDir.exists)
+		{
 			version (Windows)
 			{
 				try
@@ -136,6 +137,7 @@ int doBisectStep(string rev)
 			}
 			else
 				currentDir.rmdirRecurse();
+		}
 
 		auto state = d.begin(rev);
 
