@@ -1,6 +1,15 @@
 Digger Changelog
 ================
 
+Digger v2.2 (????-??-??)
+------------------------
+
+ * Add `--bootstrap` switch to build compiler entirely from C++ source
+ * Replace usage of `git bisect run` with internal implementation
+   * Bisection now prefers cached builds when choosing a commit to test
+ * Use git plumbing in git cache driver for concurrency and better performance
+ * Don't cache build failures if the error is likely temporary
+
 Digger v2.1 (2015-05-03)
 ------------------------
 
