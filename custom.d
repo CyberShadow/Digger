@@ -48,9 +48,9 @@ void prepareResult()
 
 /// Build the customized D version.
 /// The result will be in resultDir.
-void runBuild(string spec, DManager.SubmoduleState submoduleState, BuildConfig buildConfig, in string[] components = DManager.defaultComponents)
+void runBuild(string spec, DManager.SubmoduleState submoduleState, BuildConfig buildConfig)
 {
-	d.build(submoduleState, buildConfig, components);
+	d.build(submoduleState, buildConfig);
 	prepareResult();
 	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
 }
