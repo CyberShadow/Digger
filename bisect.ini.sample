@@ -53,6 +53,11 @@ model = 32
 
 debugDMD = false
 
+# Enable or disable D components to build.
+# For example, rdmd is rarely needed, so we can disable it here.
+
+components.enable.rdmd = false
+
 # Build/test environment.
 # See digger.ini.sample for an explanation.
 [environment]
