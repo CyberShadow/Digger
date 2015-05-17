@@ -528,10 +528,27 @@ void uninstall(bool dryRun, bool force, string location = null)
 
 	log(dryRun ? "Actions to run:" : "Uninstalling...");
 
+	void runAction(void delegate() action)
+	{
+		if (!force)
+			action();
+		else
+			try
+				action();
+			catch (Exception e)
+				log("Ignoring error: " ~ e.msg);
+	}
+
 	void uninstallObject(InstalledObject* obj)
 	{
 		auto src = buildNormalizedPath(uninstallPath, obj.name);
 		auto dst = buildNormalizedPath(uninstallPath, obj.path);
+
+		if (!src.exists) // --force
+		{
+			log(" - %s component %s with no backup".format(dryRun ? "Would skip" : "Skipping", obj.name));
+			return;
+		}
 
 		if (dryRun)
 		{
@@ -541,20 +558,14 @@ void uninstall(bool dryRun, bool force, string location = null)
 		else
 		{
 			log(" - Removing " ~ dst);
-			rmObject(dst);
+			runAction({ rmObject(dst); });
 			log("   Moving " ~ src ~ " to " ~ dst);
-			rename(src, dst);
+			runAction({ rename(src, dst); });
 		}
 	}
 
 	foreach (obj; uninstallData.objects)
-		if (!force)
-			uninstallObject(obj);
-		else
-			try
-				uninstallObject(obj);
-			catch (Exception e)
-				log("Ignoring error: " ~ e.msg);
+		runAction({ uninstallObject(obj); });
 
 	if (dryRun)
 		return;
