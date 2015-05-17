@@ -45,7 +45,7 @@ BuildConfig parseBuildOptions(BuildOptions options)
 	if (options[1])
 		buildConfig.components.common.model = options[1];
 	buildConfig.components.common.makeArgs = options[2];
-	buildConfig.bootstrap = options[3];
+	buildConfig.components.dmd.bootstrap = options[3];
 	return buildConfig;
 }
 
