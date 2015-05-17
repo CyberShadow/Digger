@@ -242,20 +242,21 @@ ComponentPaths parseConfig(string dmdPath, BuildInfo buildInfo)
 			.map!(s => s[4..$])
 			.array();
 
-	string findPath(string[] paths, string name, string testFile)
+	string findPath(string[] paths, string name, string[] testFiles)
 	{
-		auto results = paths.find!(path => path.buildPath(testFile).exists);
-		enforce(!results.empty, "Can't find %s (%s). Looked in: %s".format(name, testFile, paths));
+		auto results = paths.find!(path => testFiles.any!(testFile => path.buildPath(testFile).exists));
+		enforce(!results.empty, "Can't find %s (%-(%s or %)). Looked in: %s".format(name, testFiles, paths));
 		auto result = results.front.buildNormalizedPath();
+		auto testFile = testFiles.find!(testFile => result.buildPath(testFile).exists).front;
 		log("Found %s (%s): %s".format(name, testFile, result));
 		return result;
 	}
 
 	ComponentPaths result;
 	result.binPath = dmdPath.dirName();
-	result.libPath = findPath(libPaths, "Phobos static library", getLibFileName(buildInfo));
-	result.phobosPath = findPath(importPaths, "Phobos source code", "std/stdio.d");
-	result.druntimePath = findPath(importPaths, "Druntime import files", "object.di");
+	result.libPath = findPath(libPaths, "Phobos static library", [getLibFileName(buildInfo)]);
+	result.phobosPath = findPath(importPaths, "Phobos source code", ["std/stdio.d"]);
+	result.druntimePath = findPath(importPaths, "Druntime import files", ["object.d", "object.di"]);
 	return result;
 }
 
@@ -337,7 +338,8 @@ void install(bool yes, bool dryRun, string location = null)
 		Item("dmd"  ~ binExt, buildPath(resultDir, "bin", "dmd"  ~ binExt), dmdPath),
 		Item("rdmd" ~ binExt, buildPath(resultDir, "bin", "rdmd" ~ binExt), buildPath(componentPaths.binPath, "rdmd" ~ binExt)),
 		Item(libName        , buildPath(resultDir, "lib", libFileName)    , buildPath(componentPaths.libPath, libFileName)),
-		Item("object.di"    , buildPath(resultDir, "import", "object.di") , buildPath(componentPaths.druntimePath, "object.di")),
+		Item("object.di"    , buildPath(resultDir, "import", "object.{d,di}").globFind,
+		                                                                    buildPath(componentPaths.druntimePath, "object.{d,di}").globFind),
 		Item("core"         , buildPath(resultDir, "import", "core")      , buildPath(componentPaths.druntimePath, "core")),
 		Item("std"          , buildPath(resultDir, "import", "std")       , buildPath(componentPaths.phobosPath, "std")),
 		Item("etc"          , buildPath(resultDir, "import", "etc")       , buildPath(componentPaths.phobosPath, "etc")),
@@ -584,6 +586,16 @@ void uninstall(bool dryRun, bool force, string location = null)
 		rmdirRecurse(uninstallPath);
 
 	log("Uninstall OK.");
+}
+
+string globFind(string path)
+{
+	auto results = dirEntries(path.dirName, path.baseName, SpanMode.shallow);
+	enforce(!results.empty, "Can't find: " ~ path);
+	auto result = results.front;
+	results.popFront();
+	enforce(results.empty, "Multiple matches: " ~ path);
+	return result;
 }
 
 void verifyObject(InstalledObject* obj, string uninstallPath, string verb)
