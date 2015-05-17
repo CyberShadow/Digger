@@ -509,9 +509,15 @@ void install(bool yes, bool dryRun, string location = null)
 
 void uninstall(bool dryRun, bool force, string location = null)
 {
-	auto dmdPath = selectInstallPath(location);
-	auto binPath = dmdPath.dirName();
-	auto uninstallPath = buildPath(binPath, ".digger-install");
+	string uninstallPath;
+	if (location.canFind(".digger-install"))
+		uninstallPath = location;
+	else
+	{
+		auto dmdPath = selectInstallPath(location);
+		auto binPath = dmdPath.dirName();
+		uninstallPath = buildPath(binPath, ".digger-install");
+	}
 	auto uninstallFileName = buildPath(uninstallPath, "uninstall.json");
 	enforce(uninstallFileName.exists, "Can't find uninstallation data: " ~ uninstallFileName);
 	auto uninstallData = uninstallFileName.readText.jsonParse!UninstallData;
