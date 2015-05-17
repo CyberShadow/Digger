@@ -45,8 +45,9 @@ tester = cd C:\Temp && dmd -o- test.d
 
 # Target model.
 # Whether to target 32 or 64 bits when building D components.
+# The default is to use the system model.
 
-model = 32
+#model = 64
 
 # Whether to build a debug compiler.
 # Debug compilers are built quicker, but compile D code slower.
