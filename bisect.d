@@ -147,7 +147,7 @@ int doBisect(bool noVerify, string bisectConfigFile)
 
 		log("There are only untestable commits left to bisect.");
 		log("The first %s commit could be any of:".format(bisectConfig.reverse ? "good" : "bad"));
-		foreach (p; path[1..$])
+		foreach (p; path ~ [p1])
 			log(p);
 		throw new Exception("We cannot bisect more!");
 	}
