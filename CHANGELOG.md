@@ -4,9 +4,12 @@ Digger Changelog
 Digger v2.2 (????-??-??)
 ------------------------
 
+ * Fix `digger install` to work with `object.d`
+ * Improve resilience of `digger install`
  * Add `--bootstrap` switch to build compiler entirely from C++ source
  * Replace usage of `git bisect run` with internal implementation
    * Bisection now prefers cached builds when choosing a commit to test
+ * Allow customizing the set of components to build during bisection
  * Use git plumbing in git cache driver for concurrency and better performance
  * Don't cache build failures if the error is likely temporary
 
