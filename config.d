@@ -27,7 +27,7 @@ immutable Opts opts;
 struct ConfigFile
 {
 	string workDir;
-	string cache;
+	string cache = "none";
 	string[string] environment;
 }
 immutable ConfigFile config;
