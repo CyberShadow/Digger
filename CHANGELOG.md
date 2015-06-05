@@ -1,7 +1,7 @@
 Digger Changelog
 ================
 
-Digger v2.2 (????-??-??)
+Digger v2.2 (2015-06-05)
 ------------------------
 
  * Fix `digger install` to work with `object.d`
