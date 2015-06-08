@@ -40,6 +40,13 @@ reverse = false
 
 tester = cd C:\Temp && dmd -o- test.d
 
+# If you want to bisect a D build failure, enable bisectBuild.
+# Instead of executing the tester command, Digger will use
+# whether the D build succeeds as the signal for bisection.
+# Note that if bisectBuild is enabled, the tester option must
+# be unset.
+#bisectBuild = true
+
 # Build options.
 [build]
 

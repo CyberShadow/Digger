@@ -28,6 +28,7 @@ struct BisectConfig
 	string bad, good;
 	bool reverse;
 	string tester;
+	bool bisectBuild;
 
 	BuildConfig build;
 
@@ -85,6 +86,9 @@ int doBisect(bool noVerify, string bisectConfigFile)
 			test(false, bad);
 		}
 	}
+
+	if (bisectConfig.bisectBuild)
+		enforce(!bisectConfig.tester, "bisectBuild and specifying a test command are mutually exclusive");
 
 	auto p0 = getRev!true();  // good
 	auto p1 = getRev!false(); // bad
@@ -235,7 +239,15 @@ int doBisectStep(string rev)
 	catch (Exception e)
 	{
 		log("Build failed: " ~ e.toString());
+		if (bisectConfig.bisectBuild)
+			return 1;
 		return EXIT_UNTESTABLE;
+	}
+
+	if (bisectConfig.bisectBuild)
+	{
+		log("Build successful.");
+		return 0;
 	}
 
 	d.applyEnv(bisectConfig.environment);
