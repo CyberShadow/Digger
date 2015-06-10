@@ -1,5 +1,6 @@
 module digger;
 
+import std.array;
 import std.exception;
 import std.file : thisExePath;
 import std.stdio;
@@ -12,6 +13,7 @@ version (Windows)
 else
 	static import ae.sys.net.ae;
 
+import ae.sys.d.manager : DManager;
 import ae.utils.funopt;
 import ae.utils.main;
 import ae.utils.meta : structFun;
@@ -29,7 +31,9 @@ version(Windows) static import ae.sys.windows;
 
 alias BuildOptions = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
-	Option!(string, "Select model (32 or 64). On this system, the default is " ~ BuildConfig.components.common.defaultModel, null, 0, "model"),
+	Option!(string, "Select model (32 or 64).\nOn this system, the default is " ~ BuildConfig.components.common.defaultModel, null, 0, "model"),
+	Option!(string[], "Do not build a component (that would otherwise be built by default). List of default components: " ~ DManager.defaultComponents.join(", "), "COMPONENT", 0, "without"),
+	Option!(string[], "Specify an additional D component to build. List of available additional components: " ~ DManager.additionalComponents.join(", "), "COMPONENT", 0, "with"),
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
 	Switch!("Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package", 0, "bootstrap"),
 );
@@ -44,8 +48,12 @@ BuildConfig parseBuildOptions(BuildOptions options)
 		buildConfig.components.common.model = "64";
 	if (options[1])
 		buildConfig.components.common.model = options[1];
-	buildConfig.components.common.makeArgs = options[2];
-	buildConfig.components.dmd.bootstrap = options[3];
+	foreach (componentName; options[2])
+		buildConfig.components.enable[componentName] = false;
+	foreach (componentName; options[3])
+		buildConfig.components.enable[componentName] = true;
+	buildConfig.components.common.makeArgs = options[4];
+	buildConfig.components.dmd.bootstrap = options[5];
 	return buildConfig;
 }
 
