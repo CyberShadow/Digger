@@ -1,6 +1,13 @@
 Digger Changelog
 ================
 
+Digger v2.3 (????-??-??)
+------------------------
+
+ * Add `bisectBuild` bisect config option
+ * Add `--with` and `--without` switches to control D components to build
+ * Add `website`component
+
 Digger v2.2 (2015-06-05)
 ------------------------
 
