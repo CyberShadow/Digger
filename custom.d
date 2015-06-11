@@ -208,14 +208,14 @@ void buildCustom(string spec, BuildConfig buildConfig)
 
 	foreach (part; parts)
 	{
-		if (part.matchCaptures(re!`^(\w+)#(\d+)$`,
+		if (part.matchCaptures(re!`^(\w[\w\-\.]*)#(\d+)$`,
 			(string component, int pull)
 			{
 				d.merge(state, component, d.getPull(component, pull));
 			}))
 			continue;
 
-		if (part.matchCaptures(re!`^(\w+)/(\w[\w\-]*)/(\w[\w\-]*)$`,
+		if (part.matchCaptures(re!`^(\w+)/(\w[\w\-\.]*)/(\w[\w\-]*)$`,
 			(string user, string component, string branch)
 			{
 				d.merge(state, component, d.getFork(component, user, branch));
