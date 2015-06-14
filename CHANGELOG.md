@@ -1,7 +1,7 @@
 Digger Changelog
 ================
 
-Digger v2.3 (????-??-??)
+Digger v2.3 (2015-06-14)
 ------------------------
 
  * Add `bisectBuild` bisect config option
