@@ -6,8 +6,9 @@ Digger v2.3 (????-??-??)
 
  * Add `bisectBuild` bisect config option
  * Add `--with` and `--without` switches to control D components to build
- * Add `website`component for building dlang.org (POSIX-only)
- * Work around `readln` memory corruption bug in `git` cache engine
+ * Add `website` component for building dlang.org (POSIX-only)
+ * Work around `appender` memory corruption bug with `git` cache engine
+ * Various fixes
 
 Digger v2.2 (2015-06-05)
 ------------------------
