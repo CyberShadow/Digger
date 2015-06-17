@@ -234,7 +234,8 @@ int doBisectStep(string rev)
 			if (d.buildDir.exists)
 				rename(d.buildDir, currentDir);
 
-		d.build(state, bisectConfig.build);
+		d.config.build = bisectConfig.build;
+		d.build(state);
 	}
 	catch (Exception e)
 	{
@@ -310,10 +311,11 @@ int doDelve(bool inBisect)
 			}
 
 		d.config.cacheFailures = false;
+		d.config.build = bisectConfig.build;
 		auto state = d.begin(rev);
 		try
 		{
-			d.build(state, bisectConfig.build);
+			d.build(state);
 			return 1;
 		}
 		catch (Exception e)

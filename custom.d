@@ -50,7 +50,8 @@ void prepareResult()
 /// The result will be in resultDir.
 void runBuild(string spec, DManager.SubmoduleState submoduleState, BuildConfig buildConfig)
 {
-	d.build(submoduleState, buildConfig);
+	d.config.build = buildConfig;
+	d.build(submoduleState);
 	prepareResult();
 	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
 }
@@ -58,7 +59,7 @@ void runBuild(string spec, DManager.SubmoduleState submoduleState, BuildConfig b
 /// Perform an incremental build, i.e. don't clean or fetch anything from remote repos
 void incrementalBuild(BuildConfig buildConfig)
 {
-	d.rebuild(buildConfig);
+	d.rebuild();
 	prepareResult();
 }
 
@@ -232,6 +233,8 @@ void buildCustom(string spec, BuildConfig buildConfig)
 /// Build order is in steps of decreasing powers of two.
 void buildAll(string spec, BuildConfig buildConfig)
 {
+	d.config.build = buildConfig;
+
 	d.needUpdate();
 	auto commits = d.getLog("refs/remotes/origin/" ~ spec);
 	commits.reverse(); // oldest first
@@ -250,7 +253,7 @@ void buildAll(string spec, BuildConfig buildConfig)
 				if (!d.isCached(state, buildConfig))
 				{
 					log("Building revision %d/%d".format(n/step, commits.length/step));
-					d.build(state, buildConfig);
+					d.build(state);
 				}
 			}
 			catch (Exception e)
