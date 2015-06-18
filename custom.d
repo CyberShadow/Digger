@@ -250,7 +250,7 @@ void buildAll(string spec, BuildConfig buildConfig)
 			try
 			{
 				auto state = d.begin(commits[n].hash);
-				if (!d.isCached(state, buildConfig))
+				if (!d.isCached(state))
 				{
 					log("Building revision %d/%d".format(n/step, commits.length/step));
 					d.build(state);

@@ -45,6 +45,7 @@ int doBisect(bool noVerify, string bisectConfigFile)
 		.readText()
 		.splitLines()
 		.parseStructuredIni!BisectConfig();
+	d.config.build = bisectConfig.build;
 
 	d.getMetaRepo().needRepo();
 	auto repo = &d.getMetaRepo().git;
@@ -95,7 +96,7 @@ int doBisect(bool noVerify, string bisectConfigFile)
 	if (bisectConfig.reverse)
 		swap(p0, p1);
 
-	auto cacheState = d.getCacheState([p0, p1], bisectConfig.build);
+	auto cacheState = d.getCacheState([p0, p1]);
 	bool[string] untestable;
 
 	bisectLoop:
@@ -234,7 +235,6 @@ int doBisectStep(string rev)
 			if (d.buildDir.exists)
 				rename(d.buildDir, currentDir);
 
-		d.config.build = bisectConfig.build;
 		d.build(state);
 	}
 	catch (Exception e)
