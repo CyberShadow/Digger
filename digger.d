@@ -36,6 +36,7 @@ alias BuildOptions = TypeTuple!(
 	Option!(string[], "Specify an additional D component to build. List of available additional components: " ~ DManager.additionalComponents.join(", "), "COMPONENT", 0, "with"),
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
 	Switch!("Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package", 0, "bootstrap"),
+	Switch!(hiddenOption, 0, "use-vc"),
 );
 
 alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n"
@@ -54,6 +55,7 @@ BuildConfig parseBuildOptions(BuildOptions options)
 		buildConfig.components.enable[componentName] = true;
 	buildConfig.components.common.makeArgs = options[4];
 	buildConfig.components.dmd.bootstrap = options[5];
+	buildConfig.components.dmd.useVC = options[6];
 	return buildConfig;
 }
 
