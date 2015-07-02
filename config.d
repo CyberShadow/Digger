@@ -47,11 +47,11 @@ shared static this()
 	if (!opts.configFile)
 	{
 		opts.configFile = CONFIG_FILE;
-		if (!opts.configFile.exists)
+		if (!opts.configFile.value.exists)
 			opts.configFile = buildPath(thisExePath.dirName, CONFIG_FILE);
-		if (!opts.configFile.exists)
+		if (!opts.configFile.value.exists)
 			opts.configFile = buildPath(__FILE__.dirName, CONFIG_FILE);
-		if (!opts.configFile.exists)
+		if (!opts.configFile.value.exists)
 			opts.configFile = buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger", CONFIG_FILE);
 		version (Posix)
 		{
@@ -60,10 +60,10 @@ shared static this()
 		}
 	}
 
-	if (opts.configFile.exists)
+	if (opts.configFile.value.exists)
 	{
 		config = cast(immutable)
-			opts.configFile
+			opts.configFile.value
 			.readText()
 			.splitLines()
 			.parseStructuredIni!ConfigFile();
