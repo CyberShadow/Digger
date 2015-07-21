@@ -15,6 +15,8 @@ import common;
 import config;
 import custom;
 
+alias copy = std.file.copy; // https://issues.dlang.org/show_bug.cgi?id=14817
+
 version (Windows)
 {
 	enum string binExt = ".exe";

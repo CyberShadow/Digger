@@ -40,7 +40,7 @@ shared static this()
 	auto opts = funopt!(fun, funOpts, usageFun)(Runtime.args);
 
 	if (opts.dir)
-		chdir(opts.dir);
+		chdir(opts.dir.value);
 
 	enum CONFIG_FILE = "digger.ini";
 
