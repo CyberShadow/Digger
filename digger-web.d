@@ -91,7 +91,7 @@ class WebFrontend
 						new HttpRequest("http://ghdaemon.k3.1azy.net" ~ resource),
 						(HttpResponse response, string disconnectReason)
 						{
-							if (conn.conn.connected)
+							if (conn.conn.state == ConnectionState.connected)
 								conn.sendResponse(response);
 						}
 					);
