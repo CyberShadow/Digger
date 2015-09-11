@@ -59,6 +59,7 @@ void runBuild(string spec, DManager.SubmoduleState submoduleState, BuildConfig b
 /// Perform an incremental build, i.e. don't clean or fetch anything from remote repos
 void incrementalBuild(BuildConfig buildConfig)
 {
+	d.config.build = buildConfig;
 	d.rebuild();
 	prepareResult();
 }
