@@ -1,6 +1,21 @@
 Digger Changelog
 ================
 
+Digger v2.4 (2015-10-05)
+------------------------
+
+ * Fetch tags explicitly when updating
+   (fixes some "unknown /ambiguous revision" errors)
+ * Prepend result `bin` directory to `PATH`
+   (fixes behavior when a `dmd` binary was installed in `/usr/bin`)
+ * Add support for the `debugDMD` build option on POSIX
+ * Fix incorrect repository tree order when using `git` cache engine
+ * Fix `rebuild` ignoring build options on the command-line
+ * Automatically install KindleGen locally when building website
+ * Update OptLink installer
+ * Download platform-specific DMD release packages
+   (contributed by Martin Nowak)
+
 Digger v2.3 (2015-06-14)
 ------------------------
 
