@@ -70,8 +70,9 @@ so `digger uninstall` will revert to the state from before you first ran `digger
 You can also simultaneously install 32-bit and 64-bit versions of Phobos by first building and installing a 32-bit DMD,
 then a 64-bit DMD (`--model=64`). `digger uninstall` will revert both actions.
 
+To upgrade a system install of DMD on POSIX, simply run `digger install` as root, e.g. `sudo digger install`.
+
 `digger install` should be compatible with [DVM](https://github.com/jacob-carlborg/dvm) or any other DMD installation.
-To upgrade a system install of DMD on POSIX, simply run `digger install` as root.
 
 Installation and uninstallation are designed with safety in mind.
 When installing, Digger will provide detailed information and ask for confirmation before making any changes
