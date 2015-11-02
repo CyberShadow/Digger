@@ -72,7 +72,7 @@ components.enable.rdmd = false
 # Additional make parameters.
 # Equivalent to the --make-args "digger build" option.
 
-#components.common.makeArgs = -j8
+#components.common.makeArgs = ["-j8"]
 
 # Build/test environment.
 # See digger.ini.sample for an explanation.
