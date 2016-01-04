@@ -72,17 +72,16 @@ int doBisect(bool noVerify, string bisectConfigFile)
 
 		enforce(good != bad, "Good and bad revisions are both " ~ bad);
 
-		auto nGood = repo.query(["log", "--format=oneline", good]).splitLines().length;
-		auto nBad  = repo.query(["log", "--format=oneline", bad ]).splitLines().length;
+		auto commonAncestor = repo.query("merge-base", good, bad);
 		if (bisectConfig.reverse)
 		{
-			enforce(nBad < nGood, "Bad commit is newer than good commit (and reverse search is enabled)");
+			enforce(good != commonAncestor, "Bad commit is newer than good commit (and reverse search is enabled)");
 			test(false, bad);
 			test(true, good);
 		}
 		else
 		{
-			enforce(nGood < nBad, "Good commit is newer than bad commit");
+			enforce(bad  != commonAncestor, "Good commit is newer than bad commit");
 			test(true, good);
 			test(false, bad);
 		}
