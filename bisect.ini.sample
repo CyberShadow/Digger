@@ -37,6 +37,8 @@ reverse = false
 # Exit code 125 is treated specially and indicates that the
 # current D revision is untestable, and that Git should try
 # another.
+# The current bisected version of DMD will be in PATH,
+# so there's no need to specify an absolute path to it.
 
 tester = cd C:\Temp && dmd -o- test.d
 
