@@ -167,6 +167,13 @@ static:
 	{
 		throw new Exception("For help, run digger without any arguments.");
 	}
+
+	version (Windows)
+	int getAllMSIs()
+	{
+		d.getVSInstaller().getAllMSIs();
+		return 0;
+	}
 }
 
 int digger()
