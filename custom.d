@@ -22,6 +22,9 @@ import repo;
 
 alias indexOf = std.string.indexOf;
 
+// https://issues.dlang.org/show_bug.cgi?id=15777
+alias strip = std.string.strip;
+
 alias subDir!"result" resultDir;
 
 /// We save a JSON file to the result directory with the build parameters.
