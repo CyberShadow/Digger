@@ -15,6 +15,8 @@ import common;
 import config;
 import custom;
 
+static import std.process;
+
 alias copy = std.file.copy; // https://issues.dlang.org/show_bug.cgi?id=14817
 
 version (Windows)
@@ -51,7 +53,7 @@ else
 string[] findDMD()
 {
 	string[] result;
-	foreach (pathEntry; environment.get("PATH", null).split(pathSeparator))
+	foreach (pathEntry; std.process.environment.get("PATH", null).split(pathSeparator))
 	{
 		auto dmd = pathEntry.buildPath("dmd" ~ binExt);
 		if (dmd.exists)
@@ -138,7 +140,7 @@ string findConfig(string dmdPath)
 	if (pathOK(dmdPath.dirName))
 		return configPath;
 
-	auto home = environment.get("HOME", null);
+	auto home = std.process.environment.get("HOME", null);
 	if (home && pathOK(home))
 		return configPath;
 
@@ -163,7 +165,7 @@ ComponentPaths parseConfig(string dmdPath, BuildInfo buildInfo)
 	auto configPath = findConfig(dmdPath);
 	log("Found DMD configuration: " ~ configPath);
 
-	string[string] vars = environment.toAA();
+	string[string] vars = std.process.environment.toAA();
 	bool parsing = false;
 	foreach (line; configPath.readText().splitLines())
 	{
