@@ -1,5 +1,6 @@
 module repo;
 
+import std.array;
 import std.algorithm;
 import std.exception;
 import std.file;
@@ -47,6 +48,7 @@ final class DiggerManager : DManager
 		this.config.local.workDir = .config.workDir.expandTilde();
 		this.config.offline = .opts.offline;
 		this.config.cache = .config.cache;
+		this.config.environment = .config.environment.dup.byPair.assocArray;
 	}
 
 	override void log(string s)
@@ -57,13 +59,6 @@ final class DiggerManager : DManager
 	void logProgress(string s)
 	{
 		log((" " ~ s ~ " ").center(70, '-'));
-	}
-
-	override void prepareEnv()
-	{
-		super.prepareEnv();
-
-		applyEnv(.config.environment);
 	}
 
 	override MetaRepository getMetaRepo()

@@ -250,17 +250,18 @@ int doBisectStep(string rev)
 		return 0;
 	}
 
-	d.applyEnv(bisectConfig.environment);
+	string[string] env;
+	d.applyEnv(env, bisectConfig.environment);
 
 	auto oldPath = environment["PATH"];
 	scope(exit) environment["PATH"] = oldPath;
 
 	// Add the final DMD to the environment PATH
-	d.config.env["PATH"] = buildPath(currentDir, "bin").absolutePath() ~ pathSeparator ~ d.config.env["PATH"];
-	environment["PATH"] = d.config.env["PATH"];
+	env["PATH"] = buildPath(currentDir, "bin").absolutePath() ~ pathSeparator ~ env["PATH"];
+	environment["PATH"] = env["PATH"];
 
 	d.logProgress("Running test command...");
-	auto result = spawnShell(bisectConfig.tester, d.config.env, Config.newEnv).wait();
+	auto result = spawnShell(bisectConfig.tester, env, Config.newEnv).wait();
 	d.logProgress("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
 	return result;
 }
