@@ -74,6 +74,11 @@ final class DiggerManager : DManager
 		return escapeShellFileName(thisExePath) ~ " do callback";
 	}
 
+	string[string] getBaseEnvironment()
+	{
+		return d.baseEnvironment.vars;
+	}
+
 	bool haveUpdate;
 
 	void needUpdate()

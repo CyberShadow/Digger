@@ -250,7 +250,7 @@ int doBisectStep(string rev)
 		return 0;
 	}
 
-	string[string] env;
+	string[string] env = d.getBaseEnvironment();
 	d.applyEnv(env, bisectConfig.environment);
 
 	auto oldPath = environment["PATH"];
