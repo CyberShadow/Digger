@@ -47,6 +47,9 @@ You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Di
     # build with added GitHub fork branch
     $ digger build "master + Username/dmd/awesome-feature"
 
+    # build with reverted commit
+    $ digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"
+
     # build with reverted pull request
     $ digger build "master + -dmd#123"
 

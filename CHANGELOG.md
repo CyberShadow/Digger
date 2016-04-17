@@ -9,6 +9,9 @@ Digger v2.5 (WIP)
    The syntax is to prefix the branch or PR with a `-`
    (minus sign).
    Example: `digger build "master + -phobos#1234"`
+ * Add ability to specify commit SHA1 instead of a
+   branch or PR number. Example:
+   `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
 
 Digger v2.4 (2015-10-05)
 ------------------------

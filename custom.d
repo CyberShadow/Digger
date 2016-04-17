@@ -214,16 +214,25 @@ void buildCustom(string spec, BuildConfig buildConfig)
 	foreach (part; parts)
 	{
 		bool revert = part.skipOver("-");
+
+		void handleCommit(string component, string commit, int mainline)
+		{
+			if (revert)
+				d.revert(state, component, commit, mainline);
+			else
+				d.merge(state, component, commit);
+		}
+
 		void handleBranch(string component, string branch)
 		{
 			if (revert)
 			{
 				string commit; int mainline;
 				d.getChild(component, branch, /*out*/commit, /*out*/mainline);
-				d.revert(state, component, commit, mainline);
+				handleCommit(component, commit, mainline);
 			}
 			else
-				d.merge(state, component, branch);
+				handleCommit(component, branch, 0);
 		}
 
 		if (part.matchCaptures(re!`^(\w[\w\-\.]*)#(\d+)$`,
@@ -237,6 +246,13 @@ void buildCustom(string spec, BuildConfig buildConfig)
 			(string user, string component, string branch)
 			{
 				handleBranch(component, d.getFork(component, user, branch));
+			}))
+			continue;
+
+		if (part.matchCaptures(re!`^(\w+)/([0-9a-fA-F]{40})$`,
+			(string component, string commit)
+			{
+				handleCommit(component, commit, 0);
 			}))
 			continue;
 
