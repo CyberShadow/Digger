@@ -1,6 +1,14 @@
 Digger Changelog
 ================
 
+Digger v2.5 (WIP)
+------------------------
+
+ * Add ability to revert a branch or pull request.
+   The syntax is to prefix the branch or PR with a `-`
+   (minus sign).
+   Example: `digger build "master + -phobos#1234"`
+
 Digger v2.4 (2015-10-05)
 ------------------------
 
