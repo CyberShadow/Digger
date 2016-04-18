@@ -1,4 +1,4 @@
-# Digger
+# Digger [![Build Status](https://travis-ci.org/CyberShadow/Digger.svg?branch=master)](https://travis-ci.org/CyberShadow/Digger)
 
 Digger can:
 
