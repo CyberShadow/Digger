@@ -228,7 +228,7 @@ void buildCustom(string spec, BuildConfig buildConfig)
 			if (revert)
 			{
 				string commit; int mainline;
-				d.getChild(component, branch, /*out*/commit, /*out*/mainline);
+				d.getChild(state, component, branch, /*out*/commit, /*out*/mainline);
 				handleCommit(component, commit, mainline);
 			}
 			else
