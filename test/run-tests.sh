@@ -13,10 +13,10 @@ find -maxdepth 1 -name '*.lst' -delete
 
 # Run unittests
 
-rdmd --build-only -cov -g -unittest -of./digger ../digger.d
+rdmd --build-only -cov -debug -g -unittest -of./digger ../digger.d
 ./digger build --help
 
-rdmd --build-only -cov -g -of./digger ../digger.d
+rdmd --build-only -cov -debug -g -of./digger ../digger.d
 
 # Simple build
 
