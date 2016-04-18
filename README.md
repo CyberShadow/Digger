@@ -144,3 +144,10 @@ Module list is as follows:
 - `digger` - entry point and command-line UI
 - `digger-web` - web interface, works by launching `digger` sub-processes
 - `common` - helpers shared by `digger` and `digger-web`
+
+### Remarks
+
+##### Wine
+
+Digger should work fine under Wine. For 64-bit builds, you must first run `winetricks vcrun2013`.
+Digger cannot do this automatically as this must be done from outside Wine.
