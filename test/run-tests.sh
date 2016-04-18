@@ -29,6 +29,20 @@ work/result/bin/dmd -run issue15914.d
 ! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 
+# Rebuild - no changes
+
+./digger --config-file ./digger.ini rebuild --make-args=-j"$CPUCOUNT"
+work/result/bin/dmd -run issue15914.d
+
+# Rebuild - with changes
+
+pushd work/repo/phobos/
+git cherry-pick --no-commit ad226e92d5f092df233b90fd3fdedb8b71d728eb
+popd
+
+./digger --config-file ./digger.ini rebuild --make-args=-j"$CPUCOUNT"
+! work/result/bin/dmd -run issue15914.d
+
 # Merging
 
 ./digger --config-file ./digger.ini build --make-args=-j"$CPUCOUNT" "master @ 2016-01-01 00:00:00 + phobos#3859"
