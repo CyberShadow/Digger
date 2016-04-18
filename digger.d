@@ -29,11 +29,11 @@ import repo;
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 version(Windows) static import ae.sys.windows;
 
-alias BuildOptions = TypeTuple!(
+alias BuildOptions(string action, string pastAction) = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
 	Option!(string, "Select model (32 or 64).\nOn this system, the default is " ~ BuildConfig.components.common.defaultModel, null, 0, "model"),
-	Option!(string[], "Do not build a component (that would otherwise be built by default). List of default components: " ~ DManager.defaultComponents.join(", "), "COMPONENT", 0, "without"),
-	Option!(string[], "Specify an additional D component to build. List of available additional components: " ~ DManager.additionalComponents.join(", "), "COMPONENT", 0, "with"),
+	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", "), "COMPONENT", 0, "without"),
+	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", "), "COMPONENT", 0, "with"),
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
 	Switch!("Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package", 0, "bootstrap"),
 	Switch!(hiddenOption, 0, "use-vc"),
@@ -42,7 +42,7 @@ alias BuildOptions = TypeTuple!(
 alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n"
 	"\"master @ 3 weeks ago + dmd#123 + You/dmd/awesome-feature\"");
 
-BuildConfig parseBuildOptions(BuildOptions options)
+BuildConfig parseBuildOptions(T...)(T options) // T == BuildOptions!action
 {
 	BuildConfig buildConfig;
 	if (options[0])
@@ -63,16 +63,23 @@ struct Digger
 {
 static:
 	@(`Build D from source code`)
-	int build(BuildOptions options, Spec spec = "master")
+	int build(BuildOptions!("build", "built") options, Spec spec = "master")
 	{
 		buildCustom(spec, parseBuildOptions(options));
 		return 0;
 	}
 
 	@(`Incrementally rebuild the current D checkout`)
-	int rebuild(BuildOptions options)
+	int rebuild(BuildOptions!("rebuild", "rebuilt") options)
 	{
 		incrementalBuild(parseBuildOptions(options));
+		return 0;
+	}
+
+	@(`Run tests for enabled components`)
+	int test(BuildOptions!("test", "tested") options)
+	{
+		runTests(parseBuildOptions(options));
 		return 0;
 	}
 
@@ -138,7 +145,7 @@ static:
 
 	// hidden actions
 
-	int buildAll(BuildOptions options, string spec = "master")
+	int buildAll(BuildOptions!("build", "built") options, string spec = "master")
 	{
 		.buildAll(spec, parseBuildOptions(options));
 		return 0;

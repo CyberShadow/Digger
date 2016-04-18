@@ -23,6 +23,15 @@ rdmd --build-only -cov -debug -g -of./digger ../digger.d
 ./digger --config-file ./digger.ini build --make-args=-j"$CPUCOUNT" "master @ 2016-01-01 00:00:00"
 work/result/bin/dmd -run issue15914.d
 
+# Run tests
+
+pushd work/repo/ # Clean everything to test correct test dependencies
+git submodule foreach git reset --hard
+git submodule foreach git clean -fdx
+popd
+
+./digger --config-file ./digger.ini test --without=dmd --make-args=-j"$CPUCOUNT" # Without DMD as that takes too long and is too fragile
+
 # Caching
 
 ./digger --config-file ./digger.ini --offline build --make-args=-j"$CPUCOUNT" "master @ 2016-01-01 00:00:00" 2>&1 | tee digger.log

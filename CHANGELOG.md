@@ -4,7 +4,8 @@ Digger Changelog
 Digger v2.5 (WIP)
 ------------------------
 
- * Internal changes for improved reliability
+ * Add `digger test` command, to run tests for
+   working tree state
  * Add ability to revert a branch or pull request.
    The syntax is to prefix the branch or PR with a `-`
    (minus sign).
@@ -12,6 +13,7 @@ Digger v2.5 (WIP)
  * Add ability to specify commit SHA1 instead of a
    branch or PR number. Example:
    `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
+ * Internal changes for improved reliability
 
 Digger v2.4 (2015-10-05)
 ------------------------

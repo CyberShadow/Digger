@@ -67,6 +67,13 @@ void incrementalBuild(BuildConfig buildConfig)
 	prepareResult();
 }
 
+/// Run tests.
+void runTests(BuildConfig buildConfig)
+{
+	d.config.build = buildConfig;
+	d.test();
+}
+
 /// Implements transient persistence for the current customization state.
 struct DCustomizer
 {

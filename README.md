@@ -56,6 +56,9 @@ You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Di
     # perform incremental build (after changing a few source files)
     $ digger rebuild
 
+    # run tests
+    $ digger test
+
 Run `digger` with no arguments for detailed usage help.
 
 ##### Installing
