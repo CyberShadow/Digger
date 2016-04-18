@@ -178,6 +178,12 @@ static:
 
 int digger()
 {
+	version (D_Coverage)
+	{
+		import core.runtime;
+		dmd_coverSetMerge(true);
+	}
+
 	if (opts.action == "do")
 		return handleWebTask(opts.actionArguments.dup);
 

@@ -1,0 +1,19 @@
+digger: 14ad4729fb661c591d8b3c5e9d49e191a073b0b6 is the first bad commit
+commit 14ad4729fb661c591d8b3c5e9d49e191a073b0b6
+Author: H. S. Teoh <hsteoh@quickfur.ath.cx>
+Date:   Wed Feb 17 22:01:21 2016 -0800
+
+    phobos: Merge pull request #3859 from BBasile/getopt-checker
+    
+    https://github.com/D-Programming-Language/phobos/pull/3859
+    
+    Static verification of std.getopt arguments with more helpful error messages
+
+diff --git a/phobos b/phobos
+index 32f032f..405858d 160000
+--- a/phobos
++++ b/phobos
+@@ -1 +1 @@
+-Subproject commit 32f032fe65fd6362fcf7542b9b4bc66d531cf321
++Subproject commit 405858d816890edd068e494d4600a3d60b5c1184
+digger: Bisection completed successfully.
