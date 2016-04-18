@@ -43,6 +43,13 @@ popd
 ./digger --config-file ./digger.ini rebuild --make-args=-j"$CPUCOUNT"
 ! work/result/bin/dmd -run issue15914.d
 
+# Working tree state
+
+! ./digger --config-file ./digger.ini build --make-args=-j"$CPUCOUNT" "master @ 2016-04-01 00:00:00" # Worktree is dirty - should fail
+rm work/repo/.git/modules/phobos/ae-sys-d-worktree.json
+  ./digger --config-file ./digger.ini build --make-args=-j"$CPUCOUNT" "master @ 2016-04-01 00:00:00" # Should work now
+! work/result/bin/dmd -run issue15914.d
+
 # Merging
 
 ./digger --config-file ./digger.ini build --make-args=-j"$CPUCOUNT" "master @ 2016-01-01 00:00:00 + phobos#3859"
@@ -50,7 +57,7 @@ popd
 
 # Cached merging
 
-./digger --config-file ./digger.ini build --make-args=-j"$CPUCOUNT" "master @ 2016-01-01 00:00:00 + phobos#3859" 2>&1 | tee digger.log
+./digger --config-file ./digger.ini --offline build --make-args=-j"$CPUCOUNT" "master @ 2016-01-01 00:00:00 + phobos#3859" 2>&1 | tee digger.log
 ! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 ! grep --quiet --fixed-strings --line-regexp 'digger: Merging phobos commit ad226e92d5f092df233b90fd3fdedb8b71d728eb' digger.log
 grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
