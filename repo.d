@@ -15,7 +15,7 @@ import ae.sys.file;
 import ae.sys.d.manager;
 
 import common;
-import config : config, opts;
+import config : config, workDir, opts;
 
 //alias BuildConfig = DManager.Config.Build;
 
@@ -45,7 +45,7 @@ final class DiggerManager : DManager
 {
 	this()
 	{
-		this.config.local.workDir = .config.workDir.expandTilde();
+		this.config.local.workDir = .workDir;
 		this.config.offline = .opts.offline;
 		this.config.cache = .config.cache;
 		this.config.environment = .config.environment.dup.byPair.assocArray;

@@ -5,17 +5,7 @@ cd "$(dirname "$0")"
 
 UNAME="$(uname)"
 
-if [[ "$UNAME" == MSYS_NT-* ]]; then
-	NATIVE_WD="$(pwd -W)"
-elif [[ "$UNAME" == CYGWIN_NT-* ]]; then
-	NATIVE_WD="$(cygpath -wa .)"
-elif [[ "$UNAME" == *_NT-* ]]; then
-	echo "Unknown Windows GNU environment" ; exit 1
-else
-	NATIVE_WD="$(pwd)"
-fi
-
-echo "workDir = $NATIVE_WD/work/" > ./digger.ini
+echo "workDir = work/" > ./digger.ini
 echo "cache = git" >> ./digger.ini
 
 rm -rf work

@@ -72,5 +72,5 @@ shared static this()
 	.opts = opts;
 }
 
-@property string workDir() { return (config.workDir ? config.workDir.expandTilde() : getcwd()).absolutePath(); }
+@property string workDir() { return (config.workDir ? config.workDir.expandTilde() : getcwd()).absolutePath().buildNormalizedPath(); }
 @property string subDir(string name)() { return buildPath(workDir, name); }
