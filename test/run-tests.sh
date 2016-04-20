@@ -85,7 +85,7 @@ cat > bisect.ini <<EOF
 bad  = master @ 2016-04-01
 good = master @ 2016-01-01
 tester = dmd -run issue15914.d
-build.components.common.makeArgs = ["-j$CPUCOUNT"]
+build.components.common.makeJobs = auto
 EOF
 
 ./digger --config-file ./digger.ini --offline bisect ./bisect.ini 2>&1 | tee digger.log
