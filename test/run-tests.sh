@@ -30,7 +30,12 @@ git submodule foreach git reset --hard
 git submodule foreach git clean -fdx
 popd
 
-./digger --config-file ./digger.ini test --without=dmd --make-args=-j"$CPUCOUNT" # Without DMD as that takes too long and is too fragile
+TEST_ARGS=('--without=dmd')
+if [ "$(uname)" == "Darwin" ]; then
+	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
+	TEST_ARGS+=('--without=rdmd')
+fi
+./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --make-args=-j"$CPUCOUNT" # Without DMD as that takes too long and is too fragile
 
 # Caching
 
