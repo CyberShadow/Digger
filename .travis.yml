@@ -1,2 +1,5 @@
 language: d
+os:
+  - linux
+  - osx
 script: test/run-tests.sh
