@@ -13,6 +13,8 @@ Digger v2.5 (WIP)
  * Add ability to specify commit SHA1 instead of a
    branch or PR number. Example:
    `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
+ * Add `--jobs` option for controlling the GNU make
+   `-j` parameter
  * Refuse to clobber working tree changes not done
    by Digger
  * Internal changes for improved reliability

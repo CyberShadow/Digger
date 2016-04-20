@@ -36,6 +36,7 @@ alias BuildOptions(string action, string pastAction) = TypeTuple!(
 	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", "), "COMPONENT", 0, "with"),
 	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
 	Switch!("Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package", 0, "bootstrap"),
+	Option!(string, "How many jobs to run makefiles in. Gets passed to GNU make as the -j parameter (not supported by DigitalMars make on Windows). Specify \"auto\" to use the CPU core count, or \"unlimited\" for no limit.", "N", 0, "jobs"),
 	Switch!(hiddenOption, 0, "use-vc"),
 );
 
@@ -55,8 +56,24 @@ BuildConfig parseBuildOptions(T...)(T options) // T == BuildOptions!action
 		buildConfig.components.enable[componentName] = true;
 	buildConfig.components.common.makeArgs = options[4];
 	buildConfig.components.dmd.bootstrap = options[5];
-	buildConfig.components.dmd.useVC = options[6];
+	buildConfig.components.common.makeJobs = parseJobCount(options[6]);
+	buildConfig.components.dmd.useVC = options[7];
+	static assert(options.length == 8);
 	return buildConfig;
+}
+
+string parseJobCount(string str)
+{
+	if (str == "auto")
+	{
+		import std.parallelism, std.conv;
+		return text(totalCPUs);
+	}
+	else
+	if (str == "unlimited")
+		return "";
+	else
+		return str;
 }
 
 struct Digger
