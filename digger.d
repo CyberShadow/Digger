@@ -56,24 +56,10 @@ BuildConfig parseBuildOptions(T...)(T options) // T == BuildOptions!action
 		buildConfig.components.enable[componentName] = true;
 	buildConfig.components.common.makeArgs = options[4];
 	buildConfig.components.dmd.bootstrap = options[5];
-	buildConfig.components.common.makeJobs = parseJobCount(options[6]);
+	buildConfig.components.common.makeJobs = options[6];
 	buildConfig.components.dmd.useVC = options[7];
 	static assert(options.length == 8);
 	return buildConfig;
-}
-
-string parseJobCount(string str)
-{
-	if (str == "auto")
-	{
-		import std.parallelism, std.conv;
-		return text(totalCPUs);
-	}
-	else
-	if (str == "unlimited")
-		return "";
-	else
-		return str;
 }
 
 struct Digger
