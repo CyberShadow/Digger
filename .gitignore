@@ -6,6 +6,7 @@
 /result
 /cache/
 /cache-git/
+/temp-cache/
 /bootstrap/
 /customization-state.json
 /dl/
