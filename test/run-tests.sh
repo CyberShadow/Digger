@@ -3,6 +3,12 @@ set -euxo pipefail
 
 cd "$(dirname "$0")"
 
+UNAME="$(uname)"
+BINEXT=
+if [[ "$UNAME" == *_NT-* ]]; then
+	BINEXT=.exe
+fi
+
 echo "workDir = $(pwd)/work/" > ./digger.ini
 echo "cache = git" >> ./digger.ini
 
@@ -19,7 +25,7 @@ rdmd --build-only -cov -debug -g -of./digger ../digger.d
 # Simple build
 
 ./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-01-01 00:00:00"
-work/result/bin/dmd -run issue15914.d
+work/result/bin/dmd$BINEXT -run issue15914.d
 
 # Run tests
 
@@ -29,7 +35,7 @@ git submodule foreach git clean -fdx
 popd
 
 TEST_ARGS=('--without=dmd')
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$UNAME" == "Darwin" ]; then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
 	TEST_ARGS+=('--without=rdmd')
 fi
@@ -44,7 +50,7 @@ grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 # Rebuild - no changes
 
 ./digger --config-file ./digger.ini rebuild --jobs=auto
-work/result/bin/dmd -run issue15914.d
+work/result/bin/dmd$BINEXT -run issue15914.d
 
 # Rebuild - with changes
 
@@ -53,19 +59,19 @@ git cherry-pick --no-commit ad226e92d5f092df233b90fd3fdedb8b71d728eb
 popd
 
 ./digger --config-file ./digger.ini rebuild --jobs=auto
-! work/result/bin/dmd -run issue15914.d
+! work/result/bin/dmd$BINEXT -run issue15914.d
 
 # Working tree state
 
 ! ./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-04-01 00:00:00" # Worktree is dirty - should fail
 rm work/repo/.git/modules/phobos/ae-sys-d-worktree.json
   ./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-04-01 00:00:00" # Should work now
-! work/result/bin/dmd -run issue15914.d
+! work/result/bin/dmd$BINEXT -run issue15914.d
 
 # Merging
 
 ./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-01-01 00:00:00 + phobos#3859"
-! work/result/bin/dmd -run issue15914.d
+! work/result/bin/dmd$BINEXT -run issue15914.d
 
 # Cached merging
 
@@ -77,7 +83,7 @@ grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 # Reverting
 
 ./digger --config-file ./digger.ini --offline build --jobs=auto "master @ 2016-04-01 00:00:00 + -phobos#3859"
-work/result/bin/dmd -run issue15914.d
+work/result/bin/dmd$BINEXT -run issue15914.d
 
 # Bisecting
 
