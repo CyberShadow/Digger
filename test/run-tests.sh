@@ -9,7 +9,7 @@ echo "workDir = $(pwd)/work/" > ./digger.ini
 echo "cache = git" >> ./digger.ini
 
 rm -rf work
-find -maxdepth 1 -name '*.lst' -delete
+find . -maxdepth 1 -name '*.lst' -delete
 
 # Run unittests
 
