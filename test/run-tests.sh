@@ -3,7 +3,19 @@ set -euxo pipefail
 
 cd "$(dirname "$0")"
 
-echo "workDir = $(pwd)/work/" > ./digger.ini
+UNAME="$(uname)"
+
+if [[ "$UNAME" == MSYS_NT-* ]]; then
+	NATIVE_WD="$(pwd -W)"
+elif [[ "$UNAME" == CYGWIN_NT-* ]]; then
+	NATIVE_WD="$(cygpath -wa .)"
+elif [[ "$UNAME" == *_NT-* ]]; then
+	echo "Unknown Windows GNU environment" ; exit 1
+else
+	NATIVE_WD="$(pwd)"
+fi
+
+echo "workDir = $NATIVE_WD/work/" > ./digger.ini
 echo "cache = git" >> ./digger.ini
 
 rm -rf work
@@ -29,7 +41,7 @@ git submodule foreach git clean -fdx
 popd
 
 TEST_ARGS=('--without=dmd')
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$UNAME" == "Darwin" ]; then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
 	TEST_ARGS+=('--without=rdmd')
 fi
