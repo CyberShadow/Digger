@@ -10,6 +10,7 @@
 /bootstrap/
 /customization-state.json
 /dl/
+/tmp/
 /digger
 /digger-web
 
@@ -18,3 +19,4 @@
 *.ilk
 *.exp
 *.lib
+*.suo
