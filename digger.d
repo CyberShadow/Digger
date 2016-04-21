@@ -29,14 +29,14 @@ import repo;
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 version(Windows) static import ae.sys.windows;
 
-alias BuildOptions(string action, string pastAction) = TypeTuple!(
+alias BuildOptions(string action, string pastAction, bool showBuildActions = true) = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
-	Option!(string, "Select model (32 or 64).\nOn this system, the default is " ~ BuildConfig.components.common.defaultModel, null, 0, "model"),
+	Option!(string, showBuildActions ? "Select model (32 or 64).\nOn this system, the default is " ~ BuildConfig.components.common.defaultModel : hiddenOption, null, 0, "model"),
 	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", "), "COMPONENT", 0, "without"),
 	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", "), "COMPONENT", 0, "with"),
-	Option!(string[], `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"`, "ARG", 0, "makeArgs"),
-	Switch!("Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package", 0, "bootstrap"),
-	Option!(string, "How many jobs to run makefiles in. Gets passed to GNU make as the -j parameter (not supported by DigitalMars make on Windows). Specify \"auto\" to use the CPU core count, or \"unlimited\" for no limit.", "N", 0, "jobs"),
+	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"` : hiddenOption, "ARG", 0, "makeArgs"),
+	Switch!(showBuildActions ? "Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package" : hiddenOption, 0, "bootstrap"),
+	Option!(string, showBuildActions ? "How many jobs to run makefiles in. Gets passed to GNU make as the -j parameter (not supported by DigitalMars make on Windows). Specify \"auto\" to use the CPU core count, or \"unlimited\" for no limit." : hiddenOption, "N", 0, "jobs"),
 	Switch!(hiddenOption, 0, "use-vc"),
 );
 
@@ -83,6 +83,13 @@ static:
 	int test(BuildOptions!("test", "tested") options)
 	{
 		runTests(parseBuildOptions(options));
+		return 0;
+	}
+
+	@(`Check out D source code from git`)
+	int checkout(BuildOptions!("check out", "checked out", false) options, Spec spec = "master")
+	{
+		.checkout(spec, parseBuildOptions(options));
 		return 0;
 	}
 

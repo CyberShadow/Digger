@@ -4,6 +4,8 @@ Digger Changelog
 Digger v2.5 (WIP)
 ------------------------
 
+ * Add `digger checkout` command, which simply
+   checks out a given D revision (`master` by default)
  * Add `digger test` command, to run tests for
    working tree state
  * Add ability to revert a branch or pull request.

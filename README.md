@@ -53,7 +53,12 @@ You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Di
     # build with reverted pull request
     $ digger build "master + -dmd#123"
 
-    # perform incremental build (after changing a few source files)
+##### Hacking on D
+
+    # check out git master (or some other version)
+    $ digger checkout
+
+    # build / incrementally rebuild current checkout
     $ digger rebuild
 
     # run tests

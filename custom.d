@@ -204,12 +204,8 @@ int handleWebTask(string[] args)
 	}
 }
 
-/// Build D according to the given spec string
-/// (e.g. master+dmd#123).
-void buildCustom(string spec, BuildConfig buildConfig)
+DManager.SubmoduleState parseSpec(string spec)
 {
-	log("Building spec: " ~ spec);
-
 	auto parts = spec.split("+");
 	parts = parts.map!strip().array();
 	if (parts.empty)
@@ -266,7 +262,25 @@ void buildCustom(string spec, BuildConfig buildConfig)
 		throw new Exception("Don't know how to apply customization: " ~ spec);
 	}
 
-	runBuild(spec, state, buildConfig);
+	return state;
+}
+
+/// Build D according to the given spec string
+/// (e.g. master+dmd#123).
+void buildCustom(string spec, BuildConfig buildConfig)
+{
+	log("Building spec: " ~ spec);
+	auto submoduleState = parseSpec(spec);
+	runBuild(spec, submoduleState, buildConfig);
+}
+
+void checkout(string spec, BuildConfig buildConfig)
+{
+	log("Checking out: " ~ spec);
+	auto submoduleState = parseSpec(spec);
+	d.config.build = buildConfig;
+	d.checkout(submoduleState);
+	log("Done.");
 }
 
 /// Build all D versions (for the purpose of caching them).
