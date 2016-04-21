@@ -38,8 +38,8 @@ then
 fi
 if [[ "${APPVEYOR:-}" == "True" ]]
 then
-	# TODO, Phobos tests segfault on AppVeyor
-	TEST_ARGS+=('--without=phobos')
+	# TODO, Druntime tests segfault on AppVeyor
+	TEST_ARGS+=('--without=druntime')
 fi
 ./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --jobs=auto # Without DMD as that takes too long and is too fragile
 
