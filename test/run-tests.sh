@@ -31,9 +31,15 @@ git submodule foreach git clean -fdx
 popd
 
 TEST_ARGS=('--without=dmd')
-if [ "$UNAME" == "Darwin" ]; then
+if [[ "$UNAME" == "Darwin" ]]
+then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
 	TEST_ARGS+=('--without=rdmd')
+fi
+if [[ "${APPVEYOR:-}" == "True" ]]
+then
+	# TODO, Phobos tests segfault on AppVeyor
+	TEST_ARGS+=('--without=phobos')
 fi
 ./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --jobs=auto # Without DMD as that takes too long and is too fragile
 
