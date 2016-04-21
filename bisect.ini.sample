@@ -50,6 +50,11 @@ tester = cd C:\Temp && dmd -o- test.d
 
 #bisectBuild = true
 
+# Similarly, if you'd like to bisect a D test failure.
+# Implies bisectBuild.
+
+#bisectBuildTest = true
+
 # Build options.
 [build]
 

@@ -29,6 +29,7 @@ struct BisectConfig
 	bool reverse;
 	string tester;
 	bool bisectBuild;
+	bool bisectBuildTest;
 
 	BuildConfig build;
 
@@ -51,6 +52,14 @@ int doBisect(bool noVerify, string bisectConfigFile)
 	auto repo = &d.getMetaRepo().git;
 
 	d.needUpdate();
+
+	if (bisectConfig.bisectBuildTest)
+	{
+		bisectConfig.bisectBuild = true;
+		d.config.cache = "none";
+	}
+	if (bisectConfig.bisectBuild)
+		enforce(!bisectConfig.tester, "bisectBuild and specifying a test command are mutually exclusive");
 
 	void test(bool good, string rev)
 	{
@@ -86,9 +95,6 @@ int doBisect(bool noVerify, string bisectConfigFile)
 			test(false, bad);
 		}
 	}
-
-	if (bisectConfig.bisectBuild)
-		enforce(!bisectConfig.tester, "bisectBuild and specifying a test command are mutually exclusive");
 
 	auto p0 = getRev!true();  // good
 	auto p1 = getRev!false(); // bad
@@ -239,7 +245,7 @@ int doBisectStep(string rev)
 	catch (Exception e)
 	{
 		log("Build failed: " ~ e.toString());
-		if (bisectConfig.bisectBuild)
+		if (bisectConfig.bisectBuild && !bisectConfig.bisectBuildTest)
 			return 1;
 		return EXIT_UNTESTABLE;
 	}
@@ -247,6 +253,19 @@ int doBisectStep(string rev)
 	if (bisectConfig.bisectBuild)
 	{
 		log("Build successful.");
+
+		if (bisectConfig.bisectBuildTest)
+		{
+			try
+				d.test();
+			catch (Exception e)
+			{
+				log("Tests failed: " ~ e.toString());
+				return 1;
+			}
+			log("Tests successful.");
+		}
+
 		return 0;
 	}
 
