@@ -97,7 +97,15 @@ build.components.common.makeJobs = auto
 EOF
 
 ./digger --config-file ./digger.ini --offline bisect ./bisect.ini 2>&1 | tee digger.log
-diff <(tail -n 19 digger.log | sed 's///') issue15914-bisect.log
+
+if [[ "$UNAME" == *_NT-* ]]
+then
+	# Digger outputs \r\n newlines in its log output on Windows, filter those out before diffing
+	diff <(tail -n 19 digger.log | sed 's/\r//') issue15914-bisect.log
+else
+	# OS X doesn't support the \r escape
+	diff <(tail -n 19 digger.log) issue15914-bisect.log
+fi
 
 # Done!
 
