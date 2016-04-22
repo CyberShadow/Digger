@@ -21,6 +21,7 @@ Digger v2.5 (WIP)
    by Digger
  * Internal changes for improved reliability
    * Cache version bumped to 3
+ * Add test suite
 
 Digger v2.4 (2015-10-05)
 ------------------------
