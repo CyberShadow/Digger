@@ -97,7 +97,7 @@ build.components.common.makeJobs = auto
 EOF
 
 ./digger --config-file ./digger.ini --offline bisect ./bisect.ini 2>&1 | tee digger.log
-diff <(tail -n 19 digger.log | sed 's/\r//') issue15914-bisect.log
+diff <(tail -n 19 digger.log | sed "s/\r//") issue15914-bisect.log
 
 # Done!
 
