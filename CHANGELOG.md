@@ -20,6 +20,7 @@ Digger v2.5 (WIP)
  * Refuse to clobber working tree changes not done
    by Digger
  * Internal changes for improved reliability
+   * Cache version bumped to 3
 
 Digger v2.4 (2015-10-05)
 ------------------------
