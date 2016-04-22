@@ -43,6 +43,12 @@ then
 fi
 ./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --jobs=auto
 
+if [[ "$UNAME" == *_NT-* ]]
+then
+	# Test 64-bit on Windows too
+	./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --model=64
+fi
+
 # Caching
 
 ./digger --config-file ./digger.ini --offline build --jobs=auto "master @ 2016-01-01 00:00:00" 2>&1 | tee digger.log
