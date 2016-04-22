@@ -25,10 +25,13 @@ work/result/bin/dmd -run issue15914.d
 
 # Run tests
 
-pushd work/repo/ # Clean everything to test correct test dependencies
-git submodule foreach git reset --hard
-git submodule foreach git clean -fdx
-popd
+function clean {
+	pushd work/repo/
+	git submodule foreach git reset --hard
+	git submodule foreach git clean -fdx
+	popd
+}
+clean # Clean everything to test correct test dependencies
 
 TEST_ARGS=('--without=dmd') # Without DMD as that takes too long and is too fragile
 if [[ "$UNAME" == "Darwin" ]]
@@ -46,6 +49,7 @@ fi
 if [[ "$UNAME" == *_NT-* ]]
 then
 	# Test 64-bit on Windows too
+	clean # Needed to rebuild zlib for correct model
 	./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --model=64
 fi
 
