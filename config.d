@@ -73,6 +73,10 @@ shared static this()
 		config.local.workDir = (config.local.workDir ? config.local.workDir.expandTilde() : getcwd()).absolutePath().buildNormalizedPath();
 	}
 
+	if (opts.offline)
+		config.local.offline = opts.offline;
+	if (opts.jobs)
+		config.local.makeJobs = opts.jobs;
 	opts.configLines.parseIniInto(config);
 
 	.opts = cast(immutable)opts;
