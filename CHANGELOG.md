@@ -1,7 +1,7 @@
 Digger Changelog
 ================
 
-Digger v2.5 (WIP)
+Digger v3.0 (WIP)
 ------------------------
 
  * Add `digger checkout` command, which simply
@@ -19,6 +19,7 @@ Digger v2.5 (WIP)
    `-j` parameter
  * Refuse to clobber working tree changes not done
    by Digger
+ * Verify integrity of all downloaded files
  * Internal changes for improved reliability
    * Cache version bumped to 3
  * Add test suite
