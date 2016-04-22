@@ -30,7 +30,7 @@ git submodule foreach git reset --hard
 git submodule foreach git clean -fdx
 popd
 
-TEST_ARGS=('--without=dmd')
+TEST_ARGS=('--without=dmd') # Without DMD as that takes too long and is too fragile
 if [[ "$UNAME" == "Darwin" ]]
 then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
@@ -41,7 +41,7 @@ then
 	# TODO, Druntime tests segfault on AppVeyor
 	TEST_ARGS+=('--without=druntime')
 fi
-./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --jobs=auto # Without DMD as that takes too long and is too fragile
+./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --jobs=auto
 
 # Caching
 
