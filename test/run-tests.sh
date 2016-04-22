@@ -90,8 +90,8 @@ work/result/bin/dmd -run issue15914.d
 # Bisecting
 
 cat > bisect.ini <<EOF
-bad  = master @ 2016-02-18 00:00:00
-good = master @ 2016-02-17 00:00:00
+bad  = master @ 2016-02-19 00:00:00
+good = master @ 2016-02-18 00:00:00
 tester = dmd -run issue15914.d
 build.components.common.makeJobs = auto
 EOF
