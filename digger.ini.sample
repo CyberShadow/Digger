@@ -4,6 +4,9 @@
 # current directory, EXE directory, source directory,
 # ~/.digger/digger.ini, and, on Posix systems,
 # /etc/digger.ini.
+# These settings can also be set from the command line using
+# the -c option, and also overridden in a bisect.ini file,
+# e.g.: -c build.components.dmd.debugDMD=true
 
 # Working directory.
 # This directory will contain all of Digger's working files:
@@ -13,7 +16,18 @@
 # Please specify an absolute path. The default is to use the
 # current directory.
 
-# workDir = C:\Temp\Digger
+#local.workDir = C:\Temp\Digger
+
+# How many jobs to run makefiles in.
+# Gets passed to GNU make as the -j parameter (not supported by
+# DigitalMars make on Windows). Specify "auto" to use the
+# CPU core count, or "unlimited" for no limit.
+
+#local.makeJobs = auto
+
+# Don't go online to fetch the latest revisions from GitHub.
+
+#local.offline = false
 
 # Build cache.
 # To speed up successive runs, Digger can save the results of
@@ -29,23 +43,52 @@
 # You can periodically run "digger compact" to optimize disk
 # space used by the cache.
 
-# cache = git
+#local.cache = git
+
+# Default build options.
+
+[build]
+
+# Enable or disable D components to build.
+# For example, rdmd is rarely needed, so we can disable it here.
+# Additional components not enabled by default can also be added.
+# Equivalent to the --with and --without "digger build" options.
+# Run `digger build --help` to see a list of available components.
+
+#components.enable.rdmd = false
+
+# Target model.
+# Whether to target 32 or 64 bits when building D components.
+# The default is to use the system model on POSIX, and 32-bit
+# on Windows. Equivalent to the `digger build --model` option.
+
+#components.common.model = 64
+
+# Additional make parameters.
+# Equivalent to the --make-args "digger build" option.
+
+#components.common.makeArgs = ["HOST_CC=g++48"]
+
+# Whether to build a debug compiler.
+# Debug compilers are built quicker, but compile D code slower.
+
+#components.dmd.debugDMD = false
+
+# Bootstrap the compiler (build from C++ source code) instead of
+# downloading a pre-built binary package.
+# Equivalent to the `digger build --bootstrap` option.
+
+#components.dmd.bootstrap = false
 
 # Build/test environment.
 # By default, Digger completely clears the environment and
 # builds a new one from scratch, to avoid potential sources
 # of contamination that can affect the D builds or test results.
-# The environment is calculated in this order:
-# 1. Clear entirely
-# 2. Build minimal environment
-# 3. Apply digger.ini settings
-# 4. Apply bisect.ini settings, if we are bisecting
-# Step 4 is only applied during the execution of the test command.
-[environment]
+[build.environment]
 
 # You can use %VAR% syntax to refer to the previous value of a
 # variable, or if there wasn't one, to the value from the
-# original environment (before it was cleared and rebuilt).
+# original host environment (before it was cleared and rebuilt).
 
 # Examples:
 
@@ -54,3 +97,6 @@
 
 # Import PATHEXT from the original environment
 #PATHEXT=%PATHEXT%
+
+# There are some additional lesser-used options not listed here,
+# see ae.sys.d.manager.DManager.Config for details.

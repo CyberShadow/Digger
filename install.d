@@ -12,7 +12,7 @@ import ae.utils.array;
 import ae.utils.json;
 
 import common;
-import config;
+import config : config;
 import custom;
 
 static import std.process;
@@ -114,7 +114,7 @@ string selectInstallPath(string location)
 
 	foreach (candidate; candidates)
 	{
-		if (candidate.buildNormalizedPath.startsWith(workDir.buildNormalizedPath))
+		if (candidate.buildNormalizedPath.startsWith(config.local.workDir.buildNormalizedPath))
 		{
 			log("Skipping DMD installation under Digger workDir: " ~ candidate);
 			continue;

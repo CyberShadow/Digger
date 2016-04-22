@@ -32,7 +32,7 @@ struct BuildInfo
 {
 	string diggerVersion;
 	string spec;
-	BuildConfig config;
+	DiggerManager.Config.Build config;
 }
 
 enum buildInfoFileName = "build-info.json";
@@ -51,26 +51,23 @@ void prepareResult()
 
 /// Build the customized D version.
 /// The result will be in resultDir.
-void runBuild(string spec, DManager.SubmoduleState submoduleState, BuildConfig buildConfig)
+void runBuild(string spec, DManager.SubmoduleState submoduleState)
 {
-	d.config.build = buildConfig;
 	d.build(submoduleState);
 	prepareResult();
-	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, buildConfig).toJson());
+	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, d.config.build).toJson());
 }
 
 /// Perform an incremental build, i.e. don't clean or fetch anything from remote repos
-void incrementalBuild(BuildConfig buildConfig)
+void incrementalBuild()
 {
-	d.config.build = buildConfig;
 	d.rebuild();
 	prepareResult();
 }
 
 /// Run tests.
-void runTests(BuildConfig buildConfig)
+void runTests()
 {
-	d.config.build = buildConfig;
 	d.test();
 }
 
@@ -175,11 +172,10 @@ int handleWebTask(string[] args)
 			);
 			enforce(args.length == 1, "Unrecognized build option");
 
-			BuildConfig buildConfig;
 			if (model.length)
-				buildConfig.components.common.model = model;
+				d.config.build.components.common.model = model;
 
-			runBuild(customizer.state.spec, customizer.state.submoduleState, buildConfig);
+			runBuild(customizer.state.spec, customizer.state.submoduleState);
 			customizer.finish();
 			return 0;
 		}
@@ -267,28 +263,25 @@ DManager.SubmoduleState parseSpec(string spec)
 
 /// Build D according to the given spec string
 /// (e.g. master+dmd#123).
-void buildCustom(string spec, BuildConfig buildConfig)
+void buildCustom(string spec)
 {
 	log("Building spec: " ~ spec);
 	auto submoduleState = parseSpec(spec);
-	runBuild(spec, submoduleState, buildConfig);
+	runBuild(spec, submoduleState);
 }
 
-void checkout(string spec, BuildConfig buildConfig)
+void checkout(string spec)
 {
 	log("Checking out: " ~ spec);
 	auto submoduleState = parseSpec(spec);
-	d.config.build = buildConfig;
 	d.checkout(submoduleState);
 	log("Done.");
 }
 
 /// Build all D versions (for the purpose of caching them).
 /// Build order is in steps of decreasing powers of two.
-void buildAll(string spec, BuildConfig buildConfig)
+void buildAll(string spec)
 {
-	d.config.build = buildConfig;
-
 	d.needUpdate();
 	auto commits = d.getLog("refs/remotes/origin/" ~ spec);
 	commits.reverse(); // oldest first

@@ -31,35 +31,31 @@ version(Windows) static import ae.sys.windows;
 
 alias BuildOptions(string action, string pastAction, bool showBuildActions = true) = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
-	Option!(string, showBuildActions ? "Select model (32 or 64).\nOn this system, the default is " ~ BuildConfig.components.common.defaultModel : hiddenOption, null, 0, "model"),
-	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", "), "COMPONENT", 0, "without"),
-	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", "), "COMPONENT", 0, "with"),
-	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "-j8" or "HOST_CC=g++48"` : hiddenOption, "ARG", 0, "makeArgs"),
-	Switch!(showBuildActions ? "Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package" : hiddenOption, 0, "bootstrap"),
-	Option!(string, showBuildActions ? "How many jobs to run makefiles in. Gets passed to GNU make as the -j parameter (not supported by DigitalMars make on Windows). Specify \"auto\" to use the CPU core count, or \"unlimited\" for no limit." : hiddenOption, "N", 0, "jobs"),
+	Option!(string, showBuildActions ? "Select model (32 or 64).\nOn this system, the default is " ~ DManager.Config.Build.components.common.defaultModel ~ " [build.components.common.model]" : hiddenOption, null, 0, "model"),
+	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", ") ~ " [build.components.enable.COMPONENT=false]", "COMPONENT", 0, "without"),
+	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", ") ~ " [build.components.enable.COMPONENT=true]", "COMPONENT", 0, "with"),
+	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "HOST_CC=g++48" [build.components.common.makeArgs]` : hiddenOption, "ARG", 0, "makeArgs"),
+	Switch!(showBuildActions ? "Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package [build.components.dmd.bootstrap]" : hiddenOption, 0, "bootstrap"),
 	Switch!(hiddenOption, 0, "use-vc"),
 );
 
 alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n"
 	"\"master @ 3 weeks ago + dmd#123 + You/dmd/awesome-feature\"");
 
-BuildConfig parseBuildOptions(T...)(T options) // T == BuildOptions!action
+void parseBuildOptions(T...)(T options) // T == BuildOptions!action
 {
-	BuildConfig buildConfig;
 	if (options[0])
-		buildConfig.components.common.model = "64";
+		d.config.build.components.common.model = "64";
 	if (options[1])
-		buildConfig.components.common.model = options[1];
+		d.config.build.components.common.model = options[1];
 	foreach (componentName; options[2])
-		buildConfig.components.enable[componentName] = false;
+		d.config.build.components.enable[componentName] = false;
 	foreach (componentName; options[3])
-		buildConfig.components.enable[componentName] = true;
-	buildConfig.components.common.makeArgs = options[4];
-	buildConfig.components.dmd.bootstrap = options[5];
-	buildConfig.components.common.makeJobs = options[6];
-	buildConfig.components.dmd.useVC = options[7];
-	static assert(options.length == 8);
-	return buildConfig;
+		d.config.build.components.enable[componentName] = true;
+	d.config.build.components.common.makeArgs ~= options[4];
+	d.config.build.components.dmd.bootstrap |= options[5];
+	d.config.build.components.dmd.useVC |= options[6];
+	static assert(options.length == 7);
 }
 
 struct Digger
@@ -68,28 +64,32 @@ static:
 	@(`Build D from source code`)
 	int build(BuildOptions!("build", "built") options, Spec spec = "master")
 	{
-		buildCustom(spec, parseBuildOptions(options));
+		parseBuildOptions(options);
+		buildCustom(spec);
 		return 0;
 	}
 
 	@(`Incrementally rebuild the current D checkout`)
 	int rebuild(BuildOptions!("rebuild", "rebuilt") options)
 	{
-		incrementalBuild(parseBuildOptions(options));
+		parseBuildOptions(options);
+		incrementalBuild();
 		return 0;
 	}
 
 	@(`Run tests for enabled components`)
 	int test(BuildOptions!("test", "tested") options)
 	{
-		runTests(parseBuildOptions(options));
+		parseBuildOptions(options);
+		runTests();
 		return 0;
 	}
 
 	@(`Check out D source code from git`)
 	int checkout(BuildOptions!("check out", "checked out", false) options, Spec spec = "master")
 	{
-		.checkout(spec, parseBuildOptions(options));
+		parseBuildOptions(options);
+		.checkout(spec);
 		return 0;
 	}
 
@@ -157,7 +157,8 @@ static:
 
 	int buildAll(BuildOptions!("build", "built") options, string spec = "master")
 	{
-		.buildAll(spec, parseBuildOptions(options));
+		parseBuildOptions(options);
+		.buildAll(spec);
 		return 0;
 	}
 

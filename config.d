@@ -7,6 +7,7 @@ import std.string;
 
 import core.runtime;
 
+import ae.sys.d.manager;
 import ae.utils.funopt;
 import ae.utils.meta;
 import ae.utils.sini;
@@ -16,8 +17,10 @@ static import std.getopt;
 struct Opts
 {
 	Option!(string, hiddenOption) dir;
-	Option!(string, "Path to the configuration file to use", "PATH") configFile;
-	Switch!("Do not update D repositories from GitHub") offline;
+	Option!(string, "Path to the configuration file to use [local.workDir]", "PATH") configFile;
+	Switch!("Do not update D repositories from GitHub [local.offline]") offline;
+	Option!(string, "How many jobs to run makefiles in [local.makeJobs]", "N") jobs;
+	Option!(string[], "Additional configuration. Equivalent to digger.ini settings.", "NAME=VALUE", 'c', "config") configLines;
 
 	Parameter!(string, "Action to perform (see list below)") action;
 	Parameter!(immutable(string)[]) actionArguments;
@@ -26,9 +29,8 @@ immutable Opts opts;
 
 struct ConfigFile
 {
-	string workDir;
-	string cache = "none";
-	string[string] environment;
+	DManager.Config.Build build;
+	DManager.Config.Local local;
 }
 immutable ConfigFile config;
 
@@ -66,11 +68,14 @@ shared static this()
 			opts.configFile.value
 			.readText()
 			.splitLines()
-			.parseStructuredIni!ConfigFile();
+			.parseIni!ConfigFile();
+
+		config.local.workDir = (config.local.workDir ? config.local.workDir.expandTilde() : getcwd()).absolutePath().buildNormalizedPath();
 	}
 
-	.opts = opts;
+	opts.configLines.parseIniInto(config);
+
+	.opts = cast(immutable)opts;
 }
 
-@property string workDir() { return (config.workDir ? config.workDir.expandTilde() : getcwd()).absolutePath().buildNormalizedPath(); }
-@property string subDir(string name)() { return buildPath(workDir, name); }
+@property string subDir(string name)() { return buildPath(config.local.workDir, name); }

@@ -31,7 +31,8 @@ struct BisectConfig
 	bool bisectBuild;
 	bool bisectBuildTest;
 
-	BuildConfig build;
+	DiggerManager.Config.Build* build;
+	DiggerManager.Config.Local* local;
 
 	string[string] environment;
 }
@@ -42,11 +43,12 @@ alias currentDir = subDir!"current";
 
 int doBisect(bool noVerify, string bisectConfigFile)
 {
-	bisectConfig = bisectConfigFile
+	bisectConfig.build = &d.config.build;
+	bisectConfig.local = &d.config.local;
+	bisectConfigFile
 		.readText()
 		.splitLines()
-		.parseStructuredIni!BisectConfig();
-	d.config.build = bisectConfig.build;
+		.parseIniInto(bisectConfig);
 
 	d.getMetaRepo().needRepo();
 	auto repo = &d.getMetaRepo().git;
@@ -56,7 +58,7 @@ int doBisect(bool noVerify, string bisectConfigFile)
 	if (bisectConfig.bisectBuildTest)
 	{
 		bisectConfig.bisectBuild = true;
-		d.config.cache = "none";
+		d.config.local.cache = "none";
 	}
 	if (bisectConfig.bisectBuild)
 		enforce(!bisectConfig.tester, "bisectBuild and specifying a test command are mutually exclusive");
@@ -329,8 +331,8 @@ int doDelve(bool inBisect)
 				return EXIT_UNTESTABLE;
 			}
 
-		d.config.cacheFailures = false;
-		d.config.build = bisectConfig.build;
+		d.cacheFailures = false;
+		//d.config.build = bisectConfig.build; // TODO
 		auto state = d.begin(rev);
 		try
 		{

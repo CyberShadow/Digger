@@ -55,32 +55,15 @@ tester = cd C:\Temp && dmd -o- test.d
 
 #bisectBuildTest = true
 
-# Build options.
+# Test environment.
+# Uses the same syntax as build.environment, however it
+# is only applied during the execution of the tester
+# command specified above.
+
+[environment]
+
+# Optionally, you can specify additional build options.
+# These use the same format, and override those found in digger.ini.
 [build]
 
-# Target model.
-# Whether to target 32 or 64 bits when building D components.
-# The default is to use the system model.
-# Equivalent to the --model "digger build" option.
-
-#model = 64
-
-# Whether to build a debug compiler.
-# Debug compilers are built quicker, but compile D code slower.
-
-debugDMD = false
-
-# Enable or disable D components to build.
-# For example, rdmd is rarely needed, so we can disable it here.
-# Equivalent to the --with and --without "digger build" options.
-
 components.enable.rdmd = false
-
-# Additional make parameters.
-# Equivalent to the --make-args "digger build" option.
-
-#components.common.makeArgs = ["-j8"]
-
-# Build/test environment.
-# See digger.ini.sample for an explanation.
-[environment]

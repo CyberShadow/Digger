@@ -4,6 +4,11 @@ Digger Changelog
 Digger v3.0 (WIP)
 ------------------------
 
+ * Major internal changes for improved reliability
+   * Cache version bumped to 3
+ * Updated, backwards-incompatible .ini settings
+   * All settings are now equally available from
+     `digger.ini`, `bisect.ini` and command line
  * Add `digger checkout` command, which simply
    checks out a given D revision (`master` by default)
  * Add `digger test` command, to run tests for
@@ -17,12 +22,14 @@ Digger v3.0 (WIP)
    `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
  * Add `--jobs` option for controlling the GNU make
    `-j` parameter
+ * Add `-c` option to specify arbitrary `digger.ini`
+   setting on the command line
  * Refuse to clobber working tree changes not done
    by Digger
  * Verify integrity of all downloaded files
- * Internal changes for improved reliability
-   * Cache version bumped to 3
  * Add test suite
+   * Enable continuous integration on Travis and
+     AppVeyor
 
 Digger v2.4 (2015-10-05)
 ------------------------

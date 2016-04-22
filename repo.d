@@ -15,40 +15,16 @@ import ae.sys.file;
 import ae.sys.d.manager;
 
 import common;
-import config : config, workDir, opts;
+import config : config, opts;
 
 //alias BuildConfig = DManager.Config.Build;
-
-// Wrapper type for compatibility with 1.x INI files.
-struct BuildConfig
-{
-	DManager.Config.Build.Components components;
-
-	string model;
-	bool debugDMD;
-
-	@property DManager.Config.Build convert()
-	{
-		DManager.Config.Build build;
-		build.components = components;
-		if (model)
-			build.components.common.model = model;
-		if (debugDMD)
-			build.components.dmd.debugDMD = true;
-		return build;
-	}
-
-	alias convert this;
-}
 
 final class DiggerManager : DManager
 {
 	this()
 	{
-		this.config.local.workDir = .workDir;
-		this.config.offline = .opts.offline;
-		this.config.cache = .config.cache;
-		this.config.environment = .config.environment.dup.byPair.assocArray;
+		this.config.build = cast().config.build;
+		this.config.local = cast().config.local;
 	}
 
 	override void log(string s)

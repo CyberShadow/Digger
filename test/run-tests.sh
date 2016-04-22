@@ -5,8 +5,9 @@ cd "$(dirname "$0")"
 
 UNAME="$(uname)"
 
-echo "workDir = work/" > ./digger.ini
-echo "cache = git" >> ./digger.ini
+echo "local.workDir = work/" > ./digger.ini
+echo "local.cache = git" >> ./digger.ini
+echo "local.makeJobs = auto" >> ./digger.ini
 
 rm -rf work
 ( shopt -s nullglob; rm -f ./*.lst )
@@ -20,7 +21,7 @@ rdmd --build-only -cov -debug -g -of./digger ../digger.d
 
 # Simple build
 
-./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-01-01 00:00:00"
+./digger --config-file ./digger.ini build "master @ 2016-01-01 00:00:00"
 work/result/bin/dmd -run issue15914.d
 
 # Run tests
@@ -44,7 +45,7 @@ then
 	# TODO, Druntime tests segfault on AppVeyor
 	TEST_ARGS+=('--without=druntime')
 fi
-./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --jobs=auto
+./digger --config-file ./digger.ini test "${TEST_ARGS[@]}"
 
 if [[ "$UNAME" == *_NT-* ]]
 then
@@ -55,13 +56,13 @@ fi
 
 # Caching
 
-./digger --config-file ./digger.ini --offline build --jobs=auto "master @ 2016-01-01 00:00:00" 2>&1 | tee digger.log
+./digger --config-file ./digger.ini --offline build "master @ 2016-01-01 00:00:00" 2>&1 | tee digger.log
 ! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 
 # Rebuild - no changes
 
-./digger --config-file ./digger.ini rebuild --jobs=auto
+./digger --config-file ./digger.ini rebuild
 work/result/bin/dmd -run issue15914.d
 
 # Rebuild - with changes
@@ -70,31 +71,31 @@ pushd work/repo/phobos/
 git cherry-pick --no-commit ad226e92d5f092df233b90fd3fdedb8b71d728eb
 popd
 
-./digger --config-file ./digger.ini rebuild --jobs=auto
+./digger --config-file ./digger.ini rebuild
 ! work/result/bin/dmd -run issue15914.d
 
 # Working tree state
 
-! ./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-04-01 00:00:00" # Worktree is dirty - should fail
+! ./digger --config-file ./digger.ini build "master @ 2016-04-01 00:00:00" # Worktree is dirty - should fail
 rm work/repo/.git/modules/phobos/ae-sys-d-worktree.json
-  ./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-04-01 00:00:00" # Should work now
+  ./digger --config-file ./digger.ini build "master @ 2016-04-01 00:00:00" # Should work now
 ! work/result/bin/dmd -run issue15914.d
 
 # Merging
 
-./digger --config-file ./digger.ini build --jobs=auto "master @ 2016-01-01 00:00:00 + phobos#3859"
+./digger --config-file ./digger.ini build "master @ 2016-01-01 00:00:00 + phobos#3859"
 ! work/result/bin/dmd -run issue15914.d
 
 # Cached merging
 
-./digger --config-file ./digger.ini --offline build --jobs=auto "master @ 2016-01-01 00:00:00 + phobos#3859" 2>&1 | tee digger.log
+./digger --config-file ./digger.ini --offline build "master @ 2016-01-01 00:00:00 + phobos#3859" 2>&1 | tee digger.log
 ! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 ! grep --quiet --fixed-strings --line-regexp 'digger: Merging phobos commit ad226e92d5f092df233b90fd3fdedb8b71d728eb' digger.log
 grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 
 # Reverting
 
-./digger --config-file ./digger.ini --offline build --jobs=auto "master @ 2016-04-01 00:00:00 + -phobos#3859"
+./digger --config-file ./digger.ini --offline build "master @ 2016-04-01 00:00:00 + -phobos#3859"
 work/result/bin/dmd -run issue15914.d
 
 # Bisecting
@@ -103,7 +104,7 @@ cat > bisect.ini <<EOF
 bad  = master @ 2016-02-19 00:00:00
 good = master @ 2016-02-18 00:00:00
 tester = dmd -run issue15914.d
-build.components.common.makeJobs = auto
+local.makeJobs = auto
 EOF
 
 ./digger --config-file ./digger.ini --offline bisect ./bisect.ini 2>&1 | tee digger.log
