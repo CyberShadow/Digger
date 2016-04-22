@@ -45,14 +45,17 @@ then
 	# TODO, Druntime tests segfault on AppVeyor
 	TEST_ARGS+=('--without=druntime')
 fi
-./digger --config-file ./digger.ini test "${TEST_ARGS[@]}"
 
 if [[ "$UNAME" == *_NT-* ]]
 then
 	# Test 64-bit on Windows too
-	clean # Needed to rebuild zlib for correct model
 	./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --model=64
+	clean # Needed to rebuild zlib for correct model
+	# Build 64-bit first so we leave behind 32-bit C++ object files,
+	# so that the rebuild action below succeeds.
 fi
+
+./digger --config-file ./digger.ini test "${TEST_ARGS[@]}"
 
 # Caching
 
