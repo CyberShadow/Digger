@@ -9,9 +9,10 @@ Digger v3.0 (WIP)
  * Updated, backwards-incompatible .ini settings
    * All settings are now equally available from
      `digger.ini`, `bisect.ini` and command line
+ * Add `-c` option to specify arbitrary `digger.ini`
+   setting on the command line
  * Add `digger checkout` command, which simply
    checks out a given D revision (`master` by default)
- * Add `32mscoff` model support for Windows
  * Add `digger test` command, to run tests for
    working tree state
  * Add ability to revert a branch or pull request.
@@ -21,10 +22,9 @@ Digger v3.0 (WIP)
  * Add ability to specify commit SHA1 instead of a
    branch or PR number. Example:
    `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
+ * Add `32mscoff` model support for Windows
  * Add `--jobs` option for controlling the GNU make
    `-j` parameter
- * Add `-c` option to specify arbitrary `digger.ini`
-   setting on the command line
  * Refuse to clobber working tree changes not done
    by Digger
  * Verify integrity of all downloaded files
