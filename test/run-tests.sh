@@ -36,7 +36,7 @@ function clean {
 }
 clean # Clean everything to test correct test dependencies
 
-TEST_ARGS=('--with=phobos --with=tools')
+TEST_ARGS=('--with=phobos' '--with=tools')
 if [[ "$UNAME" == "Darwin" ]]
 then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
