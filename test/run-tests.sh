@@ -14,10 +14,12 @@ rm -rf work
 
 # Run unittests
 
-rdmd --build-only -cov -debug -g -unittest -of./digger ../digger.d
+DFLAGS=(-cov -debug -g -version=test)
+
+rdmd --build-only "${DFLAGS[@]}" -unittest -of./digger ../digger.d
 ./digger build --help
 
-rdmd --build-only -cov -debug -g -of./digger ../digger.d
+rdmd --build-only "${DFLAGS[@]}" -of./digger ../digger.d
 
 # Simple build
 
@@ -34,7 +36,7 @@ function clean {
 }
 clean # Clean everything to test correct test dependencies
 
-TEST_ARGS=('--without=dmd') # Without DMD as that takes too long and is too fragile
+TEST_ARGS=('--with=dmd')
 if [[ "$UNAME" == "Darwin" ]]
 then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
