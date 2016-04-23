@@ -36,7 +36,7 @@ function clean {
 }
 clean # Clean everything to test correct test dependencies
 
-TEST_ARGS=('--with=dmd')
+TEST_ARGS=('--with=phobos')
 if [[ "$UNAME" == "Darwin" ]]
 then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
@@ -44,6 +44,8 @@ then
 fi
 if [[ "${APPVEYOR:-}" == "True" ]]
 then
+	# MSYS downloads fail on AppVeyor (bandwidth quota exceeded?)
+	TEST_ARGS+=('--without=dmd')
 	# TODO, Druntime tests segfault on AppVeyor
 	TEST_ARGS+=('--without=druntime')
 fi
