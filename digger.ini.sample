@@ -59,6 +59,7 @@
 
 # Target model.
 # Whether to target 32 or 64 bits when building D components.
+# On Windows, 32mscoff is also an option.
 # The default is to use the system model on POSIX, and 32-bit
 # on Windows. Equivalent to the `digger build --model` option.
 

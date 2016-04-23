@@ -31,7 +31,7 @@ version(Windows) static import ae.sys.windows;
 
 alias BuildOptions(string action, string pastAction, bool showBuildActions = true) = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
-	Option!(string, showBuildActions ? "Select model (32 or 64).\nOn this system, the default is " ~ DManager.Config.Build.components.common.defaultModel ~ " [build.components.common.model]" : hiddenOption, null, 0, "model"),
+	Option!(string, showBuildActions ? "Select model (32, 64, or, on Windows, 32mscoff).\nOn this system, the default is " ~ DManager.Config.Build.components.common.defaultModel ~ " [build.components.common.model]" : hiddenOption, null, 0, "model"),
 	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", ") ~ " [build.components.enable.COMPONENT=false]", "COMPONENT", 0, "without"),
 	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", ") ~ " [build.components.enable.COMPONENT=true]", "COMPONENT", 0, "with"),
 	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "HOST_CC=g++48" [build.components.common.makeArgs]` : hiddenOption, "ARG", 0, "makeArgs"),
