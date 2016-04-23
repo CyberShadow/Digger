@@ -21,6 +21,7 @@ Digger v3.0 (WIP)
    Example: `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
  * Add `32mscoff` model support for Windows
  * Add `--jobs` option for controlling the GNU make `-j` parameter
+ * Add `components.dmd.releaseDMD` option to complement `debugDMD`
  * Refuse to clobber working tree changes not done by Digger
  * Verify integrity of all downloaded files
  * Add test suite

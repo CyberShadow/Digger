@@ -75,6 +75,11 @@
 
 #components.dmd.debugDMD = false
 
+# Whether to build a release compiler.
+# Enables optimizations. Mutually exclusive with the above.
+
+#components.dmd.releaseDMD = false
+
 # Bootstrap the compiler (build from C++ source code) instead of
 # downloading a pre-built binary package.
 # Equivalent to the `digger build --bootstrap` option.
