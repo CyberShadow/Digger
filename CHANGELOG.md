@@ -9,6 +9,8 @@ Digger v3.0 (WIP)
  * Updated, backwards-incompatible .ini settings
    * All settings are now equally available from `digger.ini`, `bisect.ini` 
      and command line
+   * Search for the configuration file according to the XDG Base Directory
+     Specification
  * Add `-c` option to specify arbitrary `digger.ini` setting on the command 
    line
  * Add `digger checkout` command, which simply checks out a given D revision 
@@ -24,8 +26,10 @@ Digger v3.0 (WIP)
  * Add `components.dmd.releaseDMD` option to complement `debugDMD`
  * Refuse to clobber working tree changes not done by Digger
  * Verify integrity of all downloaded files
+ * Prevent git from loading user/system configuration
  * Add test suite
    * Enable continuous integration on Travis and AppVeyor
+ * Various fixes
 
 Digger v2.4 (2015-10-05)
 ------------------------
