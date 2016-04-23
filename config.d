@@ -8,6 +8,7 @@ import std.string;
 import core.runtime;
 
 import ae.sys.d.manager;
+import ae.sys.paths;
 import ae.utils.funopt;
 import ae.utils.meta;
 import ae.utils.sini;
@@ -48,17 +49,24 @@ shared static this()
 
 	if (!opts.configFile)
 	{
-		opts.configFile = CONFIG_FILE;
-		if (!opts.configFile.value.exists)
-			opts.configFile = buildPath(thisExePath.dirName, CONFIG_FILE);
-		if (!opts.configFile.value.exists)
-			opts.configFile = buildPath(__FILE__.dirName, CONFIG_FILE);
-		if (!opts.configFile.value.exists)
-			opts.configFile = buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger", CONFIG_FILE);
-		version (Posix)
+		auto searchDirs = [
+			string.init,
+			thisExePath.dirName,
+			__FILE__.dirName,
+			] ~ getConfigDirs() ~ [
+			// buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger"), // legacy
+		];
+		// version (Posix)
+		// 	searchDirs ~= "/etc/"; // legacy
+
+		foreach (dir; searchDirs)
 		{
-			if (!opts.configFile.exists)
-				opts.configFile = buildPath("/etc/", CONFIG_FILE);
+			auto path = dir.buildPath(CONFIG_FILE);
+			if (path.exists)
+			{
+				opts.configFile = path;
+				break;
+			}
 		}
 	}
 
