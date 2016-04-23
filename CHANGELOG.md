@@ -21,6 +21,7 @@ Digger v3.0 (WIP)
    Example: `digger build "master + -phobos#1234"`
  * Add ability to specify commit SHA1 instead of a branch or PR number.  
    Example: `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
+ * Add `tools`, `extras` and `curl` components
  * Add `32mscoff` model support for Windows
  * Add `--jobs` option for controlling the GNU make `-j` parameter
  * Add `components.dmd.releaseDMD` option to complement `debugDMD`
