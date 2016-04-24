@@ -1,5 +1,11 @@
+# User configuration
+
 /digger.ini
 /bisect.ini
+/customization-state.json
+
+# When workDir = .
+
 /repo/
 /build/
 /current
@@ -8,11 +14,15 @@
 /cache-git/
 /temp-cache/
 /bootstrap/
-/customization-state.json
 /dl/
 /tmp/
+
+# POSIX
+
 /digger
 /digger-web
+
+# Windows
 
 *.exe
 *.pdb
