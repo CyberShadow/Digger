@@ -24,7 +24,9 @@ Digger v3.0 (WIP)
  * Add `tools`, `extras` and `curl` components
  * Add `32mscoff` model support for Windows
  * Add `--jobs` option for controlling the GNU make `-j` parameter
- * Add `components.dmd.releaseDMD` option to complement `debugDMD`
+ * Add `components.dmd.releaseDMD` build option to complement `debugDMD`
+ * Add `components.dmd.dmdModel` option, which allows building a 64-bit
+   `dmd.exe` on Windows
  * Refuse to clobber working tree changes not done by Digger
  * Verify integrity of all downloaded files
  * Prevent git from loading user/system configuration
