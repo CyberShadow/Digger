@@ -28,6 +28,7 @@ Digger v3.0 (WIP)
  * Refuse to clobber working tree changes not done by Digger
  * Verify integrity of all downloaded files
  * Prevent git from loading user/system configuration
+ * Add `dub.sdl`
  * Add test suite
    * Enable continuous integration on Travis and AppVeyor
  * Various fixes

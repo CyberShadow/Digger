@@ -30,3 +30,8 @@
 *.exp
 *.lib
 *.suo
+
+# Dub
+
+/dub.selections.json
+/digger_web

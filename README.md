@@ -118,6 +118,8 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
     $ rdmd --build-only digger
     $ rdmd --build-only digger-web
 
+A [dub](https://code.dlang.org/) definition is also included, but you still need to clone with `--recursive`.
+
 On Windows, you may see:
 
     Warning 2: File Not Found version.lib
