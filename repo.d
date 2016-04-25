@@ -16,6 +16,7 @@ import ae.sys.d.manager;
 
 import common;
 import config : config, opts;
+import custom : parseSpec;
 
 //alias BuildConfig = DManager.Config.Build;
 
@@ -35,6 +36,11 @@ final class DiggerManager : DManager
 	void logProgress(string s)
 	{
 		log((" " ~ s ~ " ").center(70, '-'));
+	}
+
+	override SubmoduleState parseSpec(string spec)
+	{
+		return .parseSpec(spec);
 	}
 
 	override MetaRepository getMetaRepo()

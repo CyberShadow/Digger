@@ -102,11 +102,38 @@
 
 #components.dmd.dmdModel = 64
 
-# Bootstrap the compiler (build from C++ source code) instead of
-# downloading a pre-built binary package.
+# How to obtain a D compiler to build the parts of DMD written in D.
+
+# Digger can either download a pre-built D version (default),
+# or build one from source.
 # Equivalent to the `digger build --bootstrap` option.
 
-#components.dmd.bootstrap = false
+#components.dmd.bootstrap.fromSource = false
+
+# Which D version to use when building the D compiler.
+# The default is to select one automatically.
+# This can be a version name, such as "v2.070.2", but also an
+# arbitrary version specification, as when using "digger build".
+
+#components.dmd.bootstrap.ver = v2.067.1
+
+# Build configuration for the compiler used for bootstrapping.
+# If no options are set, then use the same build configuration
+# as for the target build. Used when fromSource is set.
+
+#components.dmd.bootstrap.build.option = value
+
+# Note that it is possible to bootstrap the bootstrapping
+# compiler, up to an arbitrary depth. For example, to build
+# 2.067.1 from source, then use it to build master, then
+# build master again using the compiler just built from master:
+
+# $ digger \
+# 	-c "build.components.dmd.bootstrap.build.components.dmd.bootstrap.fromSource = true" \
+# 	-c "build.components.dmd.bootstrap.build.components.dmd.bootstrap.ver = v2.067.1" \
+# 	-c "build.components.dmd.bootstrap.fromSource = true" \
+# 	-c "build.components.dmd.bootstrap.ver = master" \
+# 	build master
 
 # Build/test environment.
 # By default, Digger completely clears the environment and

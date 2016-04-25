@@ -35,7 +35,7 @@ alias BuildOptions(string action, string pastAction, bool showBuildActions = tru
 	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", ") ~ " [build.components.enable.COMPONENT=false]", "COMPONENT", 0, "without"),
 	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", ") ~ " [build.components.enable.COMPONENT=true]", "COMPONENT", 0, "with"),
 	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "HOST_CC=g++48" [build.components.common.makeArgs]` : hiddenOption, "ARG", 0, "makeArgs"),
-	Switch!(showBuildActions ? "Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package [build.components.dmd.bootstrap]" : hiddenOption, 0, "bootstrap"),
+	Switch!(showBuildActions ? "Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package [build.components.dmd.bootstrap.fromSource]" : hiddenOption, 0, "bootstrap"),
 	Switch!(hiddenOption, 0, "use-vc"),
 );
 
@@ -53,7 +53,7 @@ void parseBuildOptions(T...)(T options) // T == BuildOptions!action
 	foreach (componentName; options[3])
 		d.config.build.components.enable[componentName] = true;
 	d.config.build.components.common.makeArgs ~= options[4];
-	d.config.build.components.dmd.bootstrap |= options[5];
+	d.config.build.components.dmd.bootstrap.fromSource |= options[5];
 	d.config.build.components.dmd.useVC |= options[6];
 	static assert(options.length == 7);
 }
