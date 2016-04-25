@@ -11,10 +11,14 @@ license "Boost-1.0"
 
 targetType "executable"
 
-# In lieu of `sourceFiles "*.d"`
-sourcePaths "."
-excludedSourceFiles "*/*"
-excludedSourceFiles "digger-web.d"
+# https://github.com/dlang/dub/issues/825
+sourceFiles "bisect.d"
+sourceFiles "common.d"
+sourceFiles "config.d"
+sourceFiles "custom.d"
+sourceFiles "digger.d"
+sourceFiles "install.d"
+sourceFiles "repo.d"
 
 dependency "ae" version="*" path="ae"
 
