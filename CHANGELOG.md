@@ -29,6 +29,7 @@ Digger v3.0 (WIP)
    `dmd.exe` on Windows
  * Refuse to clobber working tree changes not done by Digger
  * Verify integrity of all downloaded files
+ * Only download/install Visual Studio components as-needed
  * Prevent git from loading user/system configuration
  * Add `dub.sdl`
  * Add test suite
