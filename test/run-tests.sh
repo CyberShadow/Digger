@@ -125,6 +125,14 @@ else
 	diff <(tail -n 19 digger.log) issue15914-bisect.log
 fi
 
+# Test dmdModel
+
+if [[ "$UNAME" == *_NT-* ]]
+then
+	./digger --config-file ./digger.ini -c build.components.dmd.dmdModel=64       build "master@2016-04-01+dmd#5694"
+	./digger --config-file ./digger.ini -c build.components.dmd.dmdModel=32mscoff build "master@2016-04-01+dmd#5694"
+fi
+
 # Done!
 
 echo -e "==================================================================\nAll tests OK!"
