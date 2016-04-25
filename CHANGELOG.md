@@ -26,7 +26,7 @@ Digger v3.0 (WIP)
  * Add `--jobs` option for controlling the GNU make `-j` parameter
  * Add `components.dmd.releaseDMD` build option to complement `debugDMD`
  * Add `components.dmd.dmdModel` option, which allows building a 64-bit
-   `dmd.exe` on Windows
+   `dmd.exe` on Windows (also supports `32mscoff`).
  * Refuse to clobber working tree changes not done by Digger
  * Verify integrity of all downloaded files
  * Only download/install Visual Studio components as-needed
