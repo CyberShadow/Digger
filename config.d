@@ -18,7 +18,7 @@ static import std.getopt;
 struct Opts
 {
 	Option!(string, hiddenOption) dir;
-	Option!(string, "Path to the configuration file to use [local.workDir]", "PATH") configFile;
+	Option!(string, "Path to the configuration file to use", "PATH") configFile;
 	Switch!("Do not update D repositories from GitHub [local.offline]") offline;
 	Option!(string, "How many jobs to run makefiles in [local.makeJobs]", "N") jobs;
 	Option!(string[], "Additional configuration. Equivalent to digger.ini settings.", "NAME=VALUE", 'c', "config") configLines;

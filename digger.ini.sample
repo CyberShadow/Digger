@@ -1,12 +1,25 @@
 # Copy this file to digger.ini, and make the appropriate
 # changes below.
+
 # Digger looks for digger.ini in these locations, in order:
 # current directory, EXE directory, source directory,
 # ~/.digger/digger.ini, and, on Posix systems,
 # /etc/digger.ini.
+
+# Syntax:
+# The section names define an implicit prefix, thus ...
+#   [a.b]
+#   c.d=e
+# ... is equivalent to ...
+#   a.b.c.d=e
+
 # These settings can also be set from the command line using
 # the -c option, and also overridden in a bisect.ini file,
 # e.g.: -c build.components.dmd.debugDMD=true
+
+# Local configuration.
+
+[local]
 
 # Working directory.
 # This directory will contain all of Digger's working files:
@@ -16,18 +29,20 @@
 # Please specify an absolute path. The default is to use the
 # current directory.
 
-#local.workDir = C:\Temp\Digger
+#workDir = C:\Temp\Digger
 
 # How many jobs to run makefiles in.
 # Gets passed to GNU make as the -j parameter (not supported by
 # DigitalMars make on Windows). Specify "auto" to use the
 # CPU core count, or "unlimited" for no limit.
+# Equivalent to the --jobs command-line option.
 
-#local.makeJobs = auto
+#makeJobs = auto
 
 # Don't go online to fetch the latest revisions from GitHub.
+# Equivalent to the --offline command-line switch.
 
-#local.offline = false
+#offline = false
 
 # Build cache.
 # To speed up successive runs, Digger can save the results of
@@ -43,7 +58,7 @@
 # You can periodically run "digger compact" to optimize disk
 # space used by the cache.
 
-#local.cache = git
+#cache = git
 
 # Default build options.
 
