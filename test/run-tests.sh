@@ -133,14 +133,12 @@ then
 	./digger --config-file ./digger.ini -c build.components.dmd.dmdModel=32mscoff build "master@2016-04-01+dmd#5694"
 fi
 
-# Build test - August 2015 stable branch
+# Build test - stable @ 2015-09-01 00:00:00 (Phobos can't find Druntime .a / .so by default)
 
 if [[ ! "$UNAME" == *_NT-* ]]
 then
-	./digger --config-file ./digger.ini build ./ 36d95c4e6cf988cbf944af8c1ad9c615d628b052
+	./digger --config-file ./digger.ini build "stable @ 2015-09-01 00:00:00"
 fi
-
-36d95c4e6cf988cbf944af8c1ad9c615d628b052
 
 # Done!
 
