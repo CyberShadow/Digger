@@ -118,7 +118,7 @@ int doBisect(bool noVerify, string bisectConfigFile)
 		if (!path.length)
 		{
 			log("%s is the first %s commit".format(p1, bisectConfig.reverse ? "good" : "bad"));
-			repo.run("show", p1);
+			repo.run("--no-pager", "show", p1);
 			log("Bisection completed successfully.");
 			return 0;
 		}
