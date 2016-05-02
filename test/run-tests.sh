@@ -133,6 +133,15 @@ then
 	./digger --config-file ./digger.ini -c build.components.dmd.dmdModel=32mscoff build "master@2016-04-01+dmd#5694"
 fi
 
+# Build test - August 2015 stable branch
+
+if [[ ! "$UNAME" == *_NT-* ]]
+then
+	./digger --config-file ./digger.ini build ./ 36d95c4e6cf988cbf944af8c1ad9c615d628b052
+fi
+
+36d95c4e6cf988cbf944af8c1ad9c615d628b052
+
 # Done!
 
 echo -e "==================================================================\nAll tests OK!"
