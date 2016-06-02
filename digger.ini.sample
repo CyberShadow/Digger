@@ -2,9 +2,19 @@
 # changes below.
 
 # Digger looks for digger.ini in these locations, in order:
-# current directory, EXE directory, source directory,
-# ~/.digger/digger.ini, and, on Posix systems,
-# /etc/digger.ini.
+# - current directory
+# - EXE directory
+# - source directory
+# - On POSIX:
+#   - $XDG_CONFIG_HOME (default ~/.config)
+#   - $XDG_CONFIG_DIRS (default /etc/xdg)
+# - On Windows:
+#   - %APPDATA% (default C:\Users\<username>\AppData\Roaming)
+#
+# Additionally, for compatibility with previous versions,
+# the following locations are searched:
+# - ~/.digger/digger.ini
+# - On POSIX: /etc/digger.ini.
 
 # Syntax:
 # The section names define an implicit prefix, thus ...
