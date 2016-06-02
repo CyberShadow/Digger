@@ -54,10 +54,10 @@ shared static this()
 			thisExePath.dirName,
 			__FILE__.dirName,
 			] ~ getConfigDirs() ~ [
-			// buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger"), // legacy
+			buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger"), // legacy
 		];
-		// version (Posix)
-		// 	searchDirs ~= "/etc/"; // legacy
+		version (Posix)
+			searchDirs ~= "/etc/"; // legacy
 
 		foreach (dir; searchDirs)
 		{
