@@ -116,7 +116,7 @@ string selectInstallPath(string location)
 	{
 		if (candidate.buildNormalizedPath.startsWith(config.local.workDir.buildNormalizedPath))
 		{
-			log("Skipping DMD installation under Digger workDir: " ~ candidate);
+			log("Skipping DMD installation under Digger workDir (" ~ config.local.workDir ~ "): " ~ candidate);
 			continue;
 		}
 
