@@ -77,9 +77,9 @@ shared static this()
 			.readText()
 			.splitLines()
 			.parseIni!ConfigFile();
-
-		config.local.workDir = (config.local.workDir ? config.local.workDir.expandTilde() : getcwd()).absolutePath().buildNormalizedPath();
 	}
+
+	config.local.workDir = (config.local.workDir.length ? config.local.workDir.expandTilde() : getcwd()).absolutePath().buildNormalizedPath();
 
 	if (opts.offline)
 		config.local.offline = opts.offline;
