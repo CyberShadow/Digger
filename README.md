@@ -2,7 +2,7 @@
 
 Digger can:
 
-- build D from [git](https://github.com/D-Programming-Language)
+- build and test D from [git](https://github.com/D-Programming-Language)
 - build older versions of D
 - build D plus forks and pending pull requests
 - bisect D's history to find where regressions are introduced (or bugs fixed)
