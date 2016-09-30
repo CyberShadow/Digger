@@ -2,7 +2,7 @@ module digger;
 
 import std.array;
 import std.exception;
-import std.file : thisExePath;
+import std.file : thisExePath, exists;
 import std.stdio;
 import std.typetuple;
 
@@ -213,6 +213,9 @@ int digger()
 		stderr.writeln("Digger v" ~ diggerVersion ~ " - a D source code building and archaeology tool");
 		stderr.writeln("Created by Vladimir Panteleev <vladimir@thecybershadow.net>");
 		stderr.writeln("https://github.com/CyberShadow/Digger");
+		stderr.writeln();
+		stderr.writeln("Configuration file: ", opts.configFile.value.exists ? opts.configFile.value : "(not present)");
+		stderr.writeln("Working directory: ", config.config.local.workDir);
 		stderr.writeln();
 
 		if (lines[0].canFind("ACTION [ACTION-ARGUMENTS]"))
