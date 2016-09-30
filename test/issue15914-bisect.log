@@ -1,5 +1,5 @@
-digger: 14ad4729fb661c591d8b3c5e9d49e191a073b0b6 is the first bad commit
-commit 14ad4729fb661c591d8b3c5e9d49e191a073b0b6
+digger: 82898bc6c26021478eed562cd10496ba1168c692 is the first bad commit
+commit 82898bc6c26021478eed562cd10496ba1168c692
 Author: H. S. Teoh <hsteoh@quickfur.ath.cx>
 Date:   Wed Feb 17 22:01:21 2016 -0800
 
