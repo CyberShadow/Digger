@@ -41,19 +41,32 @@ BisectConfig bisectConfig;
 /// Final build directory for bisect tests.
 alias currentDir = subDir!"current";
 
-int doBisect(bool noVerify, string bisectConfigFile)
+int doBisect(bool noVerify, string bisectConfigFile, string[] bisectConfigLines)
 {
 	bisectConfig.build = &d.config.build;
 	bisectConfig.local = &d.config.local;
-	bisectConfigFile
-		.readText()
-		.splitLines()
-		.parseIniInto(bisectConfig);
+	if (bisectConfigFile)
+	{
+		log("Loading bisect configuration from " ~ bisectConfigFile);
+		bisectConfigFile
+			.readText()
+			.splitLines()
+			.parseIniInto(bisectConfig);
+	}
+	else
+		log("No bisect.ini file specified! Using options from command-line only.");
+	bisectConfigLines.parseIniInto(bisectConfig);
 
-	d.getMetaRepo().needRepo();
-	auto repo = &d.getMetaRepo().git;
-
-	d.needUpdate();
+	void ensureDefault(ref string var, string which, string def)
+	{
+		if (!var)
+		{
+			log("No %s revision specified, assuming '%s'".format(which, def));
+			var = def;
+		}
+	}
+	ensureDefault(bisectConfig.bad , "bad" , "master");
+	ensureDefault(bisectConfig.good, "good", "@ 1 month ago");
 
 	if (bisectConfig.bisectBuildTest)
 	{
@@ -62,6 +75,12 @@ int doBisect(bool noVerify, string bisectConfigFile)
 	}
 	if (bisectConfig.bisectBuild)
 		enforce(!bisectConfig.tester, "bisectBuild and specifying a test command are mutually exclusive");
+	enforce(bisectConfig.tester || bisectConfig.bisectBuild, "No tester specified (and bisectBuild is false)");
+
+	d.getMetaRepo().needRepo();
+	auto repo = &d.getMetaRepo().git;
+
+	d.needUpdate();
 
 	void test(bool good, string rev)
 	{

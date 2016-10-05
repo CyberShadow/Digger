@@ -117,9 +117,13 @@ static:
 	}
 
 	@(`Bisect D history according to a bisect.ini file`)
-	int bisect(bool noVerify, string bisectConfigFile)
+	int bisect(
+		Switch!("Skip sanity-check of the GOOD/BAD commits.") noVerify,
+		Option!(string[], "Additional bisect configuration. Equivalent to bisect.ini settings.", "NAME=VALUE", 'c', "config") configLines,
+		Parameter!(string, "Location of the bisect.ini file containing the bisection description.") bisectConfigFile = null,
+	)
 	{
-		return doBisect(noVerify, bisectConfigFile);
+		return doBisect(noVerify, bisectConfigFile, configLines);
 	}
 
 	@(`Cache maintenance actions (run with no arguments for details)`)
