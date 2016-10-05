@@ -6,10 +6,11 @@
 # - EXE directory
 # - source directory
 # - On POSIX:
-#   - $XDG_CONFIG_HOME/digger (default ~/.config)
-#   - $XDG_CONFIG_DIRS/digger (default /etc/xdg)
+#   - $XDG_CONFIG_HOME/digger/ (default ~/.config/digger/)
+#   - $XDG_CONFIG_DIRS/digger/ (default /etc/xdg/digger/)
 # - On Windows:
-#   - %APPDATA%\Digger (default C:\Users\<username>\AppData\Roaming)
+#   - %APPDATA%\Digger\
+#     (default C:\Users\<username>\AppData\Roaming\Digger)
 #
 # Additionally, for compatibility with previous versions,
 # the following locations are searched:
