@@ -39,7 +39,7 @@ alias BuildOptions(string action, string pastAction, bool showBuildActions = tru
 	Switch!(hiddenOption, 0, "use-vc"),
 );
 
-alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n"
+alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n" ~
 	"\"master @ 3 weeks ago + dmd#123 + You/dmd/awesome-feature\"");
 
 void parseBuildOptions(T...)(T options) // T == BuildOptions!action

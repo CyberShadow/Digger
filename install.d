@@ -108,7 +108,7 @@ string selectInstallPath(string location)
 	else
 	{
 		candidates = findDMD();
-		enforce(candidates.length, "DMD not found in PATH - "
+		enforce(candidates.length, "DMD not found in PATH - " ~
 			"add DMD to PATH or specify install location explicitly");
 	}
 
@@ -148,7 +148,7 @@ string findConfig(string dmdPath)
 		if (pathOK("/etc/"))
 			return configPath;
 
-	throw new Exception("Can't find DMD configuration file %s "
+	throw new Exception("Can't find DMD configuration file %s " ~
 		"corresponding to DMD located at %s".format(dmdConfigName, dmdPath));
 }
 
