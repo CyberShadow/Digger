@@ -185,6 +185,12 @@ static:
 		return 0;
 	}
 
+	int getLatest()
+	{
+		writeln((cast(DManager.Website)d.getComponent("website")).getLatest());
+		return 0;
+	}
+
 	int help()
 	{
 		throw new Exception("For help, run digger without any arguments.");
