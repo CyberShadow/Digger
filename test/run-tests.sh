@@ -12,6 +12,10 @@ echo "local.makeJobs = auto" >> ./digger.ini
 rm -rf work
 ( shopt -s nullglob; rm -f ./*.lst )
 
+# Test building digger-web
+
+rdmd --build-only -of./digger-web ../digger-web.d
+
 # Run unittests
 
 DFLAGS=(-cov -debug -g -version=test)
