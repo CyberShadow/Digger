@@ -10,7 +10,7 @@ Date:   Wed Feb 17 22:01:21 2016 -0800
     Static verification of std.getopt arguments with more helpful error messages
 
 diff --git a/phobos b/phobos
-index 32f032f..405858d 160000
+index 32f032fe6..405858d81 160000
 --- a/phobos
 +++ b/phobos
 @@ -1 +1 @@
