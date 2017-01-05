@@ -123,10 +123,10 @@ EOF
 if [[ "$UNAME" == *_NT-* ]]
 then
 	# Digger outputs \r\n newlines in its log output on Windows, filter those out before diffing
-	diff <(tail -n 18 digger.log | sed 's/\r//' | grep -v '^index ') issue15914-bisect.log
+	diff <(tail -n 19 digger.log | sed 's/\r//' | grep -v '^index ') issue15914-bisect.log
 else
 	# OS X doesn't support the \r escape
-	diff <(tail -n 18 digger.log                | grep -v '^index ') issue15914-bisect.log
+	diff <(tail -n 19 digger.log                | grep -v '^index ') issue15914-bisect.log
 fi
 
 # Test dmdModel
