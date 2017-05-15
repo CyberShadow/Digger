@@ -79,7 +79,15 @@ shared static this()
 			.parseIni!ConfigFile();
 	}
 
-	config.local.workDir = (config.local.workDir.length ? config.local.workDir.expandTilde() : getcwd()).absolutePath().buildNormalizedPath();
+	string workDir;
+	if (!config.local.workDir.length)
+		if (exists("repo")) // legacy
+			workDir = ".";
+		else
+			workDir = "work"; // TODO use ~/.cache/digger
+	else
+		workDir = config.local.workDir.expandTilde();
+	config.local.workDir = workDir.absolutePath().buildNormalizedPath();
 
 	if (opts.offline)
 		config.local.offline = opts.offline;
