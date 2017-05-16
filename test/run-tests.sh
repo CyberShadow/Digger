@@ -205,27 +205,41 @@ function test_2015_09_01() {
 
 # Main function
 
-function main() {
-
+function run_tests() {
 	init
 
-	test_diggerweb
-	test_unit
-	test_build
-	test_testsuite
-	test_cache
-	test_rebuild
-	test_worktree
-	test_merge
-	test_revert
-	test_bisect
-	test_dmdmodel
-	test_2015_09_01
-
-	# Done!
+	for t in "$@"
+	do
+		echo "=== Running test $t ==="
+		"test_$t"
+		echo "=== Test $t OK! ==="
+	done
 
 	echo -e "==================================================================\nAll tests OK!"
-	
+}
+
+function main() {
+	all_tests=(
+		diggerweb
+		unit
+		build
+		testsuite
+		cache
+		rebuild
+		worktree
+		merge
+		revert
+		bisect
+		dmdmodel
+		2015_09_01
+	)
+
+	if [[ $# -eq 0 ]]
+	then
+		run_tests "${all_tests[@]}"
+	else
+		run_tests "$@"
+	fi
 }
 
 main "$@"
