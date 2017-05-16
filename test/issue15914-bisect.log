@@ -1,11 +1,11 @@
-digger: 82898bc6c26021478eed562cd10496ba1168c692 is the first bad commit
-commit 82898bc6c26021478eed562cd10496ba1168c692
+digger: f39d1f7d71ef11aa4125e04e74bb17005000ae29 is the first bad commit
+commit f39d1f7d71ef11aa4125e04e74bb17005000ae29
 Author: H. S. Teoh <hsteoh@quickfur.ath.cx>
 Date:   Wed Feb 17 22:01:21 2016 -0800
 
     phobos: Merge pull request #3859 from BBasile/getopt-checker
     
-    https://github.com/D-Programming-Language/phobos/pull/3859
+    https://github.com/dlang/phobos/pull/3859
     
     Static verification of std.getopt arguments with more helpful error messages
 
