@@ -3,7 +3,7 @@ set -euxo pipefail
 
 cd "$(dirname "$0")"
 
-UNAME="$(uname)"
+uname="$(uname)"
 
 echo "local.workDir = work/" > ./digger.ini
 echo "local.cache = git" >> ./digger.ini
@@ -41,7 +41,7 @@ function clean {
 clean # Clean everything to test correct test dependencies
 
 TEST_ARGS=('--with=phobos' '--with=tools')
-if [[ "$UNAME" == "Darwin" ]]
+if [[ "$uname" == "Darwin" ]]
 then
 	# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
 	TEST_ARGS+=('--without=rdmd')
@@ -54,7 +54,7 @@ then
 	TEST_ARGS+=('--without=druntime')
 fi
 
-if [[ "$UNAME" == *_NT-* ]]
+if [[ "$uname" == *_NT-* ]]
 then
 	# Test 64-bit on Windows too
 	./digger --config-file ./digger.ini test "${TEST_ARGS[@]}" --model=64
@@ -120,7 +120,7 @@ EOF
 
 ./digger --config-file ./digger.ini --offline bisect ./bisect.ini 2>&1 | tee digger.log
 
-if [[ "$UNAME" == *_NT-* ]]
+if [[ "$uname" == *_NT-* ]]
 then
 	# Digger outputs \r\n newlines in its log output on Windows, filter those out before diffing
 	diff <(tail -n 19 digger.log | sed 's/\r//' | grep -v '^index ') issue15914-bisect.log
@@ -131,7 +131,7 @@ fi
 
 # Test dmdModel
 
-if [[ "$UNAME" == *_NT-* ]]
+if [[ "$uname" == *_NT-* ]]
 then
 	./digger --config-file ./digger.ini -c build.components.dmd.dmdModel=64       build "master@2016-04-01+dmd#5694"
 	./digger --config-file ./digger.ini -c build.components.dmd.dmdModel=32mscoff build "master@2016-04-01+dmd#5694"
@@ -139,7 +139,7 @@ fi
 
 # Build test - stable @ 2015-09-01 00:00:00 (Phobos can't find Druntime .a / .so by default)
 
-if [[ ! "$UNAME" == *_NT-* ]]
+if [[ ! "$uname" == *_NT-* ]]
 then
 	./digger --config-file ./digger.ini build "stable @ 2015-09-01 00:00:00"
 fi
