@@ -604,7 +604,7 @@ string globFind(string path)
 
 void verifyObject(InstalledObject* obj, string uninstallPath, string verb)
 {
-	auto path = buildPath(uninstallPath, obj.path);
+	auto path = buildNormalizedPath(uninstallPath, obj.path);
 	enforce(path.exists, "Can't find item to %s: %s".format(verb, path));
 	auto hash = mdObject(path);
 	enforce(hash == obj.hash,
