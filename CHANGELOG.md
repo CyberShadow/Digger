@@ -12,9 +12,9 @@ Digger v3.0 (WIP)
    * Search for the configuration file according to the XDG Base Directory
      Specification
  * Add `-c` options to specify arbitrary `digger.ini` and `bisect.ini`
-   setting on the command line
+   settings on the command line
    * Specifying a `bisect.ini` for the `bisect` command is now optional,
-   and can be entirely substituted with `-c` options.
+     and can be entirely substituted with `-c` options.
  * Add `digger checkout` command, which simply checks out a given D revision 
    (`master` by default)
  * Add `digger test` command, to run tests for working tree state
