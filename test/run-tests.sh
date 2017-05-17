@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euxo pipefail
+set -euo pipefail
 
 # Globals
 
@@ -211,7 +211,7 @@ function run_tests() {
 	for t in "$@"
 	do
 		echo "=== Running test $t ==="
-		"test_$t"
+		( set -x ; "test_$t" )
 		echo "=== Test $t OK! ==="
 	done
 
