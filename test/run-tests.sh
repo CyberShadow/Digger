@@ -103,6 +103,17 @@ function test_cache() {
 	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 }
 
+# Caching unbuildable versions
+
+function test_cache_error() {
+	! digger build "master @ 2010-01-01 00:00:00"
+
+	( ! digger --offline build "master @ 2010-01-01 00:00:00" ) 2>&1 | tee digger.log
+	! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
+	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
+	grep --quiet --fixed-strings 'was cached as unbuildable' digger.log
+}
+
 # Rebuild
 
 function test_rebuild() {
@@ -227,6 +238,7 @@ function main() {
 		build
 		testsuite
 		cache
+		cache_error
 		rebuild
 		worktree
 		merge
