@@ -14,7 +14,7 @@ function init() {
 	echo "local.cache = git" >> ./digger.ini
 	echo "local.makeJobs = auto" >> ./digger.ini
 
-	rm -rf work
+	rm -rf digger work
 	( shopt -s nullglob; rm -f ./*.lst )
 }
 
