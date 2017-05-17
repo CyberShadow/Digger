@@ -203,7 +203,7 @@ function test_2015_09_01() {
 	fi
 }
 
-# Main function
+# The test runner
 
 function run_tests() {
 	init
@@ -217,6 +217,8 @@ function run_tests() {
 
 	echo -e "==================================================================\nAll tests OK!"
 }
+
+# Main function
 
 function main() {
 	all_tests=(
