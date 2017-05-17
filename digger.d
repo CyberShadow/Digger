@@ -132,7 +132,7 @@ static:
 		static struct CacheActions
 		{
 		static:
-			@(`Compact the cache (replace identical files with hard links)`)
+			@(`Compact the cache`)
 			int compact()
 			{
 				d.optimizeCache();
