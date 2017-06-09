@@ -20,7 +20,7 @@ sourceFiles "digger.d"
 sourceFiles "install.d"
 sourceFiles "repo.d"
 
-dependency "ae" version="==0.0.1946"
+dependency "ae" version="==0.0.1948"
 
 ---------------------------
 
@@ -31,5 +31,5 @@ subPackage {
 	targetType "executable"
 	sourceFiles "digger-web.d"
 	sourceFiles "common.d"
-	dependency "ae" version="==0.0.1946"
+	dependency "ae" version="==0.0.1948"
 }
