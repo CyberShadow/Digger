@@ -11,7 +11,7 @@
 # - SHA-1 hash of a component's repo commit
 #   (must be a pull request merge commit)
 # - Full GitHub URL of a pull request, e.g.:
-#   https://github.com/D-Programming-Language/dmd/pull/123
+#   https://github.com/dlang/dmd/pull/123
 # - Optionally time spec after "@" (e.g. "@ 2013-01-02",
 #   "master @ October 2013", "2.065 @ 15 days ago" or "@ Tuesday")
 #   (if no ref is specified, master is assumed).

@@ -76,7 +76,7 @@ function createCustomizationForm() {
 			addSection($content, component, function($pulls, done) {
 				var pullsRequest = $.ajax({
 					dataType: 'jsonp',
-					url: 'https://api.github.com/repos/D-Programming-Language/'+repo+'/pulls?per_page=100',
+					url: 'https://api.github.com/repos/dlang/'+repo+'/pulls?per_page=100',
 					cache: true,
 					jsonpCallback : 'jsonpCallback_' + repo
 				});
@@ -184,7 +184,7 @@ function createCustomizationForm() {
 		$.each(components, function(i, component) {
 			var repo = component.toLowerCase();
 			addSection($content, component, function($forks, done) {
-				githubGetAll('/repos/D-Programming-Language/'+repo+'/forks')
+				githubGetAll('/repos/dlang/'+repo+'/forks')
 					.then(function(forks) {
 						function cmp(a, b) { return a<b ? -1 : a>b ? 1 : 0; }
 						forks.sort(function(a, b) { return cmp(a.owner.login.toLowerCase(), b.owner.login.toLowerCase()); });
