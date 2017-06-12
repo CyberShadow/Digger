@@ -17,6 +17,10 @@
 /dl/
 /tmp/
 
+# When workDir = ./work
+
+/work/
+
 # POSIX
 
 /digger
