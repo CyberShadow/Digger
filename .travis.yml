@@ -2,4 +2,8 @@ language: d
 os:
   - linux
   - osx
+addons:
+  apt:
+    packages:
+    - gcc-multilib # https://stackoverflow.com/questions/12591629/gcc-cannot-find-bits-predefs-h-on-i686
 script: test/run-tests.sh
