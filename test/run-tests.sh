@@ -199,14 +199,23 @@ EOF
 	fi
 }
 
-# Test dmdModel
+# Test building model combinations
 
-function test_dmdmodel() {
+function test_model() {
 	if [[ "$uname" == *_NT-* ]]
 	then
-		digger -c build.components.dmd.dmdModel=64       build "master@2016-04-01+dmd#5694"
-		digger -c build.components.dmd.dmdModel=32mscoff build "master@2016-04-01+dmd#5694"
+		models=(32 64 32mscoff)
+	else
+		models=(32 64)
 	fi
+
+	for model in "${models[@]}"
+	do
+		for dmdmodel in "${models[@]}"
+		do
+			digger -c build.components.dmd.dmdModel="$dmdmodel" build --model="$model" "master@2016-04-01+dmd#5694"
+		done
+	done
 }
 
 # Build test - stable @ 2015-09-01 00:00:00 (Phobos can't find Druntime .a / .so by default)
@@ -248,7 +257,7 @@ function main() {
 		merge
 		revert
 		bisect
-		dmdmodel
+		model
 		2015_09_01
 	)
 
