@@ -110,9 +110,9 @@ function test_cache() {
 # Caching unbuildable versions
 
 function test_cache_error() {
-	xfail digger build "master @ 2010-01-01 00:00:00"
+	xfail digger build "master @ 2009-07-01 00:00:00"
 
-	xfail digger --offline build "master @ 2010-01-01 00:00:00" 2>&1 | tee digger.log
+	xfail digger --offline build "master @ 2009-07-01 00:00:00" 2>&1 | tee digger.log
 	xfail grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 	grep --quiet --fixed-strings 'was cached as unbuildable' digger.log
