@@ -20,6 +20,10 @@ function init() {
 
 # Common functions
 
+function xfail() {
+	if "$@" ; then false ; fi
+}
+
 function build() {
 	DFLAGS=(-cov -debug -g '-version=test')
 	rdmd --build-only "${DFLAGS[@]}" "$@" -of./digger ../digger.d
@@ -99,17 +103,17 @@ function test_cache() {
 	digger build "master @ 2016-01-01 00:00:00"
 
 	digger --offline build "master @ 2016-01-01 00:00:00" 2>&1 | tee digger.log
-	! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
+	xfail grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 }
 
 # Caching unbuildable versions
 
 function test_cache_error() {
-	! digger build "master @ 2010-01-01 00:00:00"
+	xfail digger build "master @ 2010-01-01 00:00:00"
 
-	! digger --offline build "master @ 2010-01-01 00:00:00" 2>&1 | tee digger.log
-	! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
+	xfail digger --offline build "master @ 2010-01-01 00:00:00" 2>&1 | tee digger.log
+	xfail grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 	grep --quiet --fixed-strings 'was cached as unbuildable' digger.log
 }
@@ -132,7 +136,7 @@ function test_rebuild() {
 	popd
 
 	digger rebuild
-	! work/result/bin/dmd -run issue15914.d
+	xfail work/result/bin/dmd -run issue15914.d
 
 	rm work/repo/.git/modules/phobos/ae-sys-d-worktree.json
 }
@@ -146,23 +150,23 @@ function test_worktree() {
 	git cherry-pick --no-commit ad226e92d5f092df233b90fd3fdedb8b71d728eb
 	popd
 
-	! digger build "master @ 2016-04-01 00:00:00" # Worktree is dirty - should fail
+	xfail digger build "master @ 2016-04-01 00:00:00" # Worktree is dirty - should fail
 	rm work/repo/.git/modules/phobos/ae-sys-d-worktree.json
-	  digger build "master @ 2016-04-01 00:00:00" # Should work now
-	! work/result/bin/dmd -run issue15914.d
+	      digger build "master @ 2016-04-01 00:00:00" # Should work now
+	xfail work/result/bin/dmd -run issue15914.d
 }
 
 # Merging
 
 function test_merge() {
 	digger build "master @ 2016-01-01 00:00:00 + phobos#3859"
-	! work/result/bin/dmd -run issue15914.d
+	xfail work/result/bin/dmd -run issue15914.d
 
 	# Test cache
 
 	digger --offline build "master @ 2016-01-01 00:00:00 + phobos#3859" 2>&1 | tee digger.log
-	! grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
-	! grep --quiet --fixed-strings --line-regexp 'digger: Merging phobos commit ad226e92d5f092df233b90fd3fdedb8b71d728eb' digger.log
+	xfail grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
+	xfail grep --quiet --fixed-strings --line-regexp 'digger: Merging phobos commit ad226e92d5f092df233b90fd3fdedb8b71d728eb' digger.log
 	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 }
 
