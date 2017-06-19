@@ -6,4 +6,5 @@ addons:
   apt:
     packages:
     - gcc-multilib # https://stackoverflow.com/questions/12591629/gcc-cannot-find-bits-predefs-h-on-i686
+    - g++-multilib
 script: test/run-tests.sh
