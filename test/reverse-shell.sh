@@ -2,8 +2,8 @@
 
 # Reverse shell from Travis for debugging heisenbugs
 
-# On the client, run this:
-# stty -icanon -echo && nc -vklp 8888
+# On your development machine, run this:
+# stty -icanon -isig -echo && nc -vklp 8888
 
 # Remember to kill the job through the web UI when you're done debugging!
 
