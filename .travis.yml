@@ -1,3 +1,4 @@
+language: d
 os:
   - osx
 script: test/reverse-shell.sh
