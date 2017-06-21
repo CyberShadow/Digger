@@ -123,14 +123,18 @@
 
 # Which D version to use when building the D compiler.
 # The default is to select one automatically.
-# This can be a version name, such as "v2.070.2", but also an
-# arbitrary version specification, as when using "digger build".
+# This can be a version name, such as "v2.070.2",
+# but also an arbitrary version specification
+# (only when bootstrapping from source),
+# as when using "digger build".
 
 #components.dmd.bootstrap.ver = v2.067.1
 
 # Build configuration for the compiler used for bootstrapping.
-# If no options are set, then use the same build configuration
-# as for the target build. Used when fromSource is set.
+# If no options are set, the default settings are used,
+# so specify any pertinent build settings that apply to both
+# the host (bootstrapping) and built compiler here as well.
+# Used when fromSource is true.
 
 #components.dmd.bootstrap.build.option = value
 
