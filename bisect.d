@@ -303,6 +303,9 @@ int doBisectStep(string rev)
 	// Use host HOME for the test command
 	env["HOME"] = environment.get("HOME");
 
+	// For bisecting bootstrapping issues - allows passing the revision to another Digger instance
+	env["DIGGER_REVISION"] = rev;
+
 	d.logProgress("Running test command...");
 	auto result = spawnShell(bisectConfig.tester, env, Config.newEnv).wait();
 	d.logProgress("Test command exited with status %s (%s).".format(result, result==0 ? "GOOD" : result==EXIT_UNTESTABLE ? "UNTESTABLE" : "BAD"));
