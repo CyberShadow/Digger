@@ -214,6 +214,7 @@ function test_model() {
 		for dmdmodel in "${models[@]}"
 		do
 			digger -c build.components.dmd.dmdModel="$dmdmodel" build --model="$model" "master@2016-04-01+dmd#5694"
+			work/result/bin/dmd "-m${model}" -run hello.d
 		done
 	done
 }
