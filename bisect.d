@@ -129,15 +129,18 @@ int doBisect(bool noVerify, string bisectConfigFile, string[] bisectConfigLines)
 	while (true)
 	{
 		log("Finding shortest path between %s and %s...".format(p0, p1));
-		auto path = repo.pathBetween(p0, p1);
-		enforce(path.length >= 2 && path[0] == p0 && path[$-1] == p1, "Bad path calculation result");
-		path = path[1..$-1];
+		auto fullPath = repo.pathBetween(p0, p1); // closed interval
+		enforce(fullPath.length >= 2 && fullPath[0].commit == p0 && fullPath[$-1].commit == p1,
+			"Bad path calculation result");
+		auto path = fullPath[1..$-1].map!(step => step.commit).array; // open interval
 		log("%d commits (about %d tests) remaining.".format(path.length, ilog2(path.length+1)));
 
 		if (!path.length)
 		{
-			log("%s is the first %s commit".format(p1, bisectConfig.reverse ? "good" : "bad"));
-			repo.run("--no-pager", "show", p1);
+			assert(fullPath.length == 2);
+			auto p = fullPath[1].downwards ? p0 : p1;
+			log("%s is the first %s commit".format(p, bisectConfig.reverse ? "good" : "bad"));
+			repo.run("--no-pager", "show", p);
 			log("Bisection completed successfully.");
 			return 0;
 		}
@@ -186,13 +189,19 @@ int doBisect(bool noVerify, string bisectConfigFile, string[] bisectConfigLines)
 	assert(false);
 }
 
-string[] pathBetween(Repository* repo, string p0, string p1)
+struct BisectStep
+{
+	string commit;
+	bool downwards; // on the way to the common ancestor
+}
+
+BisectStep[] pathBetween(Repository* repo, string p0, string p1)
 {
 	auto commonAncestor = repo.query("merge-base", p0, p1);
 	return chain(
-		repo.commitsBetween(commonAncestor, p0).retro,
-		commonAncestor.only,
-		repo.commitsBetween(commonAncestor, p1)
+		repo.commitsBetween(commonAncestor, p0).retro.map!(commit => BisectStep(commit, true )),
+		commonAncestor.only                          .map!(commit => BisectStep(commit, true )),
+		repo.commitsBetween(commonAncestor, p1)      .map!(commit => BisectStep(commit, false)),
 	).array;
 }
 
