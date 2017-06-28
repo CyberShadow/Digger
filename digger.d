@@ -31,7 +31,7 @@ version(Windows) static import ae.sys.windows;
 
 alias BuildOptions(string action, string pastAction, bool showBuildActions = true) = TypeTuple!(
 	Switch!(hiddenOption, 0, "64"),
-	Option!(string, showBuildActions ? "Select model (32, 64, or, on Windows, 32mscoff).\nOn this system, the default is " ~ DManager.Config.Build.components.common.defaultModel ~ " [build.components.common.model]" : hiddenOption, null, 0, "model"),
+	Option!(string, showBuildActions ? "Select models (32, 64, or, on Windows, 32mscoff).\nYou can specify multiple models by comma-separating them.\nOn this system, the default is " ~ DManager.Config.Build.components.common.defaultModel ~ " [build.components.common.models]" : hiddenOption, null, 0, "model"),
 	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", ") ~ " [build.components.enable.COMPONENT=false]", "COMPONENT", 0, "without"),
 	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", ") ~ " [build.components.enable.COMPONENT=true]", "COMPONENT", 0, "with"),
 	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "HOST_CC=g++48" [build.components.common.makeArgs]` : hiddenOption, "ARG", 0, "makeArgs"),
@@ -45,9 +45,9 @@ alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, 
 void parseBuildOptions(T...)(T options) // T == BuildOptions!action
 {
 	if (options[0])
-		d.config.build.components.common.model = "64";
+		d.config.build.components.common.models = ["64"];
 	if (options[1])
-		d.config.build.components.common.model = options[1];
+		d.config.build.components.common.models = options[1].value.split(",");
 	foreach (componentName; options[2])
 		d.config.build.components.enable[componentName] = false;
 	foreach (componentName; options[3])

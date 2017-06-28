@@ -160,6 +160,12 @@ struct ComponentPaths
 	string druntimePath;
 }
 
+string commonModel(ref BuildInfo buildInfo)
+{
+	enforce(buildInfo.config.components.common.models.length == 1, "Multi-model install is not yet supported");
+	return buildInfo.config.components.common.models[0];
+}
+
 ComponentPaths parseConfig(string dmdPath, BuildInfo buildInfo)
 {
 	auto configPath = findConfig(dmdPath);
@@ -173,7 +179,7 @@ ComponentPaths parseConfig(string dmdPath, BuildInfo buildInfo)
 		{
 			auto sectionName = line[1..$-1];
 			parsing = sectionName == "Environment"
-			       || sectionName == "Environment" ~ buildInfo.config.components.common.model;
+			       || sectionName == "Environment" ~ buildInfo.commonModel;
 		}
 		else
 		if (parsing && line.canFind("="))
@@ -268,7 +274,7 @@ string getLibFileName(BuildInfo buildInfo)
 {
 	version (Windows)
 	{
-		auto model = buildInfo.config.components.common.model;
+		auto model = buildInfo.commonModel;
 		return "phobos%s.lib".format(model == "32" ? "" : model);
 	}
 	else
@@ -330,7 +336,7 @@ void install(bool yes, bool dryRun, string location = null)
 	}
 
 	auto libFileName = getLibFileName(buildInfo);
-	auto libName = libFileName.stripExtension ~ "-" ~ buildInfo.config.components.common.model ~ libFileName.extension;
+	auto libName = libFileName.stripExtension ~ "-" ~ buildInfo.commonModel ~ libFileName.extension;
 
 	static struct Item
 	{

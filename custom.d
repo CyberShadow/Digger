@@ -173,7 +173,7 @@ int handleWebTask(string[] args)
 			enforce(args.length == 1, "Unrecognized build option");
 
 			if (model.length)
-				d.config.build.components.common.model = model;
+				d.config.build.components.common.models = [model];
 
 			runBuild(customizer.state.spec, customizer.state.submoduleState);
 			customizer.finish();
