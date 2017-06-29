@@ -19,6 +19,7 @@ On Windows, Digger will download and unpack everything it needs (Git, DMC, DMD, 
 
 The easiest way to obtain and run Digger is through Dub. As Dub is included with DMD, simply run:
 
+    $ dub fetch digger
     $ dub run digger -- ...args...
 
 You can find binaries on the [GitHub releases](https://github.com/CyberShadow/Digger/releases) page.
