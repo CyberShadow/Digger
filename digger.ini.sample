@@ -83,13 +83,15 @@
 
 #components.enable.rdmd = false
 
-# Target models.
+# Target model.
 # Whether to target 32 or 64 bits when building D components.
 # On Windows, 32mscoff is also an option.
 # The default is to use the system model on POSIX, and 32-bit
 # on Windows. Equivalent to the `digger build --model` option.
+# Multiple models can be specified simultaneously by
+# comma-separating them.
 
-#components.common.models = ["32", "64"]
+#components.common.model = 32,64
 
 # Additional make parameters.
 # Equivalent to the --make-args "digger build" option.
