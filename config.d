@@ -20,7 +20,7 @@ struct Opts
 	Option!(string, hiddenOption) dir;
 	Option!(string, "Path to the configuration file to use", "PATH") configFile;
 	Switch!("Do not update D repositories from GitHub [local.offline]") offline;
-	Option!(string, "How many jobs to run makefiles in [local.makeJobs]", "N") jobs;
+	Option!(string, "How many jobs to run makefiles in [local.makeJobs]", "N", 'j') jobs;
 	Option!(string[], "Additional configuration. Equivalent to digger.ini settings.", "NAME=VALUE", 'c', "config") configLines;
 
 	Parameter!(string, "Action to perform (see list below)") action;
