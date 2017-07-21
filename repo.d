@@ -90,7 +90,7 @@ string parseRev(string rev)
 	{
 		auto parts = rev.findSplit("@");
 		auto at = parts[2].strip();
-		if (at.startsWith("#"))
+		if (at.startsWith("#")) // For the build-all command - skip this many commits
 			args ~= ["--skip", at[1..$]];
 		else
 			args ~= ["--until", at];
