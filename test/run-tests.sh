@@ -25,8 +25,8 @@ function xfail() {
 }
 
 function build() {
-	DFLAGS=(-cov -debug -g '-version=test')
-	rdmd --build-only "${DFLAGS[@]}" "$@" -of./digger ../digger.d
+	local dflags=(-cov -debug -g '-version=test')
+	rdmd --build-only "${dflags[@]}" "$@" -of./digger ../digger.d
 }
 
 function clean() {
@@ -71,7 +71,7 @@ function test_testsuite() {
 
 	clean # Clean everything to test correct test dependencies
 
-	test_args=('--with=phobos' '--with=tools')
+	local test_args=('--with=phobos' '--with=tools')
 	if [[ "$uname" == "Darwin" ]]
 	then
 		# TODO, rdmd bug: https://travis-ci.org/CyberShadow/Digger/jobs/124429436
@@ -202,6 +202,7 @@ EOF
 # Test building model combinations
 
 function test_model() {
+	local models
 	if [[ "$uname" == *_NT-* ]]
 	then
 		models=(32 64 32mscoff)
@@ -233,6 +234,7 @@ function test_2015_09_01() {
 function run_tests() {
 	init
 
+	local t
 	for t in "$@"
 	do
 		echo "=== Running test $t ==="
@@ -246,7 +248,7 @@ function run_tests() {
 # Main function
 
 function main() {
-	all_tests=(
+	local all_tests=(
 		diggerweb
 		unit
 		build
