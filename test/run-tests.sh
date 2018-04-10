@@ -67,7 +67,7 @@ function test_build() {
 # Run tests
 
 function test_testsuite() {
-	digger build "master @ 2018-04-01 00:00:00 + tools#346"
+	digger build "master @ 2018-04-01 00:00:00 + tools#346 + tools#347"
 
 	clean # Clean everything to test correct test dependencies
 
