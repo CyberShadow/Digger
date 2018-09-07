@@ -148,8 +148,8 @@ string findConfig(string dmdPath)
 		if (pathOK("/etc/"))
 			return configPath;
 
-	throw new Exception("Can't find DMD configuration file %s " ~
-		"corresponding to DMD located at %s".format(dmdConfigName, dmdPath));
+	throw new Exception(format("Can't find DMD configuration file %s " ~
+		"corresponding to DMD located at %s", dmdConfigName, dmdPath));
 }
 
 struct ComponentPaths
