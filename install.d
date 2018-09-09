@@ -137,6 +137,14 @@ string findConfig(string dmdPath)
 		return configPath.exists;
 	}
 
+	import std.process : execute;
+	auto result = execute([dmdPath, "--help"]);
+	if (result.status == 0)
+		foreach (line; result.output.splitLines)
+			if (line.skipOver("Config file: "))
+				if (pathOK(line))
+					return configPath;
+
 	if (pathOK(dmdPath.dirName))
 		return configPath;
 
