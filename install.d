@@ -142,8 +142,8 @@ string findConfig(string dmdPath)
 	if (result.status == 0)
 		foreach (line; result.output.splitLines)
 			if (line.skipOver("Config file: "))
-				if (pathOK(line))
-					return configPath;
+				if (line.exists)
+					return line;
 
 	if (pathOK(dmdPath.dirName))
 		return configPath;
