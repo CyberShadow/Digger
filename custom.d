@@ -241,7 +241,7 @@ DManager.SubmoduleState parseSpec(string spec)
 			}))
 			continue;
 
-		if (part.matchCaptures(re!`^(\w+)/(\w[\w\-\.]*)/(\w[\w\-]*)$`,
+		if (part.matchCaptures(re!`^([a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])/(\w[\w\-\.]*)/(\w[\w\-]*)$`,
 			(string user, string component, string branch)
 			{
 				handleBranch(component, d.getFork(component, user, branch));
