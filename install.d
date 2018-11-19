@@ -694,7 +694,7 @@ string mdDir(string dir)
 
 string mdObject(string path)
 {
-	import std.digest.digest;
+	import std.digest;
 
 	if (path.isDir)
 		return path.mdDir();
