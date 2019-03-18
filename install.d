@@ -694,7 +694,10 @@ string mdDir(string dir)
 
 string mdObject(string path)
 {
-	import std.digest;
+	static if (__VERSION__ < 2080)
+		import std.digest.digest : toHexString;
+	else
+		import std.digest : toHexString;
 
 	if (path.isDir)
 		return path.mdDir();
