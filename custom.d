@@ -51,11 +51,18 @@ void prepareResult()
 
 /// Build the customized D version.
 /// The result will be in resultDir.
-void runBuild(string spec, DManager.SubmoduleState submoduleState)
+void runBuild(string spec, DManager.SubmoduleState submoduleState, bool asNeeded)
 {
+	auto buildInfoPath = buildPath(resultDir, buildInfoFileName);
+	auto buildInfo = BuildInfo(diggerVersion, spec, d.config.build);
+	if (asNeeded && buildInfoPath.exists && buildInfoPath.readText.jsonParse!BuildInfo == buildInfo)
+	{
+		log("Reusing existing version in " ~ resultDir);
+		return;
+	}
 	d.build(submoduleState);
 	prepareResult();
-	std.file.write(buildPath(resultDir, buildInfoFileName), BuildInfo(diggerVersion, spec, d.config.build).toJson());
+	std.file.write(buildInfoPath, buildInfo.toJson());
 }
 
 /// Perform an incremental build, i.e. don't clean or fetch anything from remote repos
@@ -175,7 +182,7 @@ int handleWebTask(string[] args)
 			if (model.length)
 				d.config.build.components.common.models = [model];
 
-			runBuild(customizer.state.spec, customizer.state.submoduleState);
+			runBuild(customizer.state.spec, customizer.state.submoduleState, false);
 			customizer.finish();
 			return 0;
 		}
@@ -263,11 +270,11 @@ DManager.SubmoduleState parseSpec(string spec)
 
 /// Build D according to the given spec string
 /// (e.g. master+dmd#123).
-void buildCustom(string spec)
+void buildCustom(string spec, bool asNeeded = false)
 {
 	log("Building spec: " ~ spec);
 	auto submoduleState = parseSpec(spec);
-	runBuild(spec, submoduleState);
+	runBuild(spec, submoduleState, asNeeded);
 }
 
 void checkout(string spec)

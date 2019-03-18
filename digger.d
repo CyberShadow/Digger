@@ -99,7 +99,7 @@ static:
 	int run(BuildOptions!("build", "built") options, Spec spec, Parameter!(string[], "Command to run and its arguments (use -- to pass switches)") command)
 	{
 		parseBuildOptions(options);
-		buildCustom(spec);
+		buildCustom(spec, /*asNeeded*/true);
 
 		auto binPath = resultDir.buildPath("bin").absolutePath();
 		environment["PATH"] = binPath ~ pathSeparator ~ environment["PATH"];
