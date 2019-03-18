@@ -33,6 +33,7 @@ struct BuildInfo
 	string diggerVersion;
 	string spec;
 	DiggerManager.Config.Build config;
+	DManager.SubmoduleState components;
 }
 
 enum buildInfoFileName = "build-info.json";
@@ -54,7 +55,7 @@ void prepareResult()
 void runBuild(string spec, DManager.SubmoduleState submoduleState, bool asNeeded)
 {
 	auto buildInfoPath = buildPath(resultDir, buildInfoFileName);
-	auto buildInfo = BuildInfo(diggerVersion, spec, d.config.build);
+	auto buildInfo = BuildInfo(diggerVersion, spec, d.config.build, submoduleState);
 	if (asNeeded && buildInfoPath.exists && buildInfoPath.readText.jsonParse!BuildInfo == buildInfo)
 	{
 		log("Reusing existing version in " ~ resultDir);
