@@ -3,6 +3,8 @@ module digger;
 import std.array;
 import std.exception;
 import std.file : thisExePath, exists;
+import std.path;
+import std.process;
 import std.stdio;
 import std.typetuple;
 
@@ -91,6 +93,25 @@ static:
 		parseBuildOptions(options);
 		.checkout(spec);
 		return 0;
+	}
+
+	@(`Run a command using a D version`)
+	int run(BuildOptions!("build", "built") options, Spec spec, Parameter!(string[], "Command to run and its arguments (use -- to pass switches)") command)
+	{
+		parseBuildOptions(options);
+		buildCustom(spec);
+
+		auto binPath = resultDir.buildPath("bin").absolutePath();
+		environment["PATH"] = binPath ~ pathSeparator ~ environment["PATH"];
+
+		version (Windows)
+			return spawnProcess(command).wait();
+		else
+		{
+			execvp(command[0], command);
+			errnoEnforce(false, "execvp failed");
+			assert(false); // unreachable
+		}
 	}
 
 	@(`Install Digger's build result on top of an existing stable DMD installation`)
