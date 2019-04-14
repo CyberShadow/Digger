@@ -24,6 +24,10 @@ dependency "ae" version="==0.0.2388"
 dependency "ae:sys-net-wininet" version="==0.0.2388" platform="windows"
 dependency "ae:sys-net-ae" version="==0.0.2388" platform="posix"
 
+# Apparently needed for LDC. See:
+# https://github.com/CyberShadow/Digger/issues/53
+libs "zlib" platform="posix"
+
 ---------------------------
 
 # The web interface.
