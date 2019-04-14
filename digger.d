@@ -10,10 +10,7 @@ import std.typetuple;
 
 static if(!is(typeof({import ae.utils.text;}))) static assert(false, "ae library not found, did you clone with --recursive?"); else:
 
-version (Windows)
-	static import ae.sys.net.wininet;
-else
-	static import ae.sys.net.ae;
+static import ae.sys.net.system;
 
 import ae.sys.d.manager : DManager;
 import ae.utils.funopt;

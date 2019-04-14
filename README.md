@@ -123,15 +123,23 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
     $ rdmd --build-only digger
     $ rdmd --build-only digger-web
 
-If you get a link error, you may need to add `-allinst` or `-debug` due to [a DMD bug](https://github.com/CyberShadow/Digger/issues/37).
+* If you get a link error, you may need to add `-allinst` or `-debug` due to [a DMD bug](https://github.com/CyberShadow/Digger/issues/37).
 
-A [dub](https://code.dlang.org/) definition is also included.
+* A [dub](https://code.dlang.org/) definition is also included.
 
-On Windows, you may see:
+* On systems with OpenSSL 1.1 or newer, you may get linking errors related to OpenSSL (e.g. <code>undefined reference to `SSL_load_error_strings'</code>).
 
-    Warning 2: File Not Found version.lib
+  To fix this, add the line:
 
-This is a benign warning.
+      lflags "/usr/lib/libssl.so.1.0.0" "/usr/lib/libcrypto.so.1.0.0" platform="posix"
+
+  to `dub.sdl`.
+
+* On Windows, you may see:
+
+      Warning 2: File Not Found version.lib
+
+  This is a benign warning.
 
 ### Hacking
 
