@@ -21,7 +21,8 @@ sourceFiles "install.d"
 sourceFiles "repo.d"
 
 dependency "ae" version="==0.0.2387"
-dependency "ae:sys-net-system" version="==0.0.2387"
+dependency "ae:sys-net-wininet" version="==0.0.2387" platform="windows"
+dependency "ae:sys-net-ae" version="==0.0.2387" platform="posix"
 
 ---------------------------
 

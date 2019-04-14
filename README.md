@@ -127,14 +127,6 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
 
 * A [dub](https://code.dlang.org/) definition is also included.
 
-* On systems with OpenSSL 1.1 or newer, you may get linking errors related to OpenSSL (e.g. <code>undefined reference to `SSL_load_error_strings'</code>).
-
-  To fix this, add the line:
-
-      lflags "/usr/lib/libssl.so.1.0.0" "/usr/lib/libcrypto.so.1.0.0" platform="posix"
-
-  to `dub.sdl`.
-
 * On Windows, you may see:
 
       Warning 2: File Not Found version.lib
