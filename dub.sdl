@@ -20,9 +20,9 @@ sourceFiles "digger.d"
 sourceFiles "install.d"
 sourceFiles "repo.d"
 
-dependency "ae" version="==0.0.2387"
-dependency "ae:sys-net-wininet" version="==0.0.2387" platform="windows"
-dependency "ae:sys-net-ae" version="==0.0.2387" platform="posix"
+dependency "ae" version="==0.0.2388"
+dependency "ae:sys-net-wininet" version="==0.0.2388" platform="windows"
+dependency "ae:sys-net-ae" version="==0.0.2388" platform="posix"
 
 ---------------------------
 
@@ -33,5 +33,5 @@ subPackage {
 	targetType "executable"
 	sourceFiles "digger-web.d"
 	sourceFiles "common.d"
-	dependency "ae" version="==0.0.2387"
+	dependency "ae" version="==0.0.2388"
 }

@@ -32,6 +32,12 @@ struct ConfigFile
 {
 	DManager.Config.Build build;
 	DManager.Config.Local local;
+
+	struct App
+	{
+		string[] gitOptions;
+	}
+	App app;
 }
 immutable ConfigFile config;
 
@@ -96,6 +102,12 @@ shared static this()
 	opts.configLines.parseIniInto(config);
 
 	.opts = cast(immutable)opts;
+
+	if (config.app.gitOptions)
+	{
+		import ae.sys.git : Repository;
+		Repository.globalOptions ~= config.app.gitOptions;
+	}
 }
 
 @property string subDir(string name)() { return buildPath(config.local.workDir, name); }
