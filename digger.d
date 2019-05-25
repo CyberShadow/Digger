@@ -39,6 +39,7 @@ alias BuildOptions(string action, string pastAction, bool showBuildActions = tru
 	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "HOST_CC=g++48" [build.components.common.makeArgs]` : hiddenOption, "ARG", 0, "makeArgs"),
 	Switch!(showBuildActions ? "Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package [build.components.dmd.bootstrap.fromSource]" : hiddenOption, 0, "bootstrap"),
 	Switch!(hiddenOption, 0, "use-vc"),
+	Switch!(hiddenOption, 0, "clobber-local-changes"),
 );
 
 alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n" ~
@@ -57,7 +58,8 @@ void parseBuildOptions(T...)(T options) // T == BuildOptions!action
 	d.config.build.components.common.makeArgs ~= options[4];
 	d.config.build.components.dmd.bootstrap.fromSource |= options[5];
 	d.config.build.components.dmd.useVC |= options[6];
-	static assert(options.length == 7);
+	d.verifyWorkTree = !options[7];
+	static assert(options.length == 8);
 }
 
 struct Digger

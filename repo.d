@@ -26,7 +26,6 @@ final class DiggerManager : DManager
 	{
 		this.config.build = cast().config.build;
 		this.config.local = cast().config.local;
-		this.verifyWorkTree = true;
 	}
 
 	override void log(string s)
