@@ -102,8 +102,7 @@ string parseRev(string rev)
 	d.needUpdate();
 
 	auto metaRepo = d.getMetaRepo();
-	metaRepo.needRepo();
-	auto repo = &metaRepo.git;
+	auto repo = &metaRepo.git();
 
 	try
 		return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);

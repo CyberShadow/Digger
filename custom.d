@@ -188,13 +188,11 @@ int handleWebTask(string[] args)
 			return 0;
 		}
 		case "branches":
-			d.getMetaRepo().needRepo();
 			foreach (line; d.getMetaRepo().git.query("branch", "--remotes").splitLines())
 				if (line.startsWith("  origin/") && line[2..$].indexOf(" ") < 0)
 					writeln(line[9..$]);
 			return 0;
 		case "tags":
-			d.getMetaRepo().needRepo();
 			d.getMetaRepo().git.run("tag");
 			return 0;
 		case "install-preview":

@@ -202,7 +202,6 @@ static:
 
 	int show(string revision)
 	{
-		d.getMetaRepo().needRepo();
 		d.getMetaRepo().git.run("log", "-n1", revision);
 		d.getMetaRepo().git.run("log", "-n1", "--pretty=format:t=%ct", revision);
 		return 0;

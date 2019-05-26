@@ -77,8 +77,7 @@ int doBisect(bool noVerify, string bisectConfigFile, string[] bisectConfigLines)
 		enforce(!bisectConfig.tester, "bisectBuild and specifying a test command are mutually exclusive");
 	enforce(bisectConfig.tester || bisectConfig.bisectBuild, "No tester specified (and bisectBuild is false)");
 
-	d.getMetaRepo().needRepo();
-	auto repo = &d.getMetaRepo().git;
+	auto repo = &d.getMetaRepo().git();
 
 	d.needUpdate();
 
@@ -195,7 +194,7 @@ struct BisectStep
 	bool downwards; // on the way to the common ancestor
 }
 
-BisectStep[] pathBetween(Repository* repo, string p0, string p1)
+BisectStep[] pathBetween(in Repository* repo, string p0, string p1)
 {
 	auto commonAncestor = repo.query("merge-base", p0, p1);
 	return chain(
@@ -205,7 +204,7 @@ BisectStep[] pathBetween(Repository* repo, string p0, string p1)
 	).array;
 }
 
-string[] commitsBetween(Repository* repo, string p0, string p1)
+string[] commitsBetween(in Repository* repo, string p0, string p1)
 {
 	return repo.query("log", "--reverse", "--pretty=format:%H", p0 ~ ".." ~ p1).splitLines();
 }
@@ -355,7 +354,6 @@ int doDelve(bool inBisect)
 		log("Invoked by git-bisect - performing bisect step.");
 
 		import std.conv;
-		d.getMetaRepo().needRepo();
 		auto rev = d.getMetaRepo().getRef("BISECT_HEAD");
 		auto t = d.getMetaRepo().git.query("log", "-n1", "--pretty=format:%ct", rev).to!int();
 		foreach (r; badCommits)
@@ -381,7 +379,6 @@ int doDelve(bool inBisect)
 	}
 	else
 	{
-		d.getMetaRepo.needRepo();
 		auto root = d.getMetaRepo().git.query("log", "--pretty=format:%H", "--reverse", "master").splitLines()[0];
 		d.getMetaRepo().git.run(["bisect", "start", "--no-checkout", "master", root]);
 		d.getMetaRepo().git.run("bisect", "run",
