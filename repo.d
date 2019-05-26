@@ -26,6 +26,7 @@ final class DiggerManager : DManager
 	{
 		this.config.build = cast().config.build;
 		this.config.local = cast().config.local;
+		this.verifyWorkTree = true; // for commands which don't take BuildOptions, like bisect
 	}
 
 	override void log(string s)
