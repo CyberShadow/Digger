@@ -16,6 +16,12 @@ function init() {
 
 	rm -rf digger work
 	( shopt -s nullglob; rm -f ./*.lst )
+
+	if [[ "$uname" != *_NT-* ]]
+	then
+		# Apply -no-pie workaround to programs built here, too
+		PATH=$PWD/work/bin:$PATH
+	fi
 }
 
 # Common functions
