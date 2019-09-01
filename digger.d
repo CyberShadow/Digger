@@ -42,8 +42,8 @@ alias BuildOptions(string action, string pastAction, bool showBuildActions = tru
 	Switch!(hiddenOption, 0, "clobber-local-changes"),
 );
 
-alias Spec = Parameter!(string, "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n" ~
-	"\"master @ 3 weeks ago + dmd#123 + You/dmd/awesome-feature\"");
+enum specDescription = "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n" ~
+	"\"master @ 3 weeks ago + dmd#123 + You/dmd/awesome-feature\"";
 
 void parseBuildOptions(T...)(T options) // T == BuildOptions!action
 {
@@ -66,7 +66,7 @@ struct Digger
 {
 static:
 	@(`Build D from source code`)
-	int build(BuildOptions!("build", "built") options, Spec spec = "master")
+	int build(BuildOptions!("build", "built") options, Parameter!(string, specDescription) spec = "master")
 	{
 		parseBuildOptions(options);
 		buildCustom(spec);
@@ -90,7 +90,7 @@ static:
 	}
 
 	@(`Check out D source code from git`)
-	int checkout(BuildOptions!("check out", "checked out", false) options, Spec spec = "master")
+	int checkout(BuildOptions!("check out", "checked out", false) options, Parameter!(string, specDescription) spec = "master")
 	{
 		parseBuildOptions(options);
 		.checkout(spec);
@@ -98,10 +98,18 @@ static:
 	}
 
 	@(`Run a command using a D version`)
-	int run(BuildOptions!("build", "built") options, Spec spec, Parameter!(string[], "Command to run and its arguments (use -- to pass switches)") command)
+	int run(
+		BuildOptions!("build", "built") options,
+		Parameter!(string, specDescription ~ "\nSpecify \"-\" to use the previously-built version.") spec,
+		Parameter!(string[], "Command to run and its arguments (use -- to pass switches)") command)
 	{
-		parseBuildOptions(options);
-		buildCustom(spec, /*asNeeded*/true);
+		if (spec == "-")
+			enforce(options == typeof(options).init, "Can't specify build options when using the last built version.");
+		else
+		{
+			parseBuildOptions(options);
+			buildCustom(spec, /*asNeeded*/true);
+		}
 
 		auto binPath = resultDir.buildPath("bin").absolutePath();
 		environment["PATH"] = binPath ~ pathSeparator ~ environment["PATH"];
