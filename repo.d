@@ -85,11 +85,25 @@ string parseRev(string rev)
 {
 	auto args = ["log", "--pretty=format:%H"];
 
+	d.needUpdate();
+
+	auto metaRepo = d.getMetaRepo();
+	auto repo = &metaRepo.git();
+
 	// git's approxidate accepts anything, so a disambiguating prefix is required
 	if (rev.canFind('@') && !rev.canFind("@{"))
 	{
 		auto parts = rev.findSplit("@");
 		auto at = parts[2].strip();
+
+		// If this is a named tag, use the date of the tagged commit.
+		try
+		{
+			auto sha1 = metaRepo.getRef("refs/tags/" ~ at);
+			at = repo.query("log", "-1", "--pretty=format:%cI", sha1);
+		}
+		catch (Exception e) {}
+
 		if (at.startsWith("#")) // For the build-all command - skip this many commits
 			args ~= ["--skip", at[1..$]];
 		else
@@ -99,11 +113,6 @@ string parseRev(string rev)
 
 	if (rev.empty)
 		rev = "origin/master";
-
-	d.needUpdate();
-
-	auto metaRepo = d.getMetaRepo();
-	auto repo = &metaRepo.git();
 
 	try
 		return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
