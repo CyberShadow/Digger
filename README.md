@@ -105,6 +105,13 @@ To bisect D's history to find which pull request introduced a bug, first copy `b
 
     $ digger bisect path/to/bisect.ini
 
+If Digger ends up with a master/stable merge as the bisection result, switch the branches on the starting points accordingly, e.g.:
+
+- If you specified `good=v2.080.0` and `bad=v2.081.0`, try `good=master@v2.080.0` and `bad=master@v2.081.0`
+- If you specified `good=@2018-01-01` and `bad=@2019-01-01`, try `good=stable@2018-01-01` and `bad=stable@2019-01-01`
+- Note that the master/stable branch-offs/merges do not happen at the same time as when releases are tagged,
+  so you may need to increase the bisection range accordingly. See [DIP75](https://wiki.dlang.org/DIP75) for details.
+
 ### Web interface
 
 Run `digger-web` to start the web interface, which allows interactively customizing a D version to build.
