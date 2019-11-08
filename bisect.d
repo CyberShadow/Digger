@@ -181,7 +181,7 @@ int doBisect(bool noVerify, string bisectConfigFile, string[] bisectConfigLines)
 		log("There are only untestable commits left to bisect.");
 		log("The first %s commit could be any of:".format(bisectConfig.reverse ? "good" : "bad"));
 		foreach (p; path ~ [p1])
-			log(p);
+			repo.run("log", "-1", "--pretty=format:%h %ci: %s", p);
 		log("We cannot bisect more!");
 		return 2;
 	}
