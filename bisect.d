@@ -182,7 +182,8 @@ int doBisect(bool noVerify, string bisectConfigFile, string[] bisectConfigLines)
 		log("The first %s commit could be any of:".format(bisectConfig.reverse ? "good" : "bad"));
 		foreach (p; path ~ [p1])
 			log(p);
-		throw new Exception("We cannot bisect more!");
+		log("We cannot bisect more!");
+		return 2;
 	}
 
 	assert(false);
