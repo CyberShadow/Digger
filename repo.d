@@ -115,12 +115,14 @@ string parseRev(string rev)
 		rev = "origin/master";
 
 	try
-		return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
-	catch (Exception e)
+		if (metaRepo.getRef("origin/" ~ rev))
+			return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
+	catch (Exception e) {}
+
 	try
-		return repo.query(args ~ ["-n", "1", rev]);
-	catch (Exception e)
-		{}
+		if (metaRepo.getRef(rev))
+			return repo.query(args ~ ["-n", "1", rev]);
+	catch (Exception e) {}
 
 	auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
 	if (grep.length == 1)
