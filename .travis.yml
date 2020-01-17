@@ -2,6 +2,7 @@ language: d
 d: dmd-2.076.0
 os:
   - linux
+  - windows
   - osx
 addons:
   apt:
