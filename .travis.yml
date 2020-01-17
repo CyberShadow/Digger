@@ -9,6 +9,6 @@ addons:
     - gcc-multilib # https://stackoverflow.com/questions/12591629/gcc-cannot-find-bits-predefs-h-on-i686
     - g++-multilib
 script:
-  - curl -fsS https://dlang.org/install.sh | bash -s dmd-2.076.0
+  - curl -fsS https://raw.githubusercontent.com/CyberShadow/installer/install-sh-windows/script/install.sh | bash -s dmd-2.076.0
   - source ~/dlang/dmd-2.076.0/activate
   - test/run-tests.sh
