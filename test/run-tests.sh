@@ -235,6 +235,12 @@ function test_2015_09_01() {
 	fi
 }
 
+# Build test - master @ 2019-10-10 00:00:00 (build.d trouble on Windows)
+
+function test_2019_10_10() {
+	digger build "master @ 2019-10-10 00:00:00"
+}
+
 # The test runner
 
 function run_tests() {
@@ -268,6 +274,7 @@ function main() {
 		bisect
 		model
 		2015_09_01
+	#	2019_10_10
 	)
 
 	if [[ $# -eq 0 ]]
