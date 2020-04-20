@@ -16,7 +16,7 @@ import ae.utils.json;
 import ae.utils.regex;
 
 import common;
-import config;
+import config : config, subDir;
 import install;
 import repo;
 
@@ -93,44 +93,30 @@ DManager.SubmoduleState parseSpec(string spec)
 	{
 		bool revert = part.skipOver("-");
 
-		void handleCommit(string component, string commit, int mainline)
+		void apply(string component, string[2] branch, DManager.MergeMode mode)
 		{
 			if (revert)
-				d.revert(state, component, commit, mainline);
+				d.revert(state, component, branch, mode);
 			else
-				d.merge(state, component, commit);
-		}
-
-		void handleBranch(string component, string branch)
-		{
-			if (revert)
-			{
-				string commit; int mainline;
-				d.getChild(state, component, branch, /*out*/commit, /*out*/mainline);
-				handleCommit(component, commit, mainline);
-			}
-			else
-				handleCommit(component, branch, 0);
+				d.merge(state, component, branch, mode);
 		}
 
 		if (part.matchCaptures(re!`^(\w[\w\-\.]*)#(\d+)$`,
 			(string component, int pull)
 			{
-				handleBranch(component, d.getPull(component, pull));
+				apply(component, d.getPull(component, pull), DManager.MergeMode.cherryPick);
 			}))
 			continue;
 
-		if (part.matchCaptures(re!`^([a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])/(\w[\w\-\.]*)/(\w[\w\-]*)$`,
-			(string user, string component, string branch)
+		if (part.matchCaptures(re!`^(?:([a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])/)?(\w[\w\-\.]*)/(?:(\w[\w\-]*)\.\.)?(\w[\w\-]*)$`,
+			(string user, string component, string base, string tip)
 			{
-				handleBranch(component, d.getFork(component, user, branch));
-			}))
-			continue;
-
-		if (part.matchCaptures(re!`^(\w+)/([0-9a-fA-F]{40})$`,
-			(string component, string commit)
-			{
-				handleCommit(component, commit, 0);
+				// Some "do what I mean" logic here: if the user
+				// specified a range, or a single commit, cherry-pick;
+				// otherwise (just a branch name), do a git merge
+				auto branch = d.getBranch(component, user, base, tip);
+				auto mode = branch[0] ? DManager.MergeMode.cherryPick : DManager.MergeMode.merge;
+				apply(component, branch, mode);
 			}))
 			continue;
 
