@@ -61,6 +61,12 @@ tester = cd C:\Temp && dmd -o- test.d
 # is only applied during the execution of the tester
 # command specified above.
 
+# Extra patches to apply at every bisect step.
+# Specified in the same way as a build spec for "digger build",
+# but without the leading branch name.
+
+#extraSpec = +dmd#9425
+
 [environment]
 
 # Optionally, you can specify additional build options.

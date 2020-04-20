@@ -18,6 +18,7 @@ import ae.utils.sini;
 
 import common;
 import config;
+import custom;
 import repo;
 
 enum EXIT_UNTESTABLE = 125;
@@ -30,6 +31,7 @@ struct BisectConfig
 	string tester;
 	bool bisectBuild;
 	bool bisectBuildTest;
+	string extraSpec;
 
 	DiggerManager.Config.Build* build;
 	DiggerManager.Config.Local* local;
@@ -121,8 +123,9 @@ int doBisect(bool noVerify, string bisectConfigFile, string[] bisectConfigLines)
 	if (bisectConfig.reverse)
 		swap(p0, p1);
 
-	auto cacheState = d.getCacheState([p0, p1]);
-	bool[string] untestable;
+	bool[string] cacheState, untestable;
+	if (!bisectConfig.extraSpec)
+		cacheState = d.getCacheState([p0, p1]);
 
 	bisectLoop:
 	while (true)
@@ -264,7 +267,7 @@ int doBisectStep(string rev)
 				currentDir.rmdirRecurse();
 		}
 
-		auto state = d.begin(rev);
+		auto state = parseSpec(rev ~ bisectConfig.extraSpec);
 
 		scope (exit)
 			if (d.buildDir.exists)
@@ -366,7 +369,7 @@ int doDelve(bool inBisect)
 
 		d.cacheFailures = false;
 		//d.config.build = bisectConfig.build; // TODO
-		auto state = d.begin(rev);
+		auto state = parseSpec(rev ~ bisectConfig.extraSpec);
 		try
 		{
 			d.build(state);
