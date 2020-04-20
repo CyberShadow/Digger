@@ -74,7 +74,7 @@ class WebFrontend
 				case "install":
 				{
 					auto paramsArray = params
-						.pairs
+						.byKeyValue
 						.filter!(pair => !pair.value.empty)
 						.map!(pair => "--" ~ pair.key ~ "=" ~ pair.value)
 						.array;
