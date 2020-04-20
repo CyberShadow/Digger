@@ -13,7 +13,7 @@ static if(!is(typeof({import ae.utils.text;}))) static assert(false, "ae library
 version (Windows)
 	static import ae.sys.net.wininet;
 else
-	static import ae.sys.net.ae;
+	static import ae.sys.net.curl;
 
 import ae.sys.d.manager : DManager;
 import ae.utils.funopt;
