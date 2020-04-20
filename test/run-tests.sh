@@ -47,12 +47,6 @@ function digger() {
 	./digger --config-file ./digger.ini "$@"
 }
 
-# Test building digger-web
-
-function test_diggerweb() {
-	rdmd --build-only -of./digger-web ../digger-web.d
-}
-
 # Run unittests
 
 function test_unit() {
@@ -261,7 +255,6 @@ function run_tests() {
 
 function main() {
 	local all_tests=(
-		diggerweb
 		unit
 		build
 		testsuite

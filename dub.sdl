@@ -27,15 +27,3 @@ dependency "ae:sys-net-ae" version="==0.0.2515" platform="posix"
 # Apparently needed for LDC. See:
 # https://github.com/CyberShadow/Digger/issues/53
 libs "zlib" platform="posix"
-
----------------------------
-
-# The web interface.
-
-subPackage {
-	name "web"
-	targetType "executable"
-	sourceFiles "digger-web.d"
-	sourceFiles "common.d"
-	dependency "ae" version="==0.0.2515"
-}

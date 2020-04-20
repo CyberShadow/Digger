@@ -242,9 +242,6 @@ int digger()
 		dmd_coverSetMerge(true);
 	}
 
-	if (opts.action == "do")
-		return handleWebTask(opts.actionArguments.dup);
-
 	static void usageFun(string usage)
 	{
 		import std.algorithm, std.array, std.stdio, std.string;

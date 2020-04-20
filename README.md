@@ -7,8 +7,6 @@ Digger can:
 - build D plus forks and pending pull requests
 - bisect D's history to find where regressions are introduced (or bugs fixed)
 
-Digger has a simple command-line interface, as well as a web interface for customizing your custom D build.
-
 ### Requirements
 
 On POSIX, Digger needs git, g++, binutils and make. gcc-multilib and g++-multilib or equivalent are required for targeting x86 on x86_64 systems.
@@ -115,12 +113,6 @@ If Digger ends up with a master/stable merge as the bisection result, switch the
 - Note that the master/stable branch-offs/merges do not happen at the same time as when releases are tagged,
   so you may need to increase the bisection range accordingly. See [DIP75](https://wiki.dlang.org/DIP75) for details.
 
-### Web interface
-
-Run `digger-web` to start the web interface, which allows interactively customizing a D version to build.
-
-If you built `digger-web` from source, you also need to build `digger` itself.
-
 ### Configuration
 
 You can optionally configure a few settings using a configuration file.
@@ -131,7 +123,6 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
     $ git clone --recursive https://github.com/CyberShadow/Digger
     $ cd Digger
     $ rdmd --build-only digger
-    $ rdmd --build-only digger-web
 
 * If you get a link error, you may need to add `-allinst` or `-debug` due to [a DMD bug](https://github.com/CyberShadow/Digger/issues/37).
 
@@ -169,8 +160,7 @@ Module list is as follows:
 - `custom` - custom build management
 - `install` - installation
 - `digger` - entry point and command-line UI
-- `digger-web` - web interface, works by launching `digger` sub-processes
-- `common` - helpers shared by `digger` and `digger-web`
+- `common` - shared helpers
 
 ### Remarks
 
