@@ -1,7 +1,7 @@
 Digger Changelog
 ================
 
-Digger v3.0 (WIP)
+Digger v3.0 (2020-04-21)
 ------------------------
 
  * Major internal changes for improved reliability
@@ -18,11 +18,15 @@ Digger v3.0 (WIP)
  * Add `digger checkout` command, which simply checks out a given D revision 
    (`master` by default)
  * Add `digger test` command, to run tests for working tree state
+ * Add `digger run` command, which runs arbitrary commands in the
+   context of some D version
  * Add ability to revert a branch or pull request.  
    The syntax is to prefix the branch or PR with a `-` (minus sign).  
    Example: `digger build "master + -phobos#1234"`
  * Add ability to specify commit SHA1 instead of a branch or PR number.  
    Example: `digger build "master + -dmd/0123456789abcdef0123456789abcdef01234567"`
+ * Add ability to specify a tag instead of a timestamp to use that tag's time
+   Example: `digger build "master @ v2.085.0"`
  * Add `tools`, `extras` and `curl` components
  * Add `32mscoff` model support for Windows
  * Add `--jobs` option for controlling the GNU make `-j` parameter
@@ -34,9 +38,15 @@ Digger v3.0 (WIP)
  * Verify integrity of all downloaded files
  * Only download/install Visual Studio components as-needed
  * Prevent git from loading user/system configuration
+ * Add `app.gitOptions` setting, which allows e.g. specifying an
+   alternate way to clone git:// URLs
  * Add `dub.sdl`
+ * Add `DIGGER_REVISION` environment variable during bisection
+ * Add `extraSpec` bisect option, which allows specifying additional
+   patches to apply during bisection
  * Add test suite
    * Enable continuous integration on Travis and AppVeyor
+ * Remove `digger-web`
  * Various fixes
 
 Digger v2.4 (2015-10-05)
