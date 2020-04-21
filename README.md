@@ -59,6 +59,17 @@ replace `digger ...` with `./digger ...` or `dub run digger -- ...` as appropria
     # build with reverted pull request
     $ digger build "master + -dmd#123"
 
+##### Building D programs
+
+    # Run the last built DMD version
+    $ digger run - -- dmd --help
+
+    # Build and run latest DMD master
+    $ digger run master -- dmd --help
+
+    # Build latest DMD master, and then build and run a D program using it
+    $ digger run master -- dmd -i -run program.d
+
 ##### Hacking on D
 
     # check out git master (or some other version)
