@@ -107,7 +107,7 @@ function test_testsuite() {
 function test_cache() {
 	digger build "master @ 2016-01-01 00:00:00"
 
-	digger --offline build "master @ 2016-01-01 00:00:00" 2>&1 | tee digger.log
+	digger --offline build "master @ 2016-01-01 00:00:00" 2>&1 | tr -d '\r' | tee digger.log
 	xfail grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 }
@@ -117,7 +117,7 @@ function test_cache() {
 function test_cache_error() {
 	xfail digger build "master @ 2009-07-01 00:00:00"
 
-	xfail digger --offline build "master @ 2009-07-01 00:00:00" 2>&1 | tee digger.log
+	xfail digger --offline build "master @ 2009-07-01 00:00:00" 2>&1 | tr -d '\r' | tee digger.log
 	xfail grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 	grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
 	grep --quiet --fixed-strings 'was cached as unbuildable' digger.log
@@ -169,7 +169,7 @@ function test_merge() {
 
 	# Test cache
 
-	digger --offline build "master @ 2016-01-01 00:00:00 + phobos#3859" 2>&1 | tee digger.log
+	digger --offline build "master @ 2016-01-01 00:00:00 + phobos#3859" 2>&1 | tr -d '\r' | tee digger.log
 	grep --quiet --fixed-strings --line-regexp 'digger: Merging phobos commits 791659460d83b4d92c232c6a87a39276a842388c..ad226e92d5f092df233b90fd3fdedb8b71d728eb' digger.log
 	xfail grep --quiet --fixed-strings --line-regexp 'digger: Cache miss.' digger.log
 	      grep --quiet --fixed-strings --line-regexp 'digger: Cache hit!' digger.log
@@ -192,7 +192,7 @@ tester = dmd -run issue15914.d
 local.makeJobs = auto
 EOF
 
-	digger --offline bisect ./bisect.ini 2>&1 | tee digger.log
+	digger --offline bisect ./bisect.ini 2>&1 | tr -d '\r' | tee digger.log
 
 	if [[ "$uname" == *_NT-* ]]
 	then
