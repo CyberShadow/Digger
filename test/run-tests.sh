@@ -14,6 +14,11 @@ function init() {
 	echo "local.cache = git" >> ./digger.ini
 	echo "local.makeJobs = auto" >> ./digger.ini
 
+	if [[ -n "${GITHUB_API_TOKEN:-}" ]]
+	then
+		echo "local.githubToken = $GITHUB_API_TOKEN" >> ./digger.ini
+	fi
+
 	rm -rf digger work
 	( shopt -s nullglob; rm -f ./*.lst )
 
