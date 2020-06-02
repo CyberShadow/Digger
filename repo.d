@@ -13,6 +13,7 @@ import std.string;
 
 import ae.sys.file;
 import ae.sys.d.manager;
+import ae.utils.regex;
 
 import common;
 import config : config, opts;
@@ -124,9 +125,12 @@ string parseRev(string rev)
 			return repo.query(args ~ ["-n", "1", rev]);
 	catch (Exception e) {}
 
-	auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", rev, "origin/master").splitLines();
-	if (grep.length == 1)
-		return grep[0];
+	if (rev.startsWith("https://github.com"))
+	{
+		auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", "^" ~ escapeRE(rev), "origin/master").splitLines();
+		if (grep.length == 1)
+			return grep[0];
+	}
 
 	auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
 	if (pickaxe.length && pickaxe.length <= 2) // removed <- added
