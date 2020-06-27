@@ -20,9 +20,9 @@ sourceFiles "digger.d"
 sourceFiles "install.d"
 sourceFiles "repo.d"
 
-dependency "ae" version="==0.0.2700"
-dependency "ae:sys-net-wininet" version="==0.0.2700" platform="windows"
-dependency "ae:sys-net-curl" version="==0.0.2700" platform="posix"
+dependency "ae" version="==0.0.2703"
+dependency "ae:sys-net-wininet" version="==0.0.2703" platform="windows"
+dependency "ae:sys-net-curl" version="==0.0.2703" platform="posix"
 
 # Apparently needed for LDC. See:
 # https://github.com/CyberShadow/Digger/issues/53
