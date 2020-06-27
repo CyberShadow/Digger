@@ -2,6 +2,8 @@ module common;
 
 import std.stdio;
 
+import config;
+
 enum diggerVersion = "3.0.1";
 
 /// Send to stderr iff we have a console to write to
@@ -20,5 +22,6 @@ void writeToConsole(string s)
 
 void log(string s)
 {
-	writeToConsole("digger: " ~ s ~ "\n");
+	if (!opts.quiet)
+		writeToConsole("digger: " ~ s ~ "\n");
 }
