@@ -16,6 +16,7 @@
 #   "master @ October 2013", "2.065 @ 15 days ago" or "@ Tuesday")
 #   or a tag (e.g. "master @ v2.085.0).
 #   If no ref is specified, master is assumed.
+#   If only a tag is specified, stable is assument.
 
 bad  = master
 good = @ 1 month ago
