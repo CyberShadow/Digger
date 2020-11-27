@@ -240,6 +240,12 @@ function test_2019_10_10() {
 	digger build "master @ 2019-10-10 00:00:00"
 }
 
+# Build test - v2.094.2 (Druntime mak/copyimports.d breakage on Windows)
+
+function test_2_094_2() {
+	digger build "v2.094.2"
+}
+
 # The test runner
 
 function run_tests() {
@@ -273,6 +279,7 @@ function main() {
 		model
 		2015_09_01
 	#	2019_10_10
+	#	2_094_2
 	)
 
 	if [[ $# -eq 0 ]]
