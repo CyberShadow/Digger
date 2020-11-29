@@ -1,7 +1,6 @@
 #!/bin/bash
-set -eu
+set -x
 
-echo 'run-test.sh  start'
-c++ -ldl test.cpp
-echo 'run-test.sh  end'
+cc -ldl test.c
+cc test.c
 ls -al
