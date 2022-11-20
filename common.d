@@ -4,7 +4,7 @@ import std.stdio;
 
 import config;
 
-enum diggerVersion = "3.0.7";
+enum diggerVersion = "3.0.8";
 
 /// Send to stderr iff we have a console to write to
 void writeToConsole(string s)
