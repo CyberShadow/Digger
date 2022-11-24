@@ -131,13 +131,15 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
 
 ### Building
 
+    $ dub build
+
+— or —
+
     $ git clone --recursive https://github.com/CyberShadow/Digger
     $ cd Digger
-    $ rdmd --build-only digger
+    $ rdmd --build-only -Isource -ofdigger source/digger/digger.d
 
 * If you get a link error, you may need to add `-allinst` or `-debug` due to [a DMD bug](https://github.com/CyberShadow/Digger/issues/37).
-
-* A [dub](https://code.dlang.org/) definition is also included.
 
 * On Windows, you may see:
 
@@ -179,3 +181,4 @@ Module list is as follows:
 
 Digger should work fine under Wine. For 64-bit builds, you must first run `winetricks vcrun2013`.
 Digger cannot do this automatically as this must be done from outside Wine.
+

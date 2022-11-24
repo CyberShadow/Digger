@@ -1,4 +1,4 @@
-module repo;
+module digger.repo;
 
 import std.array;
 import std.algorithm;
@@ -15,9 +15,9 @@ import ae.sys.file;
 import ae.sys.d.manager;
 import ae.utils.regex;
 
-import common;
-import config : config, opts;
-import custom : parseSpec;
+import digger.common;
+import digger.config : config, opts;
+import digger.custom : parseSpec;
 
 //alias BuildConfig = DManager.Config.Build;
 
@@ -32,7 +32,7 @@ final class DiggerManager : DManager
 
 	override void log(string s)
 	{
-		common.log(s);
+		.digger.common.log(s);
 	}
 
 	void logProgress(string s)

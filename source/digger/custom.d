@@ -1,4 +1,4 @@
-module custom;
+module digger.custom;
 
 import std.algorithm;
 import std.array;
@@ -15,10 +15,10 @@ import ae.utils.array;
 import ae.utils.json;
 import ae.utils.regex;
 
-import common;
-import config : config, subDir;
-import install;
-import repo;
+import digger.common;
+import digger.config : config, subDir;
+import digger.install;
+import digger.repo;
 
 alias indexOf = std.string.indexOf;
 

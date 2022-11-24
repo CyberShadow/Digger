@@ -11,15 +11,6 @@ license "Boost-1.0"
 
 targetType "executable"
 
-# https://github.com/dlang/dub/issues/825
-sourceFiles "bisect.d"
-sourceFiles "common.d"
-sourceFiles "config.d"
-sourceFiles "custom.d"
-sourceFiles "digger.d"
-sourceFiles "install.d"
-sourceFiles "repo.d"
-
 dependency "ae" version="==0.0.3201"
 dependency "ae:sys-net-wininet" version="==0.0.3201" platform="windows"
 dependency "ae:sys-net-curl" version="==0.0.3201" platform="posix"

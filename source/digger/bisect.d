@@ -1,4 +1,4 @@
-module bisect;
+module digger.bisect;
 
 import core.thread;
 
@@ -16,10 +16,10 @@ import ae.sys.git;
 import ae.utils.math;
 import ae.utils.sini;
 
-import common;
-import config;
-import custom;
-import repo;
+import digger.common;
+import digger.config;
+import digger.custom;
+import digger.repo;
 
 enum EXIT_UNTESTABLE = 125;
 

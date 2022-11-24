@@ -1,4 +1,4 @@
-module digger;
+module digger.digger;
 
 import std.array;
 import std.exception;
@@ -21,12 +21,12 @@ import ae.utils.main;
 import ae.utils.meta : structFun;
 import ae.utils.text : eatLine;
 
-import bisect;
-import common;
-import config;
-import custom;
-import install;
-import repo;
+import digger.bisect;
+import digger.common;
+import digger.config;
+import digger.custom;
+import digger.install;
+import digger.repo;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 version(Windows) static import ae.sys.windows;
@@ -132,7 +132,7 @@ static:
 	)
 	{
 		enforce(!yes || !dryRun, "--yes and --dry-run are mutually exclusive");
-		.install.install(yes, dryRun, installLocation);
+		install(yes, dryRun, installLocation);
 		return 0;
 	}
 
@@ -234,7 +234,7 @@ static:
 	}
 }
 
-int digger()
+int program()
 {
 	version (D_Coverage)
 	{
@@ -252,7 +252,7 @@ int digger()
 		stderr.writeln("https://github.com/CyberShadow/Digger");
 		stderr.writeln();
 		stderr.writeln("Configuration file: ", opts.configFile.value.exists ? opts.configFile.value : "(not present)");
-		stderr.writeln("Working directory: ", config.config.local.workDir);
+		stderr.writeln("Working directory: ", config.local.workDir);
 		stderr.writeln();
 
 		if (lines[0].canFind("ACTION [ACTION-ARGUMENTS]"))
@@ -275,4 +275,4 @@ int digger()
 	return funoptDispatch!(Digger, FunOptConfig.init, usageFun)([thisExePath] ~ (opts.action ? [opts.action.value] ~ opts.actionArguments : []));
 }
 
-mixin main!digger;
+mixin main!program;

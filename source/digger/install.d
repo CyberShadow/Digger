@@ -1,4 +1,4 @@
-module install;
+module digger.install;
 
 import std.algorithm;
 import std.array;
@@ -11,9 +11,9 @@ import ae.sys.file;
 import ae.utils.array;
 import ae.utils.json;
 
-import common;
-import config : config;
-import custom;
+import digger.common;
+import digger.config : config;
+import digger.custom;
 
 static import std.process;
 

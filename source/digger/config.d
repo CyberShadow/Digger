@@ -1,4 +1,4 @@
-module config;
+module digger.config;
 
 import std.file;
 import std.path;

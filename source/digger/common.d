@@ -1,8 +1,8 @@
-module common;
+module digger.common;
 
 import std.stdio;
 
-import config;
+import digger.config;
 
 enum diggerVersion = "3.0.7";
 
