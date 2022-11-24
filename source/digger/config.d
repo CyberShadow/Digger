@@ -7,11 +7,12 @@ import std.string;
 
 import core.runtime;
 
-import ae.sys.d.manager;
 import ae.sys.paths;
 import ae.utils.funopt;
 import ae.utils.meta;
 import ae.utils.sini;
+
+import digger.build.manager;
 
 static import std.getopt;
 

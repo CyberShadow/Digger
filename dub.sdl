@@ -9,12 +9,27 @@ license "Boost-1.0"
 
 # Main package is the Digger tool.
 
+dependency "digger:lib" version="*" path="."
+excludedSourceFiles "source/digger/build/*.d"
 targetType "executable"
 
-dependency "ae" version="==0.0.3201"
-dependency "ae:sys-net-wininet" version="==0.0.3201" platform="windows"
-dependency "ae:sys-net-curl" version="==0.0.3201" platform="posix"
+---------------------------
 
-# Apparently needed for LDC. See:
-# https://github.com/CyberShadow/Digger/issues/53
-libs "zlib" platform="posix"
+# Reusable build machinery.
+
+subPackage {
+	name "lib"
+	sourcePaths
+	sourceFiles "source/digger/build/*.d"
+
+	# Work around "undefined reference to `internal'"
+	targetType "sourceLibrary"
+
+	dependency "ae" version="==0.0.3201"
+	dependency "ae:sys-net-wininet" version="==0.0.3201" platform="windows"
+	dependency "ae:sys-net-curl" version="==0.0.3201" platform="posix"
+
+	# Apparently needed for LDC. See:
+	# https://github.com/CyberShadow/Digger/issues/53
+	libs "zlib" platform="posix"
+}

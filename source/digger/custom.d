@@ -10,11 +10,11 @@ import std.path;
 import std.stdio;
 import std.string;
 
-import ae.sys.d.manager;
 import ae.utils.array;
 import ae.utils.json;
 import ae.utils.regex;
 
+import digger.build.manager;
 import digger.common;
 import digger.config : config, subDir;
 import digger.install;

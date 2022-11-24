@@ -151,12 +151,11 @@ To do so, copy `digger.ini.sample` to `digger.ini` and adjust as instructed by t
 
 ##### Backend
 
-The code which builds D and manages the git repository is located in the [ae library](https://github.com/CyberShadow/ae)
-(`ae.sys.d` package), so as to be reusable.
+The code which builds D and manages the git repository is located in the `digger.build` package, so as to be reusable.
 
-Currently, the bulk of the code is in [`ae.sys.d.manager`](https://github.com/CyberShadow/ae/blob/master/sys/d/manager.d).
+Currently, the bulk of the code is in  [`digger.build.manager`](https://github.com/CyberShadow/Digger/blob/master/source/digger/build/manager.d).
 
-`ae.sys.d.manager` clones [a meta-repository on BitBucket](https://bitbucket.org/cybershadow/d), which contains the major D components as submodules.
+`digger.build.manager` clones [a meta-repository on BitBucket](https://bitbucket.org/cybershadow/d), which contains the major D components as submodules.
 The meta-repository is created and maintained by another program, [D-dot-git](https://github.com/CyberShadow/D-dot-git).
 
 The build requirements are fulfilled by the [`ae.sys.install`](https://github.com/CyberShadow/ae/tree/master/sys/install) package.

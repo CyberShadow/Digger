@@ -171,4 +171,4 @@
 #PATHEXT=%PATHEXT%
 
 # There are some additional lesser-used options not listed here,
-# see ae.sys.d.manager.DManager.Config for details.
+# see digger.build.manager.DManager.Config for details.

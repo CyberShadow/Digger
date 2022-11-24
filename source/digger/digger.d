@@ -15,13 +15,13 @@ version (Windows)
 else
 	static import ae.sys.net.curl;
 
-import ae.sys.d.manager : DManager;
 import ae.utils.funopt;
 import ae.utils.main;
 import ae.utils.meta : structFun;
 import ae.utils.text : eatLine;
 
 import digger.bisect;
+import digger.build.manager : DManager;
 import digger.common;
 import digger.config;
 import digger.custom;
