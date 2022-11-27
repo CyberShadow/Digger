@@ -1,6 +1,6 @@
 name "digger"
 description "A tool to build D and bisect old D versions"
-authors "Vladimir Panteleev <vladimir@thecybershadow.net>"
+authors "Vladimir Panteleev <digger@cy.md"
 homepage "https://github.com/CyberShadow/Digger"
 license "MPL-2.0"
 license "Boost-1.0"

@@ -248,7 +248,7 @@ int program()
 		auto lines = usage.splitLines();
 
 		stderr.writeln("Digger v" ~ diggerVersion ~ " - a D source code building and archaeology tool");
-		stderr.writeln("Created by Vladimir Panteleev <vladimir@thecybershadow.net>");
+		stderr.writeln("Created by Vladimir Panteleev <digger@cy.md>");
 		stderr.writeln("https://github.com/CyberShadow/Digger");
 		stderr.writeln();
 		stderr.writeln("Configuration file: ", opts.configFile.value.exists ? opts.configFile.value : "(not present)");

@@ -8,7 +8,7 @@
  *   can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Authors:
- *   Vladimir Panteleev <ae@cy.md>
+ *   Vladimir Panteleev <digger@cy.md>
  */
 
 module digger.build.cache;
@@ -173,7 +173,7 @@ protected:
 	}
 }
 
-/// The bare minimum required for ae.sys.d to work.
+/// The bare minimum required for digger.build to work.
 /// Implement a temporary cache which is deleted
 /// as soon as it's no longer immediately needed.
 class TempCache : DirCacheBase
@@ -394,7 +394,7 @@ protected:
 	{
 		auto writer = git.createObjectWriter();
 		auto tree = git.importTree(sourcePath, writer);
-		auto author = "digger.build.cache <digger.build.cache@thecybershadow.net> 0 +0000";
+		auto author = "digger.build.cache <digger.build.cache@cy.md> 0 +0000";
 		auto commit = writer.write(Git.Object.createCommit(Git.Object.ParsedCommit(tree, null, author, author, [key])));
 		git.run("update-ref", refPrefix ~ key, commit.toString());
 	}

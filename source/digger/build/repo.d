@@ -8,7 +8,7 @@
  *   can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Authors:
- *   Vladimir Panteleev <ae@cy.md>
+ *   Vladimir Panteleev <digger@cy.md>
  */
 
 module digger.build.repo;
@@ -43,8 +43,8 @@ class ManagedRepository
 			foreach (person; ["AUTHOR", "COMMITTER"])
 			{
 				gitRepo.environment["GIT_%s_DATE".format(person)] = "Thu, 01 Jan 1970 00:00:00 +0000";
-				gitRepo.environment["GIT_%s_NAME".format(person)] = "ae.sys.d";
-				gitRepo.environment["GIT_%s_EMAIL".format(person)] = "ae.sys.d\x40thecybershadow.net";
+				gitRepo.environment["GIT_%s_NAME".format(person)] = "digger.build";
+				gitRepo.environment["GIT_%s_EMAIL".format(person)] = "digger.build\x40cy.md";
 			}
 		}
 		return gitRepo;
@@ -270,8 +270,8 @@ class ManagedRepository
 		return head;
 	}
 
-	private static const string mergeCommitMessage = "ae.sys.d merge";
-	private static const string revertCommitMessage = "ae.sys.d revert";
+	private static const string mergeCommitMessage = "digger.build merge";
+	private static const string revertCommitMessage = "digger.build revert";
 
 	// Performs a merge or revert.
 	private void performMerge(MergeSpec spec)
