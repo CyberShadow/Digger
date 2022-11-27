@@ -233,21 +233,28 @@ class DManager : ICacheHost
 	{
 		protected override Git getRepo()
 		{
-			needGit();
+			Git git;
+			withInstaller({
+				auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
 
-			if (!repoDir.exists)
-			{
-				log("Cloning initial repository...");
-				atomic!_performClone(config.local.repoUrl, repoDir);
-			}
+				if (!repoDir.exists)
+				{
+					log("Cloning initial repository...");
+					atomic!_performClone(config.local.repoUrl, repoDir, gitExecutable);
+				}
 
-			return Git(repoDir);
+				git = Git(repoDir);
+
+				assert(git.commandPrefix[0] == "git");
+				git.commandPrefix[0] = gitExecutable;
+			});
+			return git;
 		}
 
-		static void _performClone(string url, string target)
+		static void _performClone(string url, string target, string gitExecutable)
 		{
-			import ae.sys.cmd;
-			run(["git", "clone", url, target]);
+			import ae.sys.cmd : run;
+			run([gitExecutable, "clone", url, target]);
 		}
 
 		protected override void performCheckout(string hash)
@@ -335,6 +342,11 @@ class DManager : ICacheHost
 		{
 			getMetaRepo().git; // ensure meta-repository is cloned
 			auto git = Git(dir);
+			withInstaller({
+				auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
+				assert(git.commandPrefix[0] == "git");
+				git.commandPrefix[0] = gitExecutable;
+			});
 			git.commandPrefix ~= ["-c", `url.https://.insteadOf=git://`];
 			return git;
 		}
@@ -2384,10 +2396,15 @@ EOS";
 
 	// **************************** Dependencies *****************************
 
-	private void needInstaller()
+	private void withInstaller(void delegate() fun)
 	{
-		Installer.logger = &log;
-		Installer.installationDirectory = dlDir;
+		auto ourInstaller = new Installer(dlDir);
+		ourInstaller.logger = &log;
+
+		auto oldInstaller = .installer;
+		.installer = ourInstaller;
+		scope(exit) .installer = oldInstaller;
+		fun();
 	}
 
 	/// Pull in a built DMD as configured.
@@ -2464,10 +2481,10 @@ EOS";
 			log("Preparing DMD " ~ dmdVer);
 			enforce(dmdVer.startsWith("v"), "Invalid DMD version spec for binary bootstrap. Did you forget to " ~
 				((dmdVer.length && dmdVer[0].isDigit && dmdVer.contains('.')) ? "add a leading 'v'" : "enable fromSource") ~ "?");
-			needInstaller();
-			auto dmdInstaller = new DMDInstaller(dmdVer[1..$]);
-			dmdInstaller.requireLocal(false);
-			env.deps.hostDC = dmdInstaller.exePath("dmd").absolutePath();
+			withInstaller({
+				auto dmdInstaller = new DMDInstaller(dmdVer[1..$]);
+				env.deps.hostDC = dmdInstaller.requireInstalled.getExecutable("dmd").absolutePath();
+			});
 		}
 
 		log("hostDC=" ~ env.deps.hostDC);
@@ -2475,9 +2492,9 @@ EOS";
 
 	protected void needKindleGen(ref Environment env)
 	{
-		needInstaller();
-		kindleGenInstaller.requireLocal(false);
-		env.vars["PATH"] = kindleGenInstaller.directory ~ pathSeparator ~ env.vars["PATH"];
+		withInstaller({
+			env.vars = kindleGenInstaller.requireInstalled().getEnvironment(env.vars);
+		});
 	}
 
 	version (Windows)
@@ -2504,7 +2521,7 @@ EOS";
 	{
 		import ae.utils.meta : I, singleton;
 
-		static class DExtrasInstaller : Installer
+		static class DExtrasInstaller : Package
 		{
 			protected @property override string name() { return "dmd-localextras"; }
 			string url = "http://semitwist.com/download/app/dmd-localextras.7z";
@@ -2524,9 +2541,11 @@ EOS";
 
 		alias extrasInstaller = singleton!DExtrasInstaller;
 
-		needInstaller();
-		extrasInstaller.requireLocal(false);
-		return extrasInstaller.directory;
+		string dir;
+		withInstaller({
+			dir = extrasInstaller.requireInstalled().directory;
+		});
+		return dir;
 	}
 
 	/// Get libcurl for Windows (DLL and import libraries)
@@ -2650,14 +2669,6 @@ EOS";
 		env.vars["CL"] = "-D_USING_V110_SDK71_"; // Work around __userHeader macro redifinition VS bug
 	}
 
-	private void needGit()
-	{
-		tempError++; scope(success) tempError--;
-
-		needInstaller();
-		gitInstaller.require();
-	}
-
 	/// Disable the "<program> has stopped working"
 	/// standard Windows dialog.
 	version (Windows)
@@ -2687,7 +2698,7 @@ EOS";
 				log("> OK");
 				needWorkingCCChecked = true;
 			}
-		};
+		}
 
 		bool haveEnumerateTLVChecked, haveEnumerateTLVValue;
 		bool haveEnumerateTLV()
@@ -2807,9 +2818,13 @@ EOS";
 	{
 		if (!cacheEngine)
 		{
-			if (cacheEngineName == "git")
-				needGit();
-			cacheEngine = createCache(cacheEngineName, cacheEngineDir(cacheEngineName), this);
+			auto cacheEngine = createCache(cacheEngineName, cacheEngineDir(cacheEngineName), this);
+			if (auto gitCache = cast(GitCache)cacheEngine)
+				withInstaller({
+					auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
+					gitCache.setGitExecutable(gitExecutable);
+				});
+			this.cacheEngine = cacheEngine;
 		}
 		return cacheEngine;
 	} /// ditto

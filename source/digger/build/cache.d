@@ -344,6 +344,13 @@ class GitCache : DCache
 	/// Builds are pinned by refs namespaced by this prefix.
 	static const refPrefix = "refs/ae-sys-d-cache/";
 
+	/// Set executable to use instead of `git`.
+	void setGitExecutable(string gitExecutable)
+	{
+		assert(git.commandPrefix[0] == "git");
+		git.commandPrefix[0] = gitExecutable;
+	}
+
 protected:
 	import std.process;
 	import ae.sys.git;
