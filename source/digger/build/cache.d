@@ -324,6 +324,7 @@ class GitCache : DCache
 		if (!cacheDir.exists)
 		{
 			cacheDir.mkdirRecurse();
+			import std.process : spawnProcess, wait;
 			spawnProcess(["git", "init", cacheDir])
 				.wait()
 				.I!(code => (code==0).enforce("git init failed"))
@@ -343,8 +344,7 @@ class GitCache : DCache
 	}
 
 protected:
-	import std.process;
-	import ae.sys.git;
+	import ae.sys.git : Git;
 
 	Git git;
 
@@ -367,6 +367,7 @@ protected:
 
 	override bool haveEntry(string key) const
 	{
+		import std.process : Redirect, wait;
 		auto p = git.pipe(["show-ref", "--verify", refPrefix ~ key], Redirect.stdout | Redirect.stderr);
 		readFile(p.stdout);
 		readFile(p.stderr);
