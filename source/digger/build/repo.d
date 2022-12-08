@@ -24,6 +24,20 @@ import ae.utils.time : StdTime;
 /// Base class for a managed repository.
 class ManagedRepository
 {
+private:
+	// --- Subclass interface
+
+	/// Repository provider
+	protected abstract Git getRepo();
+
+	/// Override to add logging.
+	protected abstract void log(string line);
+
+	/// Optional callbacks which shall attempt to resolve a merge conflict.
+	protected alias MergeConflictResolver = void delegate(ref Git git);
+	protected MergeConflictResolver[] getMergeConflictResolvers() { return null; } /// ditto
+
+final:
 	/// Git repository we manage.
 	public @property ref const(Git) git()
 	{
@@ -44,69 +58,55 @@ class ManagedRepository
 	/// Should we fetch the latest stuff?
 	public bool offline;
 
-	/// Verify working tree state to make sure we don't clobber user changes?
-	public bool verify;
-
 	private Git gitRepo;
 
-	/// Repository provider
-	abstract protected Git getRepo();
+	private Git.ObjectReader reader;
+	private Git.ObjectMultiWriter writer;
+
+	private ref Git.ObjectReader needReader()
+	{
+		if (reader is Git.ObjectReader.init) reader = git.createObjectReader();
+		return reader;
+	}
+
+	private ref Git.ObjectMultiWriter needWriter()
+	{
+		if (writer is Git.ObjectMultiWriter.init) writer = git.createObjectWriter();
+		return writer;
+	}
 
 	/// Base name of the repository directory
 	public @property string name() { return git.path.baseName; }
 
-	// Head
+	// --- Head
 
-	/// Ensure the repository's HEAD is as indicated.
-	public void needHead(string hash)
+	private bool haveCommit(string hash)
 	{
-		needClean();
-		if (getHead() == hash)
-			return;
-
 		try
-			performCheckout(hash);
-		catch (Exception e)
-		{
-			log("Error checking out %s: %s".format(hash, e));
+			enforce(needReader().read(hash).type == "commit", "Wrong object type");
+		catch (Git.ObjectMissingException e)
+			return false;
+		return true;
+	}
 
+	void exportCommit(string hash, string targetPath)
+	{
+		if (!haveCommit(hash) && mergeCache.find!(entry => entry.result == hash)())
+		{
 			// Might be a GC-ed merge. Try to recreate the merge
 			auto hit = mergeCache.find!(entry => entry.result == hash)();
 			enforce(!hit.empty, "Unknown hash %s".format(hash));
-			performMerge(hit.front.spec);
-			enforce(getHead() == hash, "Unexpected merge result: expected %s, got %s".format(hash, getHead()));
+			auto mergeResult = performMerge(hit.front.spec);
+			enforce(mergeResult == hash, "Unexpected merge result: expected %s, got %s".format(hash, mergeResult));
 		}
+
+		git.exportCommit(hash, targetPath, needReader());
 	}
 
-	private string currentHead = null;
-
-	/// Returns the SHA1 of the given named ref.
+	/// Returns the commit OID of the given named ref.
 	public string getRef(string name)
 	{
 		return git.query("rev-parse", "--verify", "--quiet", name);
-	}
-
-	/// Return the commit the repository HEAD is pointing at.
-	/// Cache the result.
-	public string getHead()
-	{
-		if (!currentHead)
-			currentHead = getRef("HEAD");
-
-		return currentHead;
-	}
-
-	protected void performCheckout(string hash)
-	{
-		needClean();
-		needCommit(hash);
-
-		log("Checking out %s commit %s...".format(name, hash));
-
-		git.run("checkout", hash);
-
-		saveState();
-		currentHead = hash;
 	}
 
 	/// Ensure that the specified commit is fetched.
@@ -153,39 +153,20 @@ class ManagedRepository
 			return false;
 	}
 
-	// Clean
+	// --- Merge cache
 
-	bool clean = false; /// True when we know that the repository is currently clean.
-
-	/// Ensure the repository's working copy is clean.
-	public void needClean()
+	/// Represents a series of commits as a start and end point in the repository history.
+	struct CommitRange
 	{
-		if (clean)
-			return;
-		performCleanup();
-		clean = true;
+		/// The commit before the first commit in the range.
+		/// May be null in some circumstances.
+		string base;
+		/// The last commit in the range.
+		string tip;
 	}
-
-	private void performCleanup()
-	{
-		checkState();
-		clearState();
-
-		log("Cleaning repository %s...".format(name));
-		try
-		{
-			git.run("reset", "--hard");
-			git.run("clean", "--force", "--force" /*Sic*/, "-x", "-d", "--quiet");
-		}
-		catch (Exception e)
-			throw new RepositoryCleanException(e.msg, e);
-		saveState();
-	}
-
-	// Merge cache
 
 	/// How to merge a branch into another
-	enum MergeMode
+	public enum MergeMode
 	{
 		merge,      /// git merge (commit with multiple parents) of the target and branch tips
 		cherryPick, /// apply the commits as a patch
@@ -193,7 +174,7 @@ class ManagedRepository
 	private static struct MergeSpec
 	{
 		string target;
-		string[2] branch; // [base, tip]
+		CommitRange branch;
 		MergeMode mode;
 		bool revert = false;
 	}
@@ -229,11 +210,11 @@ class ManagedRepository
 		return buildPath(git.gitDir, "ae-sys-d-mergecache-v2.json");
 	}
 
-	// Merge
+	// --- Merge
 
 	/// Returns the hash of the merge between the target and branch commits.
 	/// Performs the merge if necessary. Caches the result.
-	public string getMerge(string target, string[2] branch, MergeMode mode)
+	public string getMerge(string target, CommitRange branch, MergeMode mode)
 	{
 		return getMergeImpl(MergeSpec(target, branch, mode, false));
 	}
@@ -242,7 +223,7 @@ class ManagedRepository
 	/// Performs the revert if necessary. Caches the result.
 	/// mainline is the 1-based mainline index (as per `man git-revert`),
 	/// or 0 if commit is not a merge commit.
-	public string getRevert(string target, string[2] branch, MergeMode mode)
+	public string getRevert(string target, CommitRange branch, MergeMode mode)
 	{
 		return getMergeImpl(MergeSpec(target, branch, mode, true));
 	}
@@ -253,97 +234,116 @@ class ManagedRepository
 		if (!hit.empty)
 			return hit.front.result;
 
-		performMerge(spec);
+		auto mergeResult = performMerge(spec);
 
-		auto head = getHead();
-		mergeCache ~= MergeInfo(spec, head);
+		mergeCache ~= MergeInfo(spec, mergeResult);
 		saveMergeCache();
-		return head;
+		return mergeResult;
 	}
 
 	private static const string mergeCommitMessage = "digger.build merge";
 	private static const string revertCommitMessage = "digger.build revert";
 
-	// Performs a merge or revert.
-	private void performMerge(MergeSpec spec)
+	/// Performs a merge or revert.
+	private string performMerge(MergeSpec spec)
 	{
-		needHead(spec.target);
-		currentHead = null;
+		import ae.sys.cmd : getTempFileName;
+		import ae.sys.file : removeRecurse;
 
 		log("%s %s into %s.".format(spec.revert ? "Reverting" : "Merging", spec.branch, spec.target));
 
-		scope(exit) saveState();
-
-		scope (failure)
+		auto conflictResolvers = getMergeConflictResolvers();
+		if (!conflictResolvers.length)
+			conflictResolvers = [null];
+		foreach (conflictResolverIndex, conflictResolver; conflictResolvers)
 		{
-			string op;
-			final switch (spec.mode)
+			auto tmpRepoPath = getTempFileName("digger");
+			tmpRepoPath.mkdir();
+			scope(exit) tmpRepoPath.removeRecurse();
+
+			auto tmpRepo = Git(tmpRepoPath);
+			tmpRepo.commandPrefix = git.commandPrefix.replace(git.path, tmpRepoPath).dup;
+			tmpRepo.run("init", "--quiet");
+
+			// Ensures `hash` is pulled in to the temporary work repo.
+			string needCommit(string hash)
 			{
-				case MergeMode.merge:
-					op = spec.revert ? "revert" : "merge";
-					break;
-				case MergeMode.cherryPick:
-					op = spec.revert ? "revert" : "cherry-pick";
-					break;
+				tmpRepo.run(["fetch", "--quiet", git.path.absolutePath, hash]);
+				return hash;
 			}
 
-			log("Aborting " ~ op ~ "...");
-			git.run(op, "--abort");
-			clean = false;
-		}
+			tmpRepo.run("checkout", "--quiet", needCommit(spec.target));
 
-		void doMerge()
-		{
-			final switch (spec.mode)
+			void doMerge()
 			{
-				case MergeMode.merge:
-					if (!spec.revert)
-						git.run("merge", "--no-ff", "-m", mergeCommitMessage, spec.branch[1]);
-					else
+				final switch (spec.mode)
+				{
+					case MergeMode.merge:
+						if (!spec.revert)
+							tmpRepo.run("merge", "--quiet", "--no-ff", "-m", mergeCommitMessage, needCommit(spec.branch.tip));
+						else
+						{
+							// When reverting in merge mode, we try to
+							// find the merge commit following the branch
+							// tip, and revert only that merge commit.
+							string mergeCommit; int mainline;
+							getChild(spec.target, spec.branch.tip, /*out*/mergeCommit, /*out*/mainline);
+
+							string[] args = ["revert", "--no-edit"];
+							if (mainline)
+								args ~= ["--mainline", text(mainline)];
+							args ~= [needCommit(mergeCommit)];
+							tmpRepo.run(args);
+						}
+						break;
+
+					case MergeMode.cherryPick:
+						enforce(spec.branch.base, "Must specify a branch base for a cherry-pick merge");
+						auto range = needCommit(spec.branch.base) ~ ".." ~ needCommit(spec.branch.tip);
+						if (!spec.revert)
+							tmpRepo.run("cherry-pick", range);
+						else
+							tmpRepo.run("revert", "--no-edit", range);
+						break;
+				}
+			}
+
+			void doMergeAndResolve()
+			{
+				if (conflictResolver)
+					try
+						doMerge();
+					catch (Exception e)
 					{
-						// When reverting in merge mode, we try to
-						// find the merge commit following the branch
-						// tip, and revert only that merge commit.
-						string mergeCommit; int mainline;
-						getChild(spec.target, spec.branch[1], /*out*/mergeCommit, /*out*/mainline);
-
-						string[] args = ["revert", "--no-edit"];
-						if (mainline)
-							args ~= ["--mainline", text(mainline)];
-						args ~= [mergeCommit];
-						git.run(args);
+						log("Merge failed. Attempting conflict resolution...");
+						conflictResolver(tmpRepo);
+						if (!spec.revert)
+							tmpRepo.run("-c", "rerere.enabled=false", "commit", "-m", mergeCommitMessage);
+						else
+							tmpRepo.run("revert", "--continue");
 					}
-					break;
-				case MergeMode.cherryPick:
-					enforce(spec.branch[0], "Must specify a branch base for a cherry-pick merge");
-					auto range = spec.branch[0] ~ ".." ~ spec.branch[1];
-					if (!spec.revert)
-						git.run("cherry-pick", range);
-					else
-						git.run("revert", "--no-edit", range);
-					break;
-			}
-		}
-
-		if (git.path.baseName() == "dmd")
-		{
-			try
-				doMerge();
-			catch (Exception)
-			{
-				log("Merge failed. Attempting conflict resolution...");
-				git.run("checkout", "--theirs", "test");
-				git.run("add", "test");
-				if (!spec.revert)
-					git.run("-c", "rerere.enabled=false", "commit", "-m", mergeCommitMessage);
 				else
-					git.run("revert", "--continue");
+					doMerge();
 			}
-		}
-		else
-			doMerge();
 
-		log("Merge successful.");
+			if (conflictResolverIndex + 1 < conflictResolvers.length)
+				try
+					doMergeAndResolve();
+				catch (Exception e)
+				{
+					log("Merge and conflict resolution failed. Trying next conflict resolver...");
+					continue;
+				}
+			else
+				doMergeAndResolve();
+
+			auto hash = tmpRepo.query("rev-parse", "HEAD");
+			log("Merge successful: " ~ hash);
+			git.run(["fetch", "--quiet", tmpRepo.path.absolutePath, hash]);
+			return hash;
+		}
+
+		assert(false, "Unreachable");
 	}
 
 	/// Finds and returns the merge parents of the given merge commit.
@@ -358,7 +358,7 @@ class ManagedRepository
 		enforce(parents.length > 1, "Not a merge: " ~ merge);
 		enforce(parents.length == 2, "Too many parents: " ~ merge);
 
-		auto info = MergeInfo(MergeSpec(parents[0], [null, parents[1]], MergeMode.merge, false), merge, 1);
+		auto info = MergeInfo(MergeSpec(parents[0], CommitRange(null, parents[1]), MergeMode.merge, false), merge, 1);
 		mergeCache ~= info;
 		return info;
 	}
@@ -367,12 +367,12 @@ class ManagedRepository
 	/// head commit, up till the merge with the given branch.
 	/// Then, reapplies all merges in order,
 	/// except for that with the given branch.
-	public string getUnMerge(string head, string[2] branch, MergeMode mode)
+	public string getUnMerge(string head, CommitRange branch, MergeMode mode)
 	{
 		// This could be optimized using an interactive rebase
 
 		auto info = getMergeInfo(head);
-		if (info.spec.branch[1] == branch[1])
+		if (info.spec.branch.tip == branch.tip)
 			return info.spec.target;
 
 		// Recurse to keep looking
@@ -381,7 +381,7 @@ class ManagedRepository
 		return getMerge(unmerge, info.spec.branch, info.spec.mode);
 	}
 
-	// Branches, forks and customization
+	// --- Branches, forks and customization
 
 	/// Return SHA1 of the given remote ref.
 	/// Fetches the remote first, unless offline mode is on.
@@ -456,6 +456,8 @@ class ManagedRepository
 	/// the mainline index of said commit for the child.
 	void getChild(string branch, string commit, out string child, out int mainline)
 	{
+		// TODO: this isn't right. We should look at linear history only.
+
 		needCommit(branch);
 
 		log("Querying history for commit children...");
@@ -500,10 +502,10 @@ class ManagedRepository
 			auto mergeInfo = MergeInfo(
 				MergeSpec(
 					childCommit.parents[0].oid.toString(),
-					childCommit.parents[1].oid.toString(),
+					CommitRange(null, commit),
 					MergeMode.merge,
 					true),
-				commit, mainline);
+				child, mainline);
 			if (!mergeCache.canFind(mergeInfo))
 			{
 				mergeCache ~= mergeInfo;
@@ -512,134 +514,207 @@ class ManagedRepository
 		}
 	}
 
-	// State saving and checking
+	// --- Linear history
 
-	private struct FileState
+	private alias Commit = Git.History.Commit;
+
+	/// Get the linear history starting from `refName` (typically a
+	/// branch or tag).
+	/// The linear history is built by walking the repository history
+	/// DAG such that all points on the returned linear history were
+	/// visible to the world when cloning the repository at some point
+	/// in time, under the branch `branchName`.  `branchName` is thus
+	/// used to decide which parent to follow for some merges.
+	Commit*[] getLinearHistory(string refName, string branchName = null)
 	{
-		bool isLink;
-		ulong size;
-		StdTime modificationTime;
-	}
+		import std.typecons : tuple;
 
-	private FileState getFileState(string file)
-	{
-		assert(verify);
-		auto path = git.path.buildPath(file);
-		auto de = DirEntry(path);
-		return FileState(de.isSymlink, de.size, de.timeLastModified.stdTime);
-	}
+		const(Commit)*[][Commit*] commonParentsCache;
+		const(Commit)*[][Commit*[2]] commitsBetweenCache;
 
-	private alias RepositoryState = FileState[string];
-
-	/// Return the working tree "state".
-	/// This returns a file list, along with size and modification time.
-	RepositoryState getState()
-	{
-		assert(verify);
-		auto files = git.query(["ls-files"]).splitLines();
-		RepositoryState state;
-		foreach (file; files)
-			try
-				state[file] = getFileState(file);
-			catch (Exception e) {}
-		return state;
-	}
-
-	private @property string workTreeStatePath()
-	{
-		assert(verify);
-		return buildPath(git.gitDir, "ae-sys-d-worktree.json");
-	}
-
-	/// Save the state of the working tree for versioned files
-	/// to a .json file, which can later be verified with checkState.
-	/// This should be called after any git command which mutates the git state.
-	void saveState()
-	{
-		if (!verify)
-			return;
-		std.file.write(workTreeStatePath, getState().toJson());
-	}
-
-	/// Save the state of just one file.
-	/// This should be called after automatic edits to repository files during a build.
-	/// The file parameter should be relative to the directory root, and use forward slashes.
-	void saveFileState(string file)
-	{
-		if (!verify)
-			return;
-		if (!workTreeStatePath.exists)
-			return;
-		auto state = workTreeStatePath.readText.jsonParse!RepositoryState();
-		state[file] = getFileState(file);
-		std.file.write(workTreeStatePath, state.toJson());
-	}
-
-	/// Verify that the state of the working tree matches the one
-	/// when saveState was last called. Throw an exception otherwise.
-	/// This and clearState should be called before any git command
-	/// which destroys working directory changes.
-	void checkState()
-	{
-		if (!verify)
-			return;
-		if (!workTreeStatePath.exists)
-			return;
-		auto savedState = workTreeStatePath.readText.jsonParse!RepositoryState();
-		auto currentState = getState();
-		try
+		assert(refName.startsWith("refs/"), "Invalid refName: " ~ refName);
+		auto refHash = Git.CommitID(getRef(refName));
+		auto history = git.getHistory([refName]);
+		if (!branchName)
 		{
-			foreach (file, fileState; currentState)
-			{
-				enforce(file in savedState, "New file: " ~ file);
-				enforce(savedState[file].isLink == fileState.isLink,
-					"File modified: %s (is link changed, before: %s, after: %s)".format(file, savedState[file].isLink, fileState.isLink));
-				if (fileState.isLink)
-					continue; // Correct lstat is too hard, just skip symlinks
-				enforce(savedState[file].size == fileState.size,
-					"File modified: %s (size changed, before: %s, after: %s)".format(file, savedState[file].size, fileState.size));
-				enforce(savedState[file].modificationTime == fileState.modificationTime,
-					"File modified: %s (modification time changed, before: %s, after: %s)".format(file, SysTime(savedState[file].modificationTime), SysTime(fileState.modificationTime)));
-				assert(savedState[file] == fileState);
-			}
+			if (refName.startsWith("refs/heads/"))
+				branchName = refName["refs/heads/".length .. $];
+			else
+				assert(false, "branchName must be specified for non-branch refs");
 		}
-		catch (Exception e)
-			throw new Exception(
-				"The worktree has changed since the last time this software updated it.\n" ~
-				"Specifically:\n" ~
-				"    " ~ e.msg ~ "\n\n" ~
-				"Aborting to avoid overwriting your changes.\n" ~
-				"To continue:\n" ~
-				" 1. Commit / stash / back up your changes, if you wish to keep them\n" ~
-				" 2. Delete " ~ workTreeStatePath ~ "\n" ~
-				" 3. Try this operation again."
-			);
+		Commit*[] linearHistory;
+		Commit* c = history.commits[refHash];
+		do
+		{
+			linearHistory ~= c;
+			auto subject = c.message.length ? c.message[0] : null;
+			if (subject.startsWith("Merge branch 'master' of github"))
+			{
+				enforce(c.parents.length == 2);
+				c = c.parents[1];
+			}
+			else
+			if (c.parents.length == 2 && subject.startsWith("Merge pull request #"))
+			{
+				if (subject.endsWith("/merge_" ~ branchName))
+				{
+					// We have lost our way and are on the wrong
+					// branch, but we can get back on our branch
+					// here
+					c = c.parents[1];
+				}
+				else
+					c = c.parents[0];
+			}
+			else
+			if (c.parents.length == 2 && subject.skipOver("Merge remote-tracking branch 'upstream/master' into "))
+			{
+				bool ourBranch = subject == branchName;
+				c = c.parents[ourBranch ? 0 : 1];
+			}
+			else
+			if (c.parents.length == 2 && subject.skipOver("Merge remote-tracking branch 'upstream/"))
+			{
+				subject = subject.chomp(" into merge_" ~ branchName);
+				bool ourBranch = subject == branchName ~ "'";
+				c = c.parents[ourBranch ? 1 : 0];
+			}
+			else
+			if (c.parents.length > 1)
+			{
+				enforce(c.parents.length == 2, "Octopus merge");
+
+				// Approximately equivalent to git-merge-base
+				static const(Commit)*[] commonParents(in Commit*[] commits) pure
+				{
+					bool[Commit*][] seen;
+					seen.length = commits.length;
+
+					foreach (index, parentCommit; commits)
+					{
+						auto queue = [parentCommit];
+						while (!queue.empty)
+						{
+							auto commit = queue.front;
+							queue.popFront;
+							foreach (parent; commit.parents)
+							{
+								if (parent in seen[index])
+									continue;
+								seen[index][parent] = true;
+								queue ~= parent;
+							}
+						}
+					}
+
+					bool[Commit*] commonParents =
+						seen[0]
+						.byKey
+						.filter!(commit => seen.all!(s => commit in s))
+						.map!(commit => tuple(commit, true))
+						.assocArray;
+
+					foreach (parent; commonParents.keys)
+					{
+						if (parent !in commonParents)
+							continue; // already removed
+
+						auto queue = parent.parents[];
+						while (!queue.empty)
+						{
+							auto commit = queue.front;
+							queue.popFront;
+							if (commit in commonParents)
+							{
+								commonParents.remove(commit);
+								queue ~= commit.parents;
+							}
+						}
+					}
+
+					return commonParents.keys;
+				}
+
+				static const(Commit)*[] commonParentsOfMerge(Commit* merge) pure
+				{
+					return commonParents(merge.parents);
+				}
+
+				static const(Commit)*[] commitsBetween(in Commit* child, in Commit* grandParent) pure
+				{
+					const(Commit)*[] queue = [child];
+					const(Commit)*[Git.CommitID] seen;
+
+					while (queue.length)
+					{
+						auto commit = queue[0];
+						queue = queue[1..$];
+						foreach (parent; commit.parents)
+						{
+							if (parent.hash in seen)
+								continue;
+							seen[parent.hash] = commit;
+
+							if (parent is grandParent)
+							{
+								const(Commit)*[] path;
+								while (commit)
+								{
+									path ~= commit;
+									commit = seen.get(commit.hash, null);
+								}
+								path.reverse();
+								return path;
+							}
+
+							queue ~= parent;
+						}
+					}
+					throw new Exception("No path between commits");
+				}
+
+				// bool dbg = false; //c.hash.toString() == "9545447f8529cafab0fb2c51527541870db844b6";
+				auto grandParents = commonParentsCache.require(c, commonParentsOfMerge(c));
+				// if (dbg) writeln(grandParents.map!(c => c.hash.toString));
+				if (grandParents.length == 1)
+				{
+					bool[] hasMergeCommits = c.parents
+						.map!(parent => commitsBetweenCache.require([parent, grandParents[0]], commitsBetween(parent, grandParents[0]))
+							.any!(commit => commit.message[0].startsWith("Merge pull request #"))
+						).array;
+
+					// if (dbg)
+					// {
+					// 	writefln("%d %s", hasMergeCommits.sum, subject);
+					// 	foreach (parent; c.parents)
+					// 	{
+					// 		writeln("---------------------");
+					// 		foreach (cm; memoize!commitsBetween(parent, grandParents[0]))
+					// 			writefln("%s %s", cm.hash.toString(), cm.message[0]);
+					// 		writeln("---------------------");
+					// 	}
+					// }
+
+					if (hasMergeCommits.sum == 1)
+						c = c.parents[hasMergeCommits.countUntil(true)];
+					else
+						c = c.parents[0];
+				}
+				else
+					c = c.parents[0];
+			}
+			else
+				c = c.parents.length ? c.parents[0] : null;
+		} while (c);
+		return linearHistory;
 	}
 
-	/// Delete the saved working tree state, if any.
-	void clearState()
-	{
-		if (!verify)
-			return;
-		if (workTreeStatePath.exists)
-			workTreeStatePath.remove();
-	}
-
-	// Misc
+	// --- Misc
 
 	/// Reset internal state.
 	protected void reset()
 	{
-		currentHead = null;
-		clean = false;
 		haveMergeCache = false;
 		mergeCacheData = null;
 	}
-
-	/// Override to add logging.
-	protected abstract void log(string line);
 }
-
-/// Used to communicate that a "reset --hard" failed.
-/// Generally this indicates git repository corruption.
-mixin DeclareException!q{RepositoryCleanException};

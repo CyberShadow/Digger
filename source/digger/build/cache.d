@@ -325,7 +325,7 @@ class GitCache : DCache
 		{
 			cacheDir.mkdirRecurse();
 			import std.process : spawnProcess, wait;
-			spawnProcess(["git", "init", cacheDir])
+			spawnProcess(["git", "init", "--bare", cacheDir])
 				.wait()
 				.I!(code => (code==0).enforce("git init failed"))
 			;
@@ -337,6 +337,7 @@ class GitCache : DCache
 	static const refPrefix = "refs/ae-sys-d-cache/";
 
 	/// Set executable to use instead of `git`.
+	// TODO: also use for git init
 	void setGitExecutable(string gitExecutable)
 	{
 		assert(git.commandPrefix[0] == "git");
