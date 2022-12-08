@@ -10,6 +10,12 @@ final class DMD : Component
 	protected @property override string[] sourceDependencies() { return []; }
 	protected @property override string[] dependencies() { return []; }
 
+	/// DMD configuration file name for the current platform.
+	version (Windows)
+		enum configFileName = "sc.ini";
+	else
+		enum configFileName = "dmd.conf";
+
 	/// DMD build configuration.
 	struct Config
 	{

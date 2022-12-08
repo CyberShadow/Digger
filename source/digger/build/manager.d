@@ -152,18 +152,6 @@ class DManager : ICacheHost
 		);
 	}
 
-	/// Executable file name suffix for the current platform.
-	version (Windows)
-		enum string binExt = ".exe";
-	else
-		enum string binExt = "";
-
-	/// DMD configuration file name for the current platform.
-	version (Windows)
-		enum configFileName = "sc.ini";
-	else
-		enum configFileName = "dmd.conf";
-
 	// **************************** Repositories *****************************
 
 	/// Base class for a `DManager` Git repository.
@@ -331,7 +319,6 @@ class DManager : ICacheHost
 
 	// ****************************** Building *******************************
 
-	private SubmoduleState submoduleState;
 	private bool incrementalBuild;
 
 	/// Returns the name of the cache engine being used.
@@ -1043,3 +1030,9 @@ class DManager : ICacheHost
 
 	deprecated void callback(string[] args) { assert(false); }
 }
+
+/// Executable file name suffix for the current platform.
+version (Windows)
+	enum string binExt = ".exe";
+else
+	enum string binExt = "";
