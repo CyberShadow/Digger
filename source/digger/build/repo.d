@@ -521,10 +521,12 @@ final:
 	/// Get the linear history starting from `refName` (typically a
 	/// branch or tag).
 	/// The linear history is built by walking the repository history
-	/// DAG such that all points on the returned linear history were
-	/// visible to the world when cloning the repository at some point
-	/// in time, under the branch `branchName`.  `branchName` is thus
-	/// used to decide which parent to follow for some merges.
+	/// DAG in a way which attempts to reconstruct the publicly
+	/// visible history, i.e. such that all points on the returned
+	/// linear history were visible to the world when cloning the
+	/// repository at some point in time, via the branch `branchName`.
+	/// `branchName` is thus used to decide which parent to follow for
+	/// some merges.
 	Commit*[] getLinearHistory(string refName, string branchName = null)
 	{
 		import std.typecons : tuple;

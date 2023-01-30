@@ -6,7 +6,7 @@ import digger.build.manager;
 /// The dmd executable
 final class DMD : Component
 {
-	protected @property override string submoduleName  () { return "dmd"; }
+	@property override string submoduleName  () { return "dmd"; }
 	protected @property override string[] sourceDependencies() { return []; }
 	protected @property override string[] dependencies() { return []; }
 
