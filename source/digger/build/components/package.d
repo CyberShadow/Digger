@@ -25,6 +25,31 @@ class Component
 	/// configuration.
 	abstract @property string name();
 
+	/// Return the Git repositories needed to build all versions of
+	/// this component.  The return value is a map from an internal
+	/// repository name (used as the remote name) to its Git clone URL.
+	// Note: the reason for the "all versions" is that we need to
+	// clone the repository before we can start meaningfully
+	// referencing versions of it.
+	abstract @property string[string] repositories();
+
+	/// Resolve a product version (e.g. "master" or "v2.100.0")" to a
+	/// Git ref (e.g. "refs/heads/master").
+	/// The product version is some label generally used to refer to a
+	/// branch or tag across several repositories making up a product.
+	/// For example, the product version "stable" when building DMD
+	/// will refer to "refs/heads/stable" in repositories that follow
+	/// the core D development flow, but may mean "refs/heads/master"
+	/// for others.
+	string resolveProductVersion(string repositoryName, string productVersion)
+	{
+		if (productVersion.startsWith("refs/"))
+			return productVersion; // do what I say
+		if (productVersion.length >= 2 && productVersion[0] == 'v' && productVersion[1].isDigit)
+			return "refs/tags/" ~ productVersion;
+		return "refs/heads/" ~ productVersion;
+	}
+
 	/// ------
 
 	/// Parent builder.
@@ -35,22 +60,22 @@ class Component
 // 	/// Corresponding subproject repository.
 // 	@property DManager.ManagedRepository submodule() { return getSubmodule(submoduleName); }
 
-// 	/// Configuration applicable to multiple components.
-// 	/// These settings can be set for all components,
-// 	/// as well as overridden for individual components.
-// 	struct CommonConfig
-// 	{
-// 		/// Additional make parameters, e.g. "HOST_CC=g++48"
-// 		@JSONOptional string[] makeArgs;
+	/// Configuration applicable to multiple components.
+	/// These settings can be set for all components,
+	/// as well as overridden for individual components.
+	struct CommonConfig
+	{
+		// /// Additional make parameters, e.g. "HOST_CC=g++48"
+		// @JSONOptional string[] makeArgs;
 
-// 		/// Additional environment variables.
-// 		/// Supports %VAR% expansion - see applyEnv.
-// 		@JSONOptional string[string] environment;
+		// /// Additional environment variables.
+		// /// Supports %VAR% expansion - see applyEnv.
+		// @JSONOptional string[string] environment;
 
-// 		/// Optional cache key.
-// 		/// Can be used to force a rebuild and bypass the cache for one build.
-// 		@JSONOptional string cacheKey;
-// 	}
+		// /// Optional cache key.
+		// /// Can be used to force a rebuild and bypass the cache for one build.
+		// @JSONOptional string cacheKey;
+	}
 
 // 	/// A string description of this component's configuration.
 // 	abstract @property string configString();
@@ -531,4 +556,5 @@ mixin template RegisterComponent()
 	}
 }
 
+/// Registered components.
 Component delegate(Builder)[string] componentRegistry;

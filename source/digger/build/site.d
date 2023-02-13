@@ -1,4 +1,12 @@
-module digger.build.manager;
+module digger.build.site;
+
+import std.format : format;
+import std.path : buildPath;
+import std.typecons;
+
+import ae.sys.git : Git;
+import ae.sys.install.common;
+import ae.sys.install.git;
 
 // import std.algorithm;
 // import std.array;
@@ -24,11 +32,15 @@ module digger.build.manager;
 // import ae.utils.meta;
 // import ae.utils.regex;
 // import ae.utils.sini : IniFragment;
+import ae.utils.typecons;
 
+import digger.build.build;
 // import digger.build.cache;
 // import digger.build.components;
 import digger.build.config;
+import digger.build.gitstore;
 // import digger.build.repo;
+import digger.build.versions;
 
 // // Standard components
 // static import digger.build.components.dmd;
@@ -60,6 +72,10 @@ import digger.build.config;
 
 // static import std.process;
 
+
+
+
+
 /**
    Represents a build worksite - Git repositories, dependencies,
    cache, completed builds.
@@ -69,18 +85,19 @@ import digger.build.config;
    An application will typically need one instance of this class
    across its lifetime.
 */
-class BuildSite
+final class BuildSite
 {
+private:
+
 	// --- Public API
-public:
 
 	/**
-	   Site configuration.
-	   
+	   Site configuration.  Serializable.
+
 	   These settings are machine/app-specific and should not affect
 	   the build output.
 	*/
-	struct Config
+	public struct Config
 	{
 		/// Location for the checkout, temporary files, etc.
 		string workDir;
@@ -105,28 +122,38 @@ public:
 		/// API token to access the GitHub REST API (optional).
 		string githubToken;
 	}
-	Config config; /// ditto
+	package Config config; /// ditto
+
+	/// Log function.
+	// TODO: use std.logger or ae.sys.log?
+	void delegate(string line) logger;
 
 	/// Constructor.
-	this(Config config)
+	public this(Config config)
 	{
 		this.config = config;
 	}
 
-	/// Creates a `Configurator`, which allows customizing a new build.
-	Configurator createConfigurator(BuildConfig buildConfig)
+	// /// Creates a `Configurator`, which allows customizing a new build.
+	// Configurator createConfigurator(BuildConfig buildConfig)
+	// {
+	// 	return new Configurator(this, buildConfig);
+	// }
+
+	/// Creates a `Builder`.
+	public Builder createBuilder(BuildConfig buildConfig, VersionSpec versionSpec)
 	{
-		return new Configurator(this, buildConfig);
+		return new Builder(this, buildConfig, versionSpec);
 	}
 
-package:
+	// --- Site functionality
 
-	// /// Get a specific subdirectory of the work directory.
-	// @property string subDir(string name)() { return buildPath(config.local.workDir, name); }
+	/// Get a specific subdirectory of the work directory.
+	package @property string subDir(string name)() { return buildPath(config.workDir, name); }
 
-	// alias repoDir    = subDir!"repos";        /// The git repository location.
-	// alias dlDir      = subDir!"dl";           /// The directory for downloaded dependencies.
-	// alias githubDir  = subDir!"github-cache"; /// For the GitHub API cache.
+	package alias gitStoreDir  = subDir!"git-store";    /// The git repository location.
+	package alias dlDir        = subDir!"dl";           /// The directory for downloaded dependencies.
+	// package alias githubDir    = subDir!"github-cache"; /// For the GitHub API cache.
 
 	// /// Returns the path to cached data for the given cache engine
 	// /// (as in `config.local.cache`).
@@ -144,65 +171,32 @@ package:
 	// 	);
 	// }
 
-	// // **************************** Repositories *****************************
+	// --- Repository
 
-	// /// D repositories.
-	// class DRepository : ManagedRepository
-	// {
-	// 	string dir; /// Full path to the repository.
+	/// Creates a low-level wrapper for a Git repository,
+	/// configured to use this site's local Git install if necessary.
+	package Git createGit(string path)
+	{
+		auto git = Git(path);
+		withInstaller({
+			auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
+			assert(git.commandPrefix[0] == "git");
+			git.commandPrefix[0] = gitExecutable;
 
-	// 	this(string dir)
-	// 	{
-	// 		this.dir = dir;
-	// 		this.offline = config.local.offline;
-	// 	} ///
+			foreach (person; ["AUTHOR", "COMMITTER"])
+			{
+				git.environment["GIT_%s_DATE".format(person)] = "Thu, 01 Jan 1970 00:00:00 +0000";
+				git.environment["GIT_%s_NAME".format(person)] = "digger.build";
+				git.environment["GIT_%s_EMAIL".format(person)] = "digger.build\x40cy.md";
+			}
+		});
+		return git;
+	}
 
-	// 	protected override void log(string s) { return this.outer.log(s); }
+	// ***************************** Repository ******************************
 
-	// 	protected override Git getRepo()
-	// 	{
-	// 		auto git = Git(dir);
-	// 		withInstaller({
-	// 			auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
-	// 			assert(git.commandPrefix[0] == "git");
-	// 			git.commandPrefix[0] = gitExecutable;
-	// 		});
-	// 		return git;
-	// 	}
-	// }
-
-	// private DRepository[string] submodules; /// ditto
-
-	// private ManagedRepository getSubmodule(string name)
-	// {
-	// 	assert(name, "This component is not associated with a submodule");
-	// 	return submodules.require(name,
-	// 		{
-	// 			auto repo = new SubmoduleRepository();
-	// 			repo.dir = buildPath(repoDir, name);
-
-	// 			if (!repo.dir.exists)
-	// 			{
-	// 				log("Cloning repository %s...".format(name));
-
-	// 				void cloneTo(string target)
-	// 				{
-	// 					withInstaller({
-	// 						import ae.sys.cmd : run;
-	// 						auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
-	// 						run([gitExecutable, "clone", "--mirror", url, target]);
-	// 					});
-
-
-	// 				}
-	// 				atomic!cloneTo(repo.dir);
-
-	// 				getMetaRepo().git.run(["submodule", "update", "--init", name]);
-	// 			}
-
-	// 			return repo;
-	// 		}());
-	// } /// ditto
+	Nullable!GitStore gitStoreInstance;
+	package @property GitStore gitStore() { return gitStoreInstance.require(new GitStore(this)); }
 
 	// // ***************************** Components ******************************
 
@@ -441,18 +435,18 @@ package:
 	// 	return getCacheState(history);
 	// }
 
-	// // **************************** Dependencies *****************************
+	// **************************** Dependencies *****************************
 
-	// private void withInstaller(void delegate() fun)
-	// {
-	// 	auto ourInstaller = new Installer(dlDir);
-	// 	ourInstaller.logger = &log;
+	void withInstaller(void delegate() fun)
+	{
+		auto ourInstaller = new Installer(dlDir);
+		ourInstaller.logger = &log;
 
-	// 	auto oldInstaller = .installer;
-	// 	.installer = ourInstaller;
-	// 	scope(exit) .installer = oldInstaller;
-	// 	fun();
-	// }
+		auto oldInstaller = .installer;
+		.installer = ourInstaller;
+		scope(exit) .installer = oldInstaller;
+		fun();
+	}
 
 	// /// Pull in a built DMD as configured.
 	// /// Note that this function invalidates the current repository state.
@@ -990,12 +984,12 @@ package:
 	// 	return logs;
 	// }
 
-	// // ***************************** Integration *****************************
+	// ***************************** Integration *****************************
 
-	// /// Override to add logging.
-	// void log(string line)
-	// {
-	// }
+	package void log(string line)
+	{
+		if (logger) logger("digger.build: " ~ line);
+	}
 
 	// /// Bootstrap description resolution.
 	// /// See DMD.Config.Bootstrap.spec.
@@ -1018,8 +1012,8 @@ package:
 	// deprecated void callback(string[] args) { assert(false); }
 }
 
-/// Executable file name suffix for the current platform.
-version (Windows)
-	enum string binExt = ".exe";
-else
-	enum string binExt = "";
+// /// Executable file name suffix for the current platform.
+// version (Windows)
+// 	enum string binExt = ".exe";
+// else
+// 	enum string binExt = "";

@@ -334,7 +334,7 @@ class GitCache : DCache
 	} ///
 
 	/// Builds are pinned by refs namespaced by this prefix.
-	static const refPrefix = "refs/ae-sys-d-cache/";
+	static const refPrefix = "refs/digger-build-cache/";
 
 	/// Set executable to use instead of `git`.
 	// TODO: also use for git init

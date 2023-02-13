@@ -1,8 +1,4 @@
-/**
- * Code to manage a D component repository.
- */
-
-module digger.build.repo;
+module digger.build.gitstore;
 
 import std.algorithm;
 import std.conv : text;
@@ -14,155 +10,196 @@ import std.range;
 import std.regex;
 import std.string;
 import std.path;
+import std.typecons;
 
 import ae.sys.git;
 import ae.utils.exception;
 import ae.utils.json;
 import ae.utils.regex;
 import ae.utils.time : StdTime;
+import ae.utils.typecons;
 
-/// Base class for a managed repository.
-class ManagedRepository
+import digger.build.site;
+
+alias CommitID = Git.CommitID;
+
+/**
+   Manages the Git object store repository.
+
+   `digger.build` uses a single bare Git repository for a local cache
+   of all Git remotes.  All refs (including tags) are namespaced to
+   avoid collisions.
+
+   This repository also stores the results of transient source/history
+   operations, such as merges and cherry-picks.
+*/
+final class GitStore
 {
 private:
-	// --- Subclass interface
 
-	/// Repository provider
-	protected abstract Git getRepo();
+	BuildSite buildSite;
 
-	/// Override to add logging.
-	protected abstract void log(string line);
+	public this(BuildSite buildSite)
+	{
+		this.buildSite = buildSite;
+	}
+
+	// private ManagedRepository getSubmodule(string name)
+	// {
+	// 	assert(name, "This component is not associated with a submodule");
+	// 	return submodules.require(name,
+	// 		{
+	// 			auto repo = new SubmoduleRepository();
+	// 			repo.dir = buildPath(repoDir, name);
+
+	// 			if (!repo.dir.exists)
+	// 			{
+	// 				log("Cloning repository %s...".format(name));
+
+	// 				void cloneTo(string target)
+	// 				{
+	// 					withInstaller({
+	// 						import ae.sys.cmd : run;
+	// 						auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
+	// 						run([gitExecutable, "clone", "--mirror", url, target]);
+	// 					});
+
+
+	// 				}
+	// 				atomic!cloneTo(repo.dir);
+
+	// 				getMetaRepo().git.run(["submodule", "update", "--init", name]);
+	// 			}
+
+	// 			return repo;
+	// 		}());
+	// } /// ditto
+
+	// 	protected override Git getRepo()
+	// 	{
+	// 		auto git = Git(dir);
+	// 		withInstaller({
+	// 			auto gitExecutable = gitInstaller.requireInstalled().getExecutable("git");
+	// 			assert(git.commandPrefix[0] == "git");
+	// 			git.commandPrefix[0] = gitExecutable;
+	// 		});
+	// 		return git;
+	// 	}
+
 
 	/// Optional callbacks which shall attempt to resolve a merge conflict.
-	protected alias MergeConflictResolver = void delegate(ref Git git);
-	protected MergeConflictResolver[] getMergeConflictResolvers() { return null; } /// ditto
+	public alias MergeConflictResolver = void delegate(ref Git git);
+	public static MergeConflictResolver[] mergeConflictResolvers; /// ditto
 
-final:
-	/// Git repository we manage.
+	Nullable!Git gitInstance;
+
+	/// Low-level wrapper for the Git repository we manage.
 	public @property ref const(Git) git()
 	{
-		if (!gitRepo.path)
-		{
-			gitRepo = getRepo();
-			assert(gitRepo.path, "No repository");
-			foreach (person; ["AUTHOR", "COMMITTER"])
+		return gitInstance.require({
+			auto git = buildSite.createGit(buildSite.gitStoreDir);
+			if (!git.path.exists)
 			{
-				gitRepo.environment["GIT_%s_DATE".format(person)] = "Thu, 01 Jan 1970 00:00:00 +0000";
-				gitRepo.environment["GIT_%s_NAME".format(person)] = "digger.build";
-				gitRepo.environment["GIT_%s_EMAIL".format(person)] = "digger.build\x40cy.md";
+				git.path.mkdirRecurse();
+				git.run("init", "--bare");
 			}
-		}
-		return gitRepo;
+			return git;
+		}());
 	}
 
-	/// Should we fetch the latest stuff?
-	public bool offline;
+	Nullable!(Git.ObjectReader) readerInstance;
+	@property ref Git.ObjectReader reader() { return readerInstance.require(git.createObjectReader()); }
 
-	private Git gitRepo;
-
-	private Git.ObjectReader reader;
-	private Git.ObjectMultiWriter writer;
-
-	private ref Git.ObjectReader needReader()
-	{
-		if (reader is Git.ObjectReader.init) reader = git.createObjectReader();
-		return reader;
-	}
-
-	private ref Git.ObjectMultiWriter needWriter()
-	{
-		if (writer is Git.ObjectMultiWriter.init) writer = git.createObjectWriter();
-		return writer;
-	}
-
-	/// Base name of the repository directory
-	public @property string name() { return git.path.baseName; }
+	Nullable!(Git.ObjectMultiWriter) writerInstance;
+	@property ref Git.ObjectMultiWriter writer() { return writerInstance.require(git.createObjectWriter()); }
 
 	// --- Head
 
-	private bool haveCommit(string hash)
+	bool haveCommit(CommitID commitID)
 	{
 		try
-			enforce(needReader().read(hash).type == "commit", "Wrong object type");
+			enforce(reader.read(commitID).type == "commit", "Wrong object type");
 		catch (Git.ObjectMissingException e)
 			return false;
 		return true;
 	}
 
-	void exportCommit(string hash, string targetPath)
+	public void exportCommit(CommitID commitID, string targetPath)
 	{
-		if (!haveCommit(hash) && mergeCache.find!(entry => entry.result == hash)())
+		if (!haveCommit(commitID) && mergeCache.find!(entry => entry.result == commitID)())
 		{
 			// Might be a GC-ed merge. Try to recreate the merge
-			auto hit = mergeCache.find!(entry => entry.result == hash)();
-			enforce(!hit.empty, "Unknown hash %s".format(hash));
+			auto hit = mergeCache.find!(entry => entry.result == commitID)();
+			enforce(!hit.empty, "Unknown commit %s".format(commitID));
 			auto mergeResult = performMerge(hit.front.spec);
-			enforce(mergeResult == hash, "Unexpected merge result: expected %s, got %s".format(hash, mergeResult));
+			enforce(mergeResult == commitID, "Unexpected merge result: expected %s, got %s".format(commitID, mergeResult));
 		}
 
-		git.exportCommit(hash, targetPath, needReader());
+		git.exportCommit(commitID, targetPath, reader);
 	}
 
 	/// Returns the commit OID of the given named ref.
-	public string getRef(string name)
+	CommitID getRef(string refName)
 	{
-		return git.query("rev-parse", "--verify", "--quiet", name);
+		return git.query("rev-parse", "--verify", "--quiet", refName).CommitID;
 	}
 
-	/// Ensure that the specified commit is fetched.
-	protected void needCommit(string hash)
-	{
-		void check()
-		{
-			enforce(git.query(["cat-file", "-t", hash]) == "commit",
-				"Unexpected object type");
-		}
+	// /// Ensure that the specified commit is fetched.
+	// void needCommit(CommitID commitID)
+	// {
+	// 	enforce(haveCommit(commitID), "Don't have commit " ~ commitID.toString() ~ ", can't proceed.");
 
-		try
-			check();
-		catch (Exception e)
-		{
-			if (offline)
-			{
-				log("Don't have commit " ~ hash ~ " and in offline mode, can't proceed.");
-				throw new Exception("Giving up");
-			}
-			else
-			{
-				log("Don't have commit " ~ hash ~ ", updating and retrying...");
-				update();
-				check();
-			}
-		}
-	}
+	// 	// void check()
+	// 	// {
+	// 	// 	enforce(git.query(["cat-file", "-t", commitID.toString()]) == "commit",
+	// 	// 		"Unexpected object type");
+	// 	// }
 
-	/// Update the remote.
-	/// Return true if any updates were fetched.
-	public bool update()
-	{
-		if (!offline)
-		{
-			log("Updating " ~ name ~ "...");
-			auto oldRefs = git.query(["show-ref"]);
-			git.run("-c", "fetch.recurseSubmodules=false", "remote", "update", "--prune");
-			git.run("-c", "fetch.recurseSubmodules=false", "fetch", "--force", "--tags");
-			auto newRefs = git.query(["show-ref"]);
-			return oldRefs != newRefs;
-		}
-		else
-			return false;
-	}
+	// 	// try
+	// 	// 	check();
+	// 	// catch (Exception e)
+	// 	// {
+	// 	// 	if (offline)
+	// 	// 	{
+	// 	// 		log("Don't have commit " ~ commitID.toString() ~ " and in offline mode, can't proceed.");
+	// 	// 		throw new Exception("Giving up");
+	// 	// 	}
+	// 	// 	else
+	// 	// 	{
+	// 	// 		log("Don't have commit " ~ commitID.toString() ~ ", updating and retrying...");
+	// 	// 		update();
+	// 	// 		check();
+	// 	// 	}
+	// 	// }
+	// }
+
+	// /// Update the remote.
+	// /// Return true if any updates were fetched.
+	// public bool update()
+	// {
+	// 	if (!offline)
+	// 	{
+	// 		log("Updating...");
+	// 		auto oldRefs = git.query(["show-ref"]);
+	// 		git.run("-c", "fetch.recurseSubmodules=false", "remote", "update", "--prune");
+	// 		git.run("-c", "fetch.recurseSubmodules=false", "fetch", "--force", "--tags");
+	// 		auto newRefs = git.query(["show-ref"]);
+	// 		return oldRefs != newRefs;
+	// 	}
+	// 	else
+	// 		return false;
+	// }
 
 	// --- Merge cache
 
 	/// Represents a series of commits as a start and end point in the repository history.
-	struct CommitRange
+	public struct CommitRange
 	{
 		/// The commit before the first commit in the range.
 		/// May be null in some circumstances.
-		string base;
+		Nullable!CommitID base;
 		/// The last commit in the range.
-		string tip;
+		CommitID tip;
 	}
 
 	/// How to merge a branch into another
@@ -171,50 +208,43 @@ final:
 		merge,      /// git merge (commit with multiple parents) of the target and branch tips
 		cherryPick, /// apply the commits as a patch
 	}
-	private static struct MergeSpec
+	struct MergeSpec
 	{
-		string target;
-		CommitRange branch;
-		MergeMode mode;
-		bool revert = false;
+		CommitID target;       /// What is it merged onto (or out of, when un-merging)
+		CommitRange branch;    /// What is being merged (or un-merged)
+		MergeMode mode;        /// How to merge
+		bool revert = false;   /// Un-merge instead of merge
 	}
-	private static struct MergeInfo
+	struct MergeInfo
 	{
 		MergeSpec spec;
-		string result;
+		CommitID result;
 		int mainline = 0; // git parent index of the "target", if any
 	}
-	private alias MergeCache = MergeInfo[];
-	private MergeCache mergeCacheData;
-	private bool haveMergeCache;
+	alias MergeCache = MergeInfo[];
 
-	private @property ref MergeCache mergeCache()
+	@property string mergeCachePath() { return buildPath(git.path, "digger-build-mergecache.json"); }
+
+	Nullable!MergeCache mergeCacheInstance;
+	@property ref MergeCache mergeCache()
 	{
-		if (!haveMergeCache)
-		{
+		return mergeCacheInstance.require({
 			if (mergeCachePath.exists)
-				mergeCacheData = mergeCachePath.readText().jsonParse!MergeCache;
-			haveMergeCache = true;
-		}
-
-		return mergeCacheData;
+				return mergeCachePath.readText().jsonParse!MergeCache;
+			return MergeCache.init;
+		}());
 	}
 
-	private void saveMergeCache()
+	void saveMergeCache()
 	{
 		std.file.write(mergeCachePath(), toJson(mergeCache));
-	}
-
-	private @property string mergeCachePath()
-	{
-		return buildPath(git.gitDir, "ae-sys-d-mergecache-v2.json");
 	}
 
 	// --- Merge
 
 	/// Returns the hash of the merge between the target and branch commits.
 	/// Performs the merge if necessary. Caches the result.
-	public string getMerge(string target, CommitRange branch, MergeMode mode)
+	public CommitID getMerge(CommitID target, CommitRange branch, MergeMode mode)
 	{
 		return getMergeImpl(MergeSpec(target, branch, mode, false));
 	}
@@ -223,12 +253,12 @@ final:
 	/// Performs the revert if necessary. Caches the result.
 	/// mainline is the 1-based mainline index (as per `man git-revert`),
 	/// or 0 if commit is not a merge commit.
-	public string getRevert(string target, CommitRange branch, MergeMode mode)
+	public CommitID getRevert(CommitID target, CommitRange branch, MergeMode mode)
 	{
 		return getMergeImpl(MergeSpec(target, branch, mode, true));
 	}
 
-	private string getMergeImpl(MergeSpec spec)
+	CommitID getMergeImpl(MergeSpec spec)
 	{
 		auto hit = mergeCache.find!(entry => entry.spec == spec)();
 		if (!hit.empty)
@@ -241,18 +271,18 @@ final:
 		return mergeResult;
 	}
 
-	private static const string mergeCommitMessage = "digger.build merge";
-	private static const string revertCommitMessage = "digger.build revert";
+	enum mergeCommitMessage = "digger.build merge";
+	enum revertCommitMessage = "digger.build revert";
 
 	/// Performs a merge or revert.
-	private string performMerge(MergeSpec spec)
+	CommitID performMerge(MergeSpec spec)
 	{
 		import ae.sys.cmd : getTempFileName;
 		import ae.sys.file : removeRecurse;
 
 		log("%s %s into %s.".format(spec.revert ? "Reverting" : "Merging", spec.branch, spec.target));
 
-		auto conflictResolvers = getMergeConflictResolvers();
+		auto conflictResolvers = mergeConflictResolvers;
 		if (!conflictResolvers.length)
 			conflictResolvers = [null];
 		foreach (conflictResolverIndex, conflictResolver; conflictResolvers)
@@ -266,13 +296,13 @@ final:
 			tmpRepo.run("init", "--quiet");
 
 			// Ensures `hash` is pulled in to the temporary work repo.
-			string needCommit(string hash)
+			CommitID needCommit(CommitID commitID)
 			{
-				tmpRepo.run(["fetch", "--quiet", git.path.absolutePath, hash]);
-				return hash;
+				tmpRepo.run(["fetch", "--quiet", git.path.absolutePath, commitID.toString()]);
+				return commitID;
 			}
 
-			tmpRepo.run("checkout", "--quiet", needCommit(spec.target));
+			tmpRepo.run("checkout", "--quiet", needCommit(spec.target.CommitID).toString());
 
 			void doMerge()
 			{
@@ -280,26 +310,26 @@ final:
 				{
 					case MergeMode.merge:
 						if (!spec.revert)
-							tmpRepo.run("merge", "--quiet", "--no-ff", "-m", mergeCommitMessage, needCommit(spec.branch.tip));
+							tmpRepo.run("merge", "--quiet", "--no-ff", "-m", mergeCommitMessage, needCommit(spec.branch.tip.CommitID).toString());
 						else
 						{
 							// When reverting in merge mode, we try to
 							// find the merge commit following the branch
 							// tip, and revert only that merge commit.
-							string mergeCommit; int mainline;
+							CommitID mergeCommit; int mainline;
 							getChild(spec.target, spec.branch.tip, /*out*/mergeCommit, /*out*/mainline);
 
 							string[] args = ["revert", "--no-edit"];
 							if (mainline)
 								args ~= ["--mainline", text(mainline)];
-							args ~= [needCommit(mergeCommit)];
+							args ~= [needCommit(mergeCommit).toString()];
 							tmpRepo.run(args);
 						}
 						break;
 
 					case MergeMode.cherryPick:
-						enforce(spec.branch.base, "Must specify a branch base for a cherry-pick merge");
-						auto range = needCommit(spec.branch.base) ~ ".." ~ needCommit(spec.branch.tip);
+						enforce(!spec.branch.base.isNull(), "Must specify a branch base for a cherry-pick merge");
+						auto range = needCommit(spec.branch.base.get()).toString() ~ ".." ~ needCommit(spec.branch.tip).toString();
 						if (!spec.revert)
 							tmpRepo.run("cherry-pick", range);
 						else
@@ -337,10 +367,10 @@ final:
 			else
 				doMergeAndResolve();
 
-			auto hash = tmpRepo.query("rev-parse", "HEAD");
-			log("Merge successful: " ~ hash);
-			git.run(["fetch", "--quiet", tmpRepo.path.absolutePath, hash]);
-			return hash;
+			auto commitID = tmpRepo.query("rev-parse", "HEAD");
+			log("Merge successful: " ~ commitID);
+			git.run(["fetch", "--quiet", tmpRepo.path.absolutePath, commitID]);
+			return commitID.CommitID;
 		}
 
 		assert(false, "Unreachable");
@@ -348,17 +378,18 @@ final:
 
 	/// Finds and returns the merge parents of the given merge commit.
 	/// Queries the git repository if necessary. Caches the result.
-	public MergeInfo getMergeInfo(string merge)
+	public MergeInfo getMergeInfo(CommitID merge)
 	{
 		auto hit = mergeCache.find!(entry => entry.result == merge && !entry.spec.revert)();
 		if (!hit.empty)
 			return hit.front;
 
-		auto parents = git.query(["log", "--pretty=%P", "-n", "1", merge]).split();
-		enforce(parents.length > 1, "Not a merge: " ~ merge);
-		enforce(parents.length == 2, "Too many parents: " ~ merge);
+		auto parents = git.query(["log", "--pretty=%P", "-n", "1", merge.toString()]).split();
+		enforce(parents.length > 1, "Not a merge: " ~ merge.toString());
+		enforce(parents.length == 2, "Too many parents: " ~ merge.toString());
 
-		auto info = MergeInfo(MergeSpec(parents[0], CommitRange(null, parents[1]), MergeMode.merge, false), merge, 1);
+		auto spec = MergeSpec(parents[0].CommitID, CommitRange(Nullable!CommitID.init, parents[1].CommitID), MergeMode.merge, false);
+		auto info = MergeInfo(spec, merge, 1);
 		mergeCache ~= info;
 		return info;
 	}
@@ -367,7 +398,7 @@ final:
 	/// head commit, up till the merge with the given branch.
 	/// Then, reapplies all merges in order,
 	/// except for that with the given branch.
-	public string getUnMerge(string head, CommitRange branch, MergeMode mode)
+	public CommitID getUnMerge(CommitID head, CommitRange branch, MergeMode mode)
 	{
 		// This could be optimized using an interactive rebase
 
@@ -385,7 +416,7 @@ final:
 
 	/// Return SHA1 of the given remote ref.
 	/// Fetches the remote first, unless offline mode is on.
-	string getRemoteRef(string remote, string remoteRef, string localRef)
+	package CommitID getRemoteRef(string remote, string remoteRef, string localRef)
 	{
 		if (!offline)
 		{
@@ -397,7 +428,7 @@ final:
 
 	/// Return SHA1 of the given pull request #.
 	/// Fetches the pull request first, unless offline mode is on.
-	string getPullTip(int pull)
+	CommitID getPullTip(int pull)
 	{
 		return getRemoteRef(
 			"origin",
@@ -406,62 +437,75 @@ final:
 		);
 	}
 
-	private static bool isCommitHash(string s)
+	static bool isCommitHash(string s)
 	{
 		return s.length == 40 && s.representation.all!(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
 	}
 
-	/// Return SHA1 (base, tip) of the given branch (possibly of GitHub fork).
-	/// Fetches the fork first, unless offline mode is on.
-	/// (This is a thin wrapper around getRemoteRef.)
-	string[2] getBranch(string user, string base, string tip)
+	// /// Return SHA1 (base, tip) of the given branch (possibly of GitHub fork).
+	// /// Fetches the fork first, unless offline mode is on.
+	// /// (This is a thin wrapper around getRemoteRef.)
+	// string[2] getBranch(string user, string base, string tip)
+	// {
+	// 	if (user) enforce(user.match(re!`^\w[\w\-]*$`), "Bad remote name");
+	// 	if (base) enforce(base.match(re!`^\w[\w\-\.]*$`), "Bad branch base name");
+	// 	if (true) enforce(tip .match(re!`^\w[\w\-\.]*$`), "Bad branch tip name");
+
+	// 	if (!user)
+	// 		user = "dlang";
+
+	// 	if (isCommitHash(tip))
+	// 	{
+	// 		if (!offline)
+	// 		{
+	// 			// We don't know which branch the commit will be in, so just grab everything.
+	// 			auto remote = "https://github.com/%s/%s".format(user, name);
+	// 			log("Fetching everything from %s ...".format(remote));
+	// 			git.run("fetch", remote, "+refs/heads/*:refs/forks/%s/*".format(user));
+	// 		}
+	// 		if (!base)
+	// 			base = git.query("rev-parse", tip ~ "^");
+	// 		return [
+	// 			base,
+	// 			tip,
+	// 		];
+	// 	}
+	// 	else
+	// 	{
+	// 		return [
+	// 			null,
+	// 			getRemoteRef(
+	// 				"https://github.com/%s/%s".format(user, name),
+	// 				"refs/heads/%s".format(tip),
+	// 				"refs/digger/fork/%s/%s".format(user, tip),
+	// 			),
+	// 		];
+	// 	}
+	// }
+
+	/**
+	   Find the child of a commit, and, if the commit was a merge,
+	   the mainline index of said commit for the child.
+	*/
+	void getChild(
+		/// Tip of the history which will be scanned to find the child.
+		CommitID branch,
+		/// The parent commit, whose child is to be found.
+		CommitID commit,
+		/// Will store the commit ID of the found child.
+		out CommitID child,
+		/// When the found child is a merge commit, will store the
+		/// parent index of `commit`.
+		out int mainline,
+	)
 	{
-		if (user) enforce(user.match(re!`^\w[\w\-]*$`), "Bad remote name");
-		if (base) enforce(base.match(re!`^\w[\w\-\.]*$`), "Bad branch base name");
-		if (true) enforce(tip .match(re!`^\w[\w\-\.]*$`), "Bad branch tip name");
-
-		if (!user)
-			user = "dlang";
-
-		if (isCommitHash(tip))
-		{
-			if (!offline)
-			{
-				// We don't know which branch the commit will be in, so just grab everything.
-				auto remote = "https://github.com/%s/%s".format(user, name);
-				log("Fetching everything from %s ...".format(remote));
-				git.run("fetch", remote, "+refs/heads/*:refs/forks/%s/*".format(user));
-			}
-			if (!base)
-				base = git.query("rev-parse", tip ~ "^");
-			return [
-				base,
-				tip,
-			];
-		}
-		else
-		{
-			return [
-				null,
-				getRemoteRef(
-					"https://github.com/%s/%s".format(user, name),
-					"refs/heads/%s".format(tip),
-					"refs/digger/fork/%s/%s".format(user, tip),
-				),
-			];
-		}
-	}
-
-	/// Find the child of a commit, and, if the commit was a merge,
-	/// the mainline index of said commit for the child.
-	void getChild(string branch, string commit, out string child, out int mainline)
-	{
-		// TODO: this isn't right. We should look at linear history only.
-
-		needCommit(branch);
+		// Note: there is an edge case which the current version of this function can't handle:
+		// when `commit` has multiple children which are visible from `branch`.
+		// To avoid this we could add a `mainBranchName` parameter and scan in the same way as
+		// `gitLinearHistory`, but let's cross that bridge when we get there.
 
 		log("Querying history for commit children...");
-		auto history = git.getHistory([branch]);
+		auto history = git.getHistory([branch.toString()]);
 
 		bool[Git.CommitID] seen;
 		void visit(Git.History.Commit* commit)
@@ -475,19 +519,18 @@ final:
 		}
 		auto branchHash = Git.CommitID(branch);
 		auto pBranchCommit = branchHash in history.commits;
-		enforce(pBranchCommit, "Can't find commit " ~ branch ~" in history");
+		enforce(pBranchCommit, "Can't find branch commit " ~ branch.toString() ~ " in history");
 		visit(*pBranchCommit);
 
-		auto commitHash = Git.CommitID(commit);
-		auto pCommit = commitHash in history.commits;
-		enforce(pCommit, "Can't find commit in history");
+		auto pCommit = commit in history.commits;
+		enforce(pCommit, "Can't find parent commit " ~ commit.toString() ~ " in history");
 		auto children = (*pCommit).children;
 		enforce(children.length, "Commit has no children");
 		children = children.filter!(child => child.oid in seen).array();
 		enforce(children.length, "Commit has no children under specified branch");
 		enforce(children.length == 1, "Commit has more than one child");
 		auto childCommit = children[0];
-		child = childCommit.oid.toString();
+		child = childCommit.oid;
 
 		if (childCommit.parents.length == 1)
 			mainline = 0;
@@ -501,8 +544,8 @@ final:
 
 			auto mergeInfo = MergeInfo(
 				MergeSpec(
-					childCommit.parents[0].oid.toString(),
-					CommitRange(null, commit),
+					childCommit.parents[0].oid,
+					CommitRange(Nullable!CommitID.init, commit),
 					MergeMode.merge,
 					true),
 				child, mainline);
@@ -516,10 +559,10 @@ final:
 
 	// --- Linear history
 
-	private alias Commit = Git.History.Commit;
+	alias Commit = Git.History.Commit;
 
 	/// Get the linear history starting from `refName` (typically a
-	/// branch or tag).
+	/// (namespaced) branch or tag).
 	/// The linear history is built by walking the repository history
 	/// DAG in a way which attempts to reconstruct the publicly
 	/// visible history, i.e. such that all points on the returned
@@ -713,10 +756,10 @@ final:
 
 	// --- Misc
 
-	/// Reset internal state.
-	protected void reset()
+	void log(string line)
 	{
-		haveMergeCache = false;
-		mergeCacheData = null;
+		buildSite.log("gitstore: " ~ line);
 	}
+
+	bool offline() { return buildSite.config.offline; }
 }

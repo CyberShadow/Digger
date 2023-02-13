@@ -1,5 +1,17 @@
 module digger.build.build;
 
+import std.algorithm.iteration;
+import std.algorithm.searching;
+import std.array;
+import std.exception;
+import std.typecons;
+
+import digger.build.config;
+import digger.build.components;
+import digger.build.gitstore;
+import digger.build.versions;
+import digger.build.site;
+
 /**
    Manages one build session.
 
@@ -8,6 +20,7 @@ module digger.build.build;
 */
 final class Builder
 {
+private:
 	// /// Current build environment.
 	// struct Environment
 	// {
@@ -25,5 +38,70 @@ final class Builder
 	// 	string[string] vars;
 	// }
 
+	package BuildSite buildSite;
+	package BuildConfig buildConfig;
+	VersionSpec versionSpec;
 
+	package this(BuildSite buildSite, BuildConfig buildConfig, VersionSpec versionSpec)
+	{
+		this.buildSite = buildSite;
+		this.buildConfig = buildConfig;
+		this.versionSpec = versionSpec;
+	}
+
+	// --- Configuration
+
+	/// Returns a list of all enabled components, whether
+	/// they're enabled explicitly or by default.
+	package string[] getEnabledComponentNames()
+	{
+		foreach (componentName; buildConfig.enableComponent.byKey)
+			enforce(componentRegistry.byKey.canFind(componentName),
+				"Unknown component: " ~ componentName);
+
+		return componentRegistry.byKey
+			.filter!(componentName =>
+				buildConfig.enableComponent.get(componentName, defaultComponents.canFind(componentName)))
+			.array
+			.dup;
+	}
+
+	// --- Versions / history
+
+	Nullable!Versions versions;
+
+	package Versions getVersions()
+	{
+		if (versions.isNull)
+			versions = versionSpec(this);
+		return versions.get();
+	}
+
+	// --- Repository
+
+	CommitID[string][string] resolvedRefs;
+
+	package CommitID getRef(string repositoryName, string repositoryURL, string refName)
+	{
+		return resolvedRefs
+			.require(repositoryName, null)
+			.require(refName, buildSite
+				.gitStore
+				.getRemoteRef(repositoryName, repositoryURL, refName)
+			);
+	}
+
+	// --- Components
+
+	Component[string] components;
+
+	package Component getComponent(string componentName)
+	{
+		return components.require(componentName,
+			componentRegistry
+			.get(componentName, null)
+			.enforce("Unknown component: " ~ componentName)
+			(this)
+		);
+	}
 }

@@ -1,12 +1,12 @@
 module digger.digger;
 
 import std.array;
-import std.exception;
+// import std.exception;
 import std.file : thisExePath, exists;
-import std.path;
-import std.process;
-import std.stdio;
-import std.typetuple;
+import std.meta;
+// import std.path;
+// import std.process;
+// import std.stdio;
 
 static if(!is(typeof({import ae.utils.text;}))) static assert(false, "ae library not found, did you clone with --recursive?"); else:
 
@@ -21,217 +21,201 @@ import ae.utils.meta : structFun;
 import ae.utils.text : eatLine;
 
 import digger.bisect;
-import digger.build.manager : DManager;
+import digger.build.config : BuildConfig;
 import digger.common;
 import digger.config;
 import digger.custom;
-import digger.install;
-import digger.repo;
+import digger.site;
 
 // http://d.puremagic.com/issues/show_bug.cgi?id=7016
 version(Windows) static import ae.sys.windows;
 
-alias BuildOptions(string action, string pastAction, bool showBuildActions = true) = TypeTuple!(
-	Switch!(hiddenOption, 0, "64"),
-	Option!(string, showBuildActions ? "Select models (32, 64, or, on Windows, 32mscoff). You can specify multiple models by comma-separating them.\nOn this system, the default is " ~ DManager.Config.Build.components.common.defaultModel ~ " [build.components.common.models]" : hiddenOption, null, 0, "model"),
-	Option!(string[], "Do not " ~ action ~ " a component (that would otherwise be " ~ pastAction ~ " by default). List of default components: " ~ DManager.defaultComponents.join(", ") ~ " [build.components.enable.COMPONENT=false]", "COMPONENT", 0, "without"),
-	Option!(string[], "Specify an additional D component to " ~ action ~ ". List of available additional components: " ~ DManager.additionalComponents.join(", ") ~ " [build.components.enable.COMPONENT=true]", "COMPONENT", 0, "with"),
-	Option!(string[], showBuildActions ? `Additional make parameters, e.g. "HOST_CC=g++48" [build.components.common.makeArgs]` : hiddenOption, "ARG", 0, "makeArgs"),
-	Switch!(showBuildActions ? "Bootstrap the compiler (build from C++ source code) instead of downloading a pre-built binary package [build.components.dmd.bootstrap.fromSource]" : hiddenOption, 0, "bootstrap"),
-	Switch!(hiddenOption, 0, "use-vc"),
-	Switch!(hiddenOption, 0, "clobber-local-changes"),
+alias BuildOptions = AliasSeq!(
+	Option!(string[],
+		"Do not include a component (that would otherwise be included by default). " ~
+		"List of default components: " ~ defaultComponents.join(", ") ~ " [build.components.enable.COMPONENT=false]",
+		"COMPONENT", 0, "without"
+	),
+	Option!(string[],
+		"Specify an additional D component to include. " ~
+		"Run \"digger list-components\" for a list of all available components. [build.components.enable.COMPONENT=true]",
+		"COMPONENT", 0, "with"
+	),
 );
 
-enum specDescription = "D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n" ~
+enum versionSpecDescription =
+	"D ref (branch / tag / point in time) to build, plus any additional forks or pull requests. Example:\n" ~
 	"\"master @ 3 weeks ago + dmd#123 + You/dmd/awesome-feature\"";
 
-void parseBuildOptions(T...)(T options) // T == BuildOptions!action
+/// Build instructions as specified on the Digger CLI.
+struct DiggerBuildSpec
 {
-	if (options[0])
-		d.config.build.components.common.models = ["64"];
-	if (options[1])
-		d.config.build.components.common.models = options[1].value.split(",");
-	foreach (componentName; options[2])
-		d.config.build.components.enable[componentName] = false;
-	foreach (componentName; options[3])
-		d.config.build.components.enable[componentName] = true;
-	d.config.build.components.common.makeArgs ~= options[4];
-	d.config.build.components.dmd.bootstrap.fromSource |= options[5];
-	d.config.build.components.dmd.useVC |= options[6];
-	d.verifyWorkTree = !options[7];
-	static assert(options.length == 8);
+	/// Version specification in Digger CLI syntax
+	/// (e.g. "master+dmd#123")
+	string versionSpec;
+
+	/// Build config
+	immutable BuildConfig buildConfig;
+
+	/// Explicitly enable or disable a component.
+	/// Overrides digger.config.defaultComponents.
+	bool[string] enableComponent;
+}
+
+void parseBuildOptions(T...)(ref DiggerBuildSpec spec, T options) // T == BuildOptions!action
+{
+	foreach (componentName; options[0])
+		spec.enableComponent[componentName] = false;
+	foreach (componentName; options[1])
+		spec.enableComponent[componentName] = true;
+	static assert(options.length == 2);
 }
 
 struct Digger
 {
 static:
 	@(`Build D from source code`)
-	int build(BuildOptions!("build", "built") options, Parameter!(string, specDescription) spec = "master")
+	int build(BuildOptions options, Parameter!(string, versionSpecDescription) versionSpec = "master")
 	{
-		parseBuildOptions(options);
+		auto spec = DiggerBuildSpec(versionSpec, config.build);
+		parseBuildOptions(spec, options);
 		buildCustom(spec);
 		return 0;
 	}
 
-	@(`Incrementally rebuild the current D checkout`)
-	int rebuild(BuildOptions!("rebuild", "rebuilt") options)
-	{
-		parseBuildOptions(options);
-		incrementalBuild();
-		return 0;
-	}
+	// @(`Incrementally rebuild the current D checkout`)
+	// int rebuild(BuildOptions!("rebuild", "rebuilt") options)
+	// {
+	// 	parseBuildOptions(options);
+	// 	incrementalBuild();
+	// 	return 0;
+	// }
 
-	@(`Run tests for enabled components`)
-	int test(BuildOptions!("test", "tested") options)
-	{
-		parseBuildOptions(options);
-		runTests();
-		return 0;
-	}
+	// @(`Run tests for enabled components`)
+	// int test(BuildOptions!("test", "tested") options)
+	// {
+	// 	parseBuildOptions(options);
+	// 	runTests();
+	// 	return 0;
+	// }
 
-	@(`Check out D source code from git`)
-	int checkout(BuildOptions!("check out", "checked out", false) options, Parameter!(string, specDescription) spec = "master")
-	{
-		parseBuildOptions(options);
-		.checkout(spec);
-		return 0;
-	}
+	// @(`Check out D source code from git`)
+	// int checkout(BuildOptions!("check out", "checked out", false) options, Parameter!(string, versionSpecDescription) spec = "master")
+	// {
+	// 	parseBuildOptions(options);
+	// 	.checkout(spec);
+	// 	return 0;
+	// }
 
-	@(`Run a command using a D version`)
-	int run(
-		BuildOptions!("build", "built") options,
-		Parameter!(string, specDescription ~ "\nSpecify \"-\" to use the previously-built version.") spec,
-		Parameter!(string[], "Command to run and its arguments (use -- to pass switches)") command)
-	{
-		if (spec == "-")
-			enforce(options == typeof(options).init, "Can't specify build options when using the last built version.");
-		else
-		{
-			parseBuildOptions(options);
-			buildCustom(spec, /*asNeeded*/true);
-		}
+	// @(`Run a command using a D version`)
+	// int run(
+	// 	BuildOptions options,
+	// 	Parameter!(string, versionSpecDescription) versionSpec,
+	// 	Parameter!(string[], "Command to run and its arguments (use -- to pass switches)") command)
+	// {
+	// 	DiggerBuildSpec spec;
+	// 	spec.versionSpec = versionSpec;
+	// 	parseBuildOptions(spec, options);
+	// 	buildCustom(spec, /*asNeeded*/true);
 
-		auto binPath = resultDir.buildPath("bin").absolutePath();
-		environment["PATH"] = binPath ~ pathSeparator ~ environment["PATH"];
+	// 	auto binPath = resultDir.buildPath("bin").absolutePath();
+	// 	environment["PATH"] = binPath ~ pathSeparator ~ environment["PATH"];
 
-		version (Windows)
-			return spawnProcess(command).wait();
-		else
-		{
-			execvp(command[0], command);
-			errnoEnforce(false, "execvp failed");
-			assert(false); // unreachable
-		}
-	}
+	// 	version (Windows)
+	// 		return spawnProcess(command).wait();
+	// 	else
+	// 	{
+	// 		execvp(command[0], command);
+	// 		errnoEnforce(false, "execvp failed");
+	// 		assert(false); // unreachable
+	// 	}
+	// }
 
-	@(`Install Digger's build result on top of an existing stable DMD installation`)
-	int install(
-		Switch!("Do not prompt", 'y') yes,
-		Switch!("Only print what would be done", 'n') dryRun,
-		Parameter!(string, "Directory to install to. Default is to find one in PATH.") installLocation = null,
-	)
-	{
-		enforce(!yes || !dryRun, "--yes and --dry-run are mutually exclusive");
-		install(yes, dryRun, installLocation);
-		return 0;
-	}
+	// @(`Bisect D history according to a bisect.ini file`)
+	// int bisect(
+	// 	Switch!("Skip sanity-check of the GOOD/BAD commits.") noVerify,
+	// 	Option!(string[], "Additional bisect configuration. Equivalent to bisect.ini settings.", "NAME=VALUE", 'c', "config") configLines,
+	// 	Parameter!(string, "Location of the bisect.ini file containing the bisection description.") bisectConfigFile = null,
+	// )
+	// {
+	// 	return doBisect(noVerify, bisectConfigFile, configLines);
+	// }
 
-	@(`Undo the "install" action`)
-	int uninstall(
-		Switch!("Only print what would be done", 'n') dryRun,
-		Switch!("Do not verify files to be deleted; ignore errors") force,
-		Parameter!(string, "Directory to uninstall from. Default is to search PATH.") installLocation = null,
-	)
-	{
-		.uninstall(dryRun, force, installLocation);
-		return 0;
-	}
+	// @(`Cache maintenance actions (run with no arguments for details)`)
+	// int cache(string[] args)
+	// {
+	// 	static struct CacheActions
+	// 	{
+	// 	static:
+	// 		@(`Compact the cache`)
+	// 		int compact()
+	// 		{
+	// 			d.optimizeCache();
+	// 			return 0;
+	// 		}
 
-	@(`Bisect D history according to a bisect.ini file`)
-	int bisect(
-		Switch!("Skip sanity-check of the GOOD/BAD commits.") noVerify,
-		Option!(string[], "Additional bisect configuration. Equivalent to bisect.ini settings.", "NAME=VALUE", 'c', "config") configLines,
-		Parameter!(string, "Location of the bisect.ini file containing the bisection description.") bisectConfigFile = null,
-	)
-	{
-		return doBisect(noVerify, bisectConfigFile, configLines);
-	}
+	// 		@(`Delete entries cached as unbuildable`)
+	// 		int purgeUnbuildable()
+	// 		{
+	// 			d.purgeUnbuildable();
+	// 			return 0;
+	// 		}
 
-	@(`Cache maintenance actions (run with no arguments for details)`)
-	int cache(string[] args)
-	{
-		static struct CacheActions
-		{
-		static:
-			@(`Compact the cache`)
-			int compact()
-			{
-				d.optimizeCache();
-				return 0;
-			}
+	// 		@(`Migrate cached entries from one cache engine to another`)
+	// 		int migrate(string source, string target)
+	// 		{
+	// 			d.migrateCache(source, target);
+	// 			return 0;
+	// 		}
+	// 	}
 
-			@(`Delete entries cached as unbuildable`)
-			int purgeUnbuildable()
-			{
-				d.purgeUnbuildable();
-				return 0;
-			}
+	// 	return funoptDispatch!CacheActions(["digger cache"] ~ args);
+	// }
 
-			@(`Migrate cached entries from one cache engine to another`)
-			int migrate(string source, string target)
-			{
-				d.migrateCache(source, target);
-				return 0;
-			}
-		}
+	// // hidden actions
 
-		return funoptDispatch!CacheActions(["digger cache"] ~ args);
-	}
+	// int buildAll(BuildOptions options, string spec = "master")
+	// {
+	// 	parseBuildOptions(options);
+	// 	.buildAll(spec);
+	// 	return 0;
+	// }
 
-	// hidden actions
+	// int delve(bool inBisect)
+	// {
+	// 	return doDelve(inBisect);
+	// }
 
-	int buildAll(BuildOptions!("build", "built") options, string spec = "master")
-	{
-		parseBuildOptions(options);
-		.buildAll(spec);
-		return 0;
-	}
+	// int parseRev(string rev)
+	// {
+	// 	stdout.writeln(.parseRev(rev));
+	// 	return 0;
+	// }
 
-	int delve(bool inBisect)
-	{
-		return doDelve(inBisect);
-	}
+	// int show(string revision)
+	// {
+	// 	d.getMetaRepo().git.run("log", "-n1", revision);
+	// 	d.getMetaRepo().git.run("log", "-n1", "--pretty=format:t=%ct", revision);
+	// 	return 0;
+	// }
 
-	int parseRev(string rev)
-	{
-		stdout.writeln(.parseRev(rev));
-		return 0;
-	}
+	// int getLatest()
+	// {
+	// 	writeln((cast(DManager.Website)d.getComponent("website")).getLatest());
+	// 	return 0;
+	// }
 
-	int show(string revision)
-	{
-		d.getMetaRepo().git.run("log", "-n1", revision);
-		d.getMetaRepo().git.run("log", "-n1", "--pretty=format:t=%ct", revision);
-		return 0;
-	}
+	// int help()
+	// {
+	// 	throw new Exception("For help, run digger without any arguments.");
+	// }
 
-	int getLatest()
-	{
-		writeln((cast(DManager.Website)d.getComponent("website")).getLatest());
-		return 0;
-	}
-
-	int help()
-	{
-		throw new Exception("For help, run digger without any arguments.");
-	}
-
-	version (Windows)
-	int getAllMSIs()
-	{
-		d.getVSInstaller().getAllMSIs();
-		return 0;
-	}
+	// version (Windows)
+	// int getAllMSIs()
+	// {
+	// 	d.getVSInstaller().getAllMSIs();
+	// 	return 0;
+	// }
 }
 
 int program()

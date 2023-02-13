@@ -12,13 +12,14 @@ import ae.utils.funopt;
 import ae.utils.meta;
 import ae.utils.sini;
 
-import digger.build.manager;
+import digger.build.config;
+import digger.build.site;
 
 static import std.getopt;
 
 struct Opts
 {
-	Option!(string, hiddenOption) dir;
+	// Option!(string, hiddenOption) dir;
 	Option!(string, "Path to the configuration file to use", "PATH") configFile;
 	Switch!("Silence log output", 'q') quiet;
 	Switch!("Do not update D repositories from GitHub [local.offline]") offline;
@@ -32,8 +33,8 @@ immutable Opts opts;
 
 struct ConfigFile
 {
-	DManager.Config.Build build;
-	DManager.Config.Local local;
+	BuildConfig build;
+	BuildSite.Config local;
 
 	struct App
 	{
@@ -50,8 +51,8 @@ shared static this()
 	void usageFun(string) {}
 	auto opts = funopt!(fun, funOpts, usageFun)(Runtime.args);
 
-	if (opts.dir)
-		chdir(opts.dir.value);
+	// if (opts.dir)
+	// 	chdir(opts.dir.value);
 
 	enum CONFIG_FILE = "digger.ini";
 
@@ -61,9 +62,7 @@ shared static this()
 			string.init,
 			thisExePath.dirName,
 			__FILE__.dirName,
-			] ~ getConfigDirs() ~ [
-			buildPath(environment.get("HOME", environment.get("USERPROFILE")), ".digger"), // legacy
-		];
+		] ~ getConfigDirs();
 		version (Posix)
 			searchDirs ~= "/etc/"; // legacy
 
@@ -112,4 +111,7 @@ shared static this()
 	}
 }
 
-@property string subDir(string name)() { return buildPath(config.local.workDir, name); }
+// @property string subDir(string name)() { return buildPath(config.local.workDir, name); }
+
+/// Components enabled by default.
+immutable string[] defaultComponents = ["dmd", "druntime", "phobos-includes", "phobos", "rdmd"];
