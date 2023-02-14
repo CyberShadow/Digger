@@ -139,7 +139,7 @@ private:
 	}
 
 	/// Returns the commit OID of the given named ref.
-	CommitID getRef(string refName)
+	package CommitID getRef(string refName)
 	{
 		return git.query("rev-parse", "--verify", "--quiet", refName).CommitID;
 	}
@@ -416,72 +416,28 @@ private:
 
 	/// Return SHA1 of the given remote ref.
 	/// Fetches the remote first, unless offline mode is on.
-	package CommitID getRemoteRef(string remote, string remoteRef, string localRef)
+	package CommitID getRemoteRef(string remoteName, string remoteURL, string remoteRef)
 	{
+		enforce(remoteRef.startsWith("refs/"), "Invalid remote ref");
+		auto localRef = "refs/" ~ remoteName ~ remoteRef["refs".length .. $];
 		if (!offline)
 		{
-			log("Fetching from %s (%s -> %s) ...".format(remote, remoteRef, localRef));
-			git.run("fetch", remote, "+%s:%s".format(remoteRef, localRef));
+			log("Fetching from %s (%s -> %s) ...".format(remoteURL, remoteRef, localRef));
+			git.run("fetch", remoteURL, "+%s:%s".format(remoteRef, localRef));
 		}
 		return getRef(localRef);
 	}
 
-	/// Return SHA1 of the given pull request #.
-	/// Fetches the pull request first, unless offline mode is on.
-	CommitID getPullTip(int pull)
+	/// Fetch all remote refs.
+	/// Generally we should never need to do this,
+	/// except for very specific cases like getting a commit
+	/// for which we don't know a containing branch.
+	package void fetchAllRemoteRefs(string remoteName, string remoteURL)
 	{
-		return getRemoteRef(
-			"origin",
-			"refs/pull/%d/head".format(pull),
-			"refs/digger/pull/%d".format(pull),
-		);
+		enforce(!offline, "Cannot fetch all refs while offline");
+		log("Fetching all refs from %s ...".format(remoteURL));
+		git.run("fetch", remoteURL, "+refs/*:refs/%s/*".format(remoteName));
 	}
-
-	static bool isCommitHash(string s)
-	{
-		return s.length == 40 && s.representation.all!(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'));
-	}
-
-	// /// Return SHA1 (base, tip) of the given branch (possibly of GitHub fork).
-	// /// Fetches the fork first, unless offline mode is on.
-	// /// (This is a thin wrapper around getRemoteRef.)
-	// string[2] getBranch(string user, string base, string tip)
-	// {
-	// 	if (user) enforce(user.match(re!`^\w[\w\-]*$`), "Bad remote name");
-	// 	if (base) enforce(base.match(re!`^\w[\w\-\.]*$`), "Bad branch base name");
-	// 	if (true) enforce(tip .match(re!`^\w[\w\-\.]*$`), "Bad branch tip name");
-
-	// 	if (!user)
-	// 		user = "dlang";
-
-	// 	if (isCommitHash(tip))
-	// 	{
-	// 		if (!offline)
-	// 		{
-	// 			// We don't know which branch the commit will be in, so just grab everything.
-	// 			auto remote = "https://github.com/%s/%s".format(user, name);
-	// 			log("Fetching everything from %s ...".format(remote));
-	// 			git.run("fetch", remote, "+refs/heads/*:refs/forks/%s/*".format(user));
-	// 		}
-	// 		if (!base)
-	// 			base = git.query("rev-parse", tip ~ "^");
-	// 		return [
-	// 			base,
-	// 			tip,
-	// 		];
-	// 	}
-	// 	else
-	// 	{
-	// 		return [
-	// 			null,
-	// 			getRemoteRef(
-	// 				"https://github.com/%s/%s".format(user, name),
-	// 				"refs/heads/%s".format(tip),
-	// 				"refs/digger/fork/%s/%s".format(user, tip),
-	// 			),
-	// 		];
-	// 	}
-	// }
 
 	/**
 	   Find the child of a commit, and, if the commit was a merge,

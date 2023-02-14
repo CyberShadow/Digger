@@ -1,5 +1,7 @@
 module digger.build.components;
 
+import std.algorithm.searching;
+
 import ae.utils.json;
 
 import digger.build.build;
@@ -19,11 +21,12 @@ import digger.build.build;
 
 class Component
 {
+private:
 	/// Name of this component.
 	/// Used by users to select which components to build, and in the
 	/// build configuration as the section name for this component's
 	/// configuration.
-	abstract @property string name();
+	public abstract @property string name();
 
 	/// Return the Git repositories needed to build all versions of
 	/// this component.  The return value is a map from an internal
@@ -31,7 +34,7 @@ class Component
 	// Note: the reason for the "all versions" is that we need to
 	// clone the repository before we can start meaningfully
 	// referencing versions of it.
-	abstract @property string[string] repositories();
+	public abstract @property string[string] repositoryURLs();
 
 	/// Resolve a product version (e.g. "master" or "v2.100.0")" to a
 	/// Git ref (e.g. "refs/heads/master").
@@ -41,7 +44,7 @@ class Component
 	/// will refer to "refs/heads/stable" in repositories that follow
 	/// the core D development flow, but may mean "refs/heads/master"
 	/// for others.
-	string resolveProductVersion(string repositoryName, string productVersion)
+	package(digger.build) string resolveProductVersion(string repositoryName, string productVersion)
 	{
 		if (productVersion.startsWith("refs/"))
 			return productVersion; // do what I say
@@ -53,7 +56,7 @@ class Component
 	/// ------
 
 	/// Parent builder.
-	private Builder builder;
+	Builder builder;
 
 // 	/// Corresponding subproject repository name.
 // 	@property abstract string submoduleName();
@@ -63,7 +66,7 @@ class Component
 	/// Configuration applicable to multiple components.
 	/// These settings can be set for all components,
 	/// as well as overridden for individual components.
-	struct CommonConfig
+	public struct CommonConfig
 	{
 		// /// Additional make parameters, e.g. "HOST_CC=g++48"
 		// @JSONOptional string[] makeArgs;

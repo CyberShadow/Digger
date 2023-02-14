@@ -49,32 +49,15 @@ private:
 		this.versionSpec = versionSpec;
 	}
 
-	// --- Configuration
-
-	/// Returns a list of all enabled components, whether
-	/// they're enabled explicitly or by default.
-	package string[] getEnabledComponentNames()
-	{
-		foreach (componentName; buildConfig.enableComponent.byKey)
-			enforce(componentRegistry.byKey.canFind(componentName),
-				"Unknown component: " ~ componentName);
-
-		return componentRegistry.byKey
-			.filter!(componentName =>
-				buildConfig.enableComponent.get(componentName, defaultComponents.canFind(componentName)))
-			.array
-			.dup;
-	}
-
 	// --- Versions / history
 
-	Nullable!Versions versions;
+	CommitID[string] versions;
 
-	package Versions getVersions()
+	package CommitID getVersion(string repositoryName, string repositoryURL)
 	{
-		if (versions.isNull)
-			versions = versionSpec(this);
-		return versions.get();
+		return versions.require(repositoryName,
+			versionSpec(HistoryWalker(this, repositoryName, repositoryURL))
+		);
 	}
 
 	// --- Repository

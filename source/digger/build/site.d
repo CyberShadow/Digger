@@ -1,12 +1,15 @@
 module digger.build.site;
 
+import std.file;
 import std.format : format;
 import std.path : buildPath;
 import std.typecons;
 
+import ae.sys.file;
 import ae.sys.git : Git;
 import ae.sys.install.common;
 import ae.sys.install.git;
+import ae.utils.digest;
 
 // import std.algorithm;
 // import std.array;
@@ -19,10 +22,10 @@ import ae.sys.install.git;
 // import std.process : spawnProcess, wait, escapeShellCommand;
 // import std.range;
 // import std.regex;
-// import std.string;
+import std.string;
 // import std.typecons;
 
-// import ae.net.github.rest;
+import ae.net.github.rest;
 // import ae.sys.file;
 // import ae.sys.git;
 // import ae.utils.aa;
@@ -153,7 +156,7 @@ private:
 
 	package alias gitStoreDir  = subDir!"git-store";    /// The git repository location.
 	package alias dlDir        = subDir!"dl";           /// The directory for downloaded dependencies.
-	// package alias githubDir    = subDir!"github-cache"; /// For the GitHub API cache.
+	package alias githubDir    = subDir!"github-cache"; /// For the GitHub API cache.
 
 	// /// Returns the path to cached data for the given cache engine
 	// /// (as in `config.local.cache`).
@@ -264,39 +267,39 @@ private:
 	// 		.array();
 	// }
 
-	// // ***************************** GitHub API ******************************
+	// ***************************** GitHub API ******************************
 
-	// private GitHub github;
+	Nullable!GitHub githubInstance;
 
-	// private ref GitHub needGitHub()
-	// {
-	// 	if (github is GitHub.init)
-	// 	{
-	// 		github.log = &this.log;
-	// 		github.token = config.local.githubToken;
-	// 		github.cache = new class GitHub.ICache
-	// 		{
-	// 			final string cacheFileName(string key)
-	// 			{
-	// 				return githubDir.buildPath(getDigestString!MD5(key).toLower());
-	// 			}
+	public @property ref GitHub github()
+	{
+		return githubInstance.require({
+			GitHub github;
+			github.log = &this.log;
+			github.token = config.githubToken;
+			github.cache = new class GitHub.ICache
+			{
+				final string cacheFileName(string key)
+				{
+					return githubDir.buildPath(getDigestString!MD5(key).toLower());
+				}
 
-	// 			string get(string key)
-	// 			{
-	// 				auto fn = cacheFileName(key);
-	// 				return fn.exists ? fn.readText : null;
-	// 			}
+				string get(string key)
+				{
+					auto fn = cacheFileName(key);
+					return fn.exists ? fn.readText : null;
+				}
 
-	// 			void put(string key, string value)
-	// 			{
-	// 				githubDir.ensureDirExists;
-	// 				std.file.write(cacheFileName(key), value);
-	// 			}
-	// 		};
-	// 		github.offline = config.local.offline;
-	// 	}
-	// 	return github;
-	// }
+				void put(string key, string value)
+				{
+					githubDir.ensureDirExists;
+					std.file.write(cacheFileName(key), value);
+				}
+			};
+			github.offline = config.offline;
+			return github;
+		}());
+	}
 
 	// // ****************************** Building *******************************
 
