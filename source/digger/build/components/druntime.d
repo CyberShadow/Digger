@@ -4,7 +4,7 @@ import digger.build.components;
 import digger.build.manager;
 
 /// Druntime. Installs only import files, but builds the library too.
-final class Druntime : Component
+final class Druntime : DlangComponent
 {
 	protected @property override string submoduleName    () { return "druntime"; }
 	protected @property override string[] sourceDependencies() { return ["phobos", "phobos-includes"]; }

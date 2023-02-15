@@ -5,7 +5,7 @@ import digger.build.manager;
 
 /// Phobos import files.
 /// In older versions of D, Druntime depended on Phobos modules.
-final class PhobosIncludes : Component
+final class PhobosIncludes : DlangComponent
 {
 	protected @property override string submoduleName() { return "phobos"; }
 	protected @property override string[] sourceDependencies() { return []; }

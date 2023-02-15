@@ -1,7 +1,7 @@
 module digger.build.gitstore;
 
 import std.algorithm;
-import std.conv : text;
+import std.conv : to;
 import std.datetime : SysTime;
 import std.exception;
 import std.file;
@@ -22,6 +22,18 @@ import ae.utils.typecons;
 import digger.build.site;
 
 alias CommitID = Git.CommitID;
+
+/// Stores the location of a remote Git repository.
+struct GitRemote
+{
+	/// Internal repository name.
+	/// Used for ref namespacing, and allows the URL to change without
+	/// breaking caches.
+	string name;
+
+	/// Remote repository URL, suitable for "git fetch".
+	string url;
+}
 
 /**
    Manages the Git object store repository.
@@ -124,7 +136,7 @@ private:
 		return true;
 	}
 
-	public void exportCommit(CommitID commitID, string targetPath)
+	void needCommit(CommitID commitID)
 	{
 		if (!haveCommit(commitID) && mergeCache.find!(entry => entry.result == commitID)())
 		{
@@ -134,14 +146,24 @@ private:
 			auto mergeResult = performMerge(hit.front.spec);
 			enforce(mergeResult == commitID, "Unexpected merge result: expected %s, got %s".format(commitID, mergeResult));
 		}
+	}
 
+	public Git.Object.ParsedCommit getCommit(CommitID commitID)
+	{
+		needCommit(commitID);
+		return reader.read(commitID).parseCommit();
+	}
+
+	public void exportCommit(CommitID commitID, string targetPath)
+	{
+		needCommit(commitID);
 		git.exportCommit(commitID, targetPath, reader);
 	}
 
-	/// Returns the commit OID of the given named ref.
-	package CommitID getRef(string refName)
+	/// Returns the commit OID of the given commit-ish.
+	CommitID revParse(string commitish)
 	{
-		return git.query("rev-parse", "--verify", "--quiet", refName).CommitID;
+		return git.query("rev-parse", "--verify", "--quiet", commitish).CommitID;
 	}
 
 	// /// Ensure that the specified commit is fetched.
@@ -321,7 +343,7 @@ private:
 
 							string[] args = ["revert", "--no-edit"];
 							if (mainline)
-								args ~= ["--mainline", text(mainline)];
+								args ~= ["--mainline", mainline.to!string];
 							args ~= [needCommit(mergeCommit).toString()];
 							tmpRepo.run(args);
 						}
@@ -416,27 +438,33 @@ private:
 
 	/// Return SHA1 of the given remote ref.
 	/// Fetches the remote first, unless offline mode is on.
-	package CommitID getRemoteRef(string remoteName, string remoteURL, string remoteRef)
+	package CommitID getRemoteRef(GitRemote remote, string remoteRef)
 	{
 		enforce(remoteRef.startsWith("refs/"), "Invalid remote ref");
-		auto localRef = "refs/" ~ remoteName ~ remoteRef["refs".length .. $];
+		auto localRef = "refs/" ~ remote.name ~ remoteRef["refs".length .. $];
 		if (!offline)
 		{
-			log("Fetching from %s (%s -> %s) ...".format(remoteURL, remoteRef, localRef));
-			git.run("fetch", remoteURL, "+%s:%s".format(remoteRef, localRef));
+			log("Fetching from %s (%s -> %s) ...".format(remote.url, remoteRef, localRef));
+			git.run("fetch", remote.url, "+%s:%s".format(remoteRef, localRef));
 		}
-		return getRef(localRef);
+		return revParse(localRef);
 	}
 
 	/// Fetch all remote refs.
 	/// Generally we should never need to do this,
 	/// except for very specific cases like getting a commit
 	/// for which we don't know a containing branch.
-	package void fetchAllRemoteRefs(string remoteName, string remoteURL)
+	package void fetchAllRemoteRefs(GitRemote remote)
 	{
 		enforce(!offline, "Cannot fetch all refs while offline");
-		log("Fetching all refs from %s ...".format(remoteURL));
-		git.run("fetch", remoteURL, "+refs/*:refs/%s/*".format(remoteName));
+		log("Fetching all refs from %s ...".format(remote.url));
+		git.run("fetch", remote.url, "+refs/*:refs/%s/*".format(remote.name));
+	}
+
+	/// Get a commit's parent.
+	public CommitID getParent(CommitID child, int parentIndex = 1)
+	{
+		return revParse(format("%s^%d", child, parentIndex));
 	}
 
 	/**
@@ -458,7 +486,7 @@ private:
 		// Note: there is an edge case which the current version of this function can't handle:
 		// when `commit` has multiple children which are visible from `branch`.
 		// To avoid this we could add a `mainBranchName` parameter and scan in the same way as
-		// `gitLinearHistory`, but let's cross that bridge when we get there.
+		// `getLinearHistory`, but let's cross that bridge when we get there.
 
 		log("Querying history for commit children...");
 		auto history = git.getHistory([branch.toString()]);
@@ -473,8 +501,7 @@ private:
 					visit(parent);
 			}
 		}
-		auto branchHash = Git.CommitID(branch);
-		auto pBranchCommit = branchHash in history.commits;
+		auto pBranchCommit = branch in history.commits;
 		enforce(pBranchCommit, "Can't find branch commit " ~ branch.toString() ~ " in history");
 		visit(*pBranchCommit);
 
@@ -526,7 +553,7 @@ private:
 	/// repository at some point in time, via the branch `branchName`.
 	/// `branchName` is thus used to decide which parent to follow for
 	/// some merges.
-	Commit*[] getLinearHistory(string refName, string branchName = null)
+	package Commit*[] getLinearHistory(string refName, string branchName = null)
 	{
 		import std.typecons : tuple;
 
@@ -534,7 +561,7 @@ private:
 		const(Commit)*[][Commit*[2]] commitsBetweenCache;
 
 		assert(refName.startsWith("refs/"), "Invalid refName: " ~ refName);
-		auto refHash = Git.CommitID(getRef(refName));
+		auto refHash = revParse(refName);
 		auto history = git.getHistory([refName]);
 		if (!branchName)
 		{
@@ -707,7 +734,26 @@ private:
 			else
 				c = c.parents.length ? c.parents[0] : null;
 		} while (c);
+		linearHistory.reverse();
 		return linearHistory;
+	}
+
+	/// Parse a time string using Git's approxidate.
+	package SysTime parseTime(string timeStr)
+	{
+		import ae.sys.cmd : getTempFileName;
+		import ae.sys.file : removeRecurse;
+
+		auto tmpRepoPath = getTempFileName("digger");
+		tmpRepoPath.mkdir();
+		scope(exit) tmpRepoPath.removeRecurse();
+
+		auto tmpRepo = Git(tmpRepoPath);
+		tmpRepo.commandPrefix = git.commandPrefix.replace(git.path, tmpRepoPath).dup;
+		tmpRepo.run("init", "--quiet");
+
+		tmpRepo.run("commit", "--allow-empty", "--allow-empty-message", "--no-edit", "--quiet", "--date=" ~ timeStr);
+		return SysTime.fromUnixTime(tmpRepo.query("log", "--format=%at").to!long);
 	}
 
 	// --- Misc

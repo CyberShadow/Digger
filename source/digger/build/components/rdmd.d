@@ -6,7 +6,7 @@ import digger.build.manager;
 
 /// The rdmd build tool by itself.
 /// It predates the tools package.
-final class RDMD : Component
+final class RDMD : DlangComponent
 {
 	protected @property override string submoduleName() { return "tools"; }
 	protected @property override string[] sourceDependencies() { return []; }

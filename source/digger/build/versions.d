@@ -2,6 +2,7 @@ module digger.build.versions;
 
 import std.algorithm.searching;
 import std.array;
+import std.datetime.systime;
 import std.exception;
 import std.format;
 import std.json;
@@ -13,7 +14,7 @@ import ae.utils.regex;
 
 import digger.build.build;
 import digger.build.components;
-import digger.build.gitstore : CommitID, GitStore;
+import digger.build.gitstore : CommitID, GitRemote, GitStore;
 
 /// A version specification, indicated as a function which returns a
 /// `CommitID`.
@@ -35,17 +36,17 @@ private:
 		Builder builder;
 		Component component;
 
-		/// The repository whose history we're finding.
-		string repositoryName;
+		/// The repository whose history we're walking.
+		GitRemote remote;
 	}
 	/*immutable*/ Session* session;
 
 	/// Current commit.
-	immutable CommitID commitID;
+	/*immutable*/ CommitID commitID;
 
-	package this(Builder builder, Component component, string repositoryName)
+	package this(Builder builder, Component component, GitRemote remote)
 	{
-		this(new Session(builder, component, repositoryName), CommitID.init);
+		this(new Session(builder, component, remote), CommitID.init);
 	}
 
 	this(Session* session, CommitID commitID)
@@ -61,28 +62,43 @@ private:
 	}
 
 	/// Reset versions to the specified point, specified as a product version.
-	public HistoryWalker resetToProductVersion(string productVersion)
+	/// If a date is indicated, resets to the newest commit in the ref's linear history
+	/// which is not newer than date.
+	public HistoryWalker resetToProductVersion(string productVersion, Nullable!SysTime date = Nullable!SysTime.init)
 	{
 		session.builder.buildSite.log("Starting at product version " ~ productVersion);
-		auto refName = session.component.resolveProductVersion(session.repositoryName, productVersion);
-		auto repositoryURL = session.component.repositoryURLs[session.repositoryName];
-		auto commitID = session.builder.getRef(session.repositoryName, repositoryURL, refName);
+		auto refName = session.component.resolveProductVersion(session.remote.name, productVersion);
+		auto commitID = session.builder.getRef(session.remote, refName);
+		if (!date.isNull)
+		{
+			import ae.sys.git : Git;
+			import ae.utils.time.parse;
+
+			auto branchName = session.component.getBranchName(session.remote.name, productVersion);
+			auto history = session.builder.buildSite.gitStore.getLinearHistory(refName, branchName);
+			// Note: we don't use binary search here in order to get
+			// consistent behavior (regardless of history length) just
+			// in case the commit timestamps are not always increasing.
+			foreach_reverse (commit; history)
+				if (commit.parsedCommitter.date.parseTime!(Git.Authorship.dateFormat) <= date.get())
+					return HistoryWalker(session, commit.oid);
+		}
 		return HistoryWalker(session, commitID);
 	}
 
 	public CommitID finish() { return commitID; }
 
-	alias MergeMode = GitStore.MergeMode; ///
-	alias CommitRange = GitStore.CommitRange; ///
+	public alias MergeMode = GitStore.MergeMode; ///
+	public alias CommitRange = GitStore.CommitRange; ///
 
 	/// Applies a merge onto the given SubmoduleState.
-	public HistoryWalker merge(string repositoryName, CommitRange branch, MergeMode mode)
+	public HistoryWalker merge(string remoteName, CommitRange branch, MergeMode mode)
 	{
-		if (repositoryName != session.repositoryName)
+		if (remoteName != session.remote.name)
 			return this; // Ignore operation for another repository
 
 		session.builder.buildSite.log("Merging %s commits %s..%s".format(
-			repositoryName,
+			remoteName,
 			branch.base.isNull() ? "" : branch.base.get().toString(), branch.tip
 		));
 
@@ -91,13 +107,13 @@ private:
 	}
 
 	/// Removes a merge from the given SubmoduleState.
-	public HistoryWalker unmerge(string repositoryName, CommitRange branch, MergeMode mode)
+	public HistoryWalker unmerge(string remoteName, CommitRange branch, MergeMode mode)
 	{
-		if (repositoryName != session.repositoryName)
+		if (remoteName != session.remote.name)
 			return this; // Ignore operation for another repository
 
 		session.builder.buildSite.log("Unmerging %s commits %s..%s".format(
-			repositoryName,
+			remoteName,
 			branch.base.isNull() ? "" : branch.base.get().toString(), branch.tip
 		));
 
@@ -108,13 +124,13 @@ private:
 	/// Reverts a commit from the given SubmoduleState.
 	/// parent is the 1-based mainline index (as per `man git-revert`),
 	/// or 0 if commit is not a merge commit.
-	HistoryWalker revert(string repositoryName, CommitRange branch, MergeMode mode)
+	public HistoryWalker revert(string remoteName, CommitRange branch, MergeMode mode)
 	{
-		if (repositoryName != session.repositoryName)
+		if (remoteName != session.remote.name)
 			return this; // Ignore operation for another repository
 
 		session.builder.buildSite.log("Unmerging %s commits %s..%s".format(
-			repositoryName,
+			remoteName,
 			branch.base.isNull() ? "" : branch.base.get().toString(), branch.tip
 		));
 
@@ -124,19 +140,18 @@ private:
 
 	/// Returns the commit hash for the given GitHub pull request # (base and tip).
 	/// The result can then be used with addMerge/removeMerge.
-	CommitRange getPull(string repositoryName, int pullNumber)
+	public CommitRange getPull(string remoteName, int pullNumber)
 	{
-		if (repositoryName != session.repositoryName)
+		if (remoteName != session.remote.name)
 			return CommitRange.init; // Ignore operation for another repository
 
-		auto repositoryURL = session.component.repositoryURLs[repositoryName];
-		enforce(repositoryURL.startsWith("https://github.com/"), "Not a GitHub repository");
+		enforce(session.remote.url.startsWith("https://github.com/"), "Not a GitHub repository");
 
 		auto refName = "refs/pull/%d/head".format(pullNumber);
-		auto tip = session.builder.getRef(session.repositoryName, repositoryURL, refName);
+		auto tip = session.builder.getRef(session.remote, refName);
 
-		auto githubOwner = repositoryURL.split("/")[3];
-		auto githubRepositoryName = repositoryURL.split("/")[4];
+		auto githubOwner = session.remote.url.split("/")[3];
+		auto githubRepositoryName = session.remote.url.split("/")[4];
 
 		auto pull = session.builder.buildSite.github.query("https://api.github.com/repos/%s/%s/pulls/%d"
 			.format(githubOwner, githubRepositoryName, pullNumber)).data.parseJSON;
@@ -150,15 +165,14 @@ private:
 
 	/// Returns the commit hash for the given branch (optionally GitHub fork).
 	/// The result can then be used with `merge`/`unmerge`.
-	CommitRange getBranch(string repositoryName, string user, string base, string tip)
+	public CommitRange getBranch(string remoteName, string user, string base, string tip)
 	{
-		if (repositoryName != session.repositoryName)
+		if (remoteName != session.remote.name)
 			return CommitRange.init; // Ignore operation for another repository
 
-		auto repositoryURL = session.component.repositoryURLs[repositoryName];
-		enforce(repositoryURL.startsWith("https://github.com/"), "Not a GitHub repository");
-		auto githubOwner = repositoryURL.split("/")[3];
-		auto githubRepositoryName = repositoryURL.split("/")[4];
+		enforce(session.remote.url.startsWith("https://github.com/"), "Not a GitHub repository");
+		auto githubOwner = session.remote.url.split("/")[3];
+		auto githubRepositoryName = session.remote.url.split("/")[4];
 
 		if (user) enforce(user.match(re!`^\w[\w\-]*$`), "Bad remote name");
 		if (base) enforce(base.match(re!`^\w[\w\-\.]*$`), "Bad branch base name");
@@ -168,19 +182,21 @@ private:
 			user = githubOwner;
 		auto name = githubRepositoryName;
 
-		auto forkName = repositoryName ~ "-@" ~ user;
-		auto forkURL = "https://github.com/%s/%s".format(user, name);
+		auto forkRemote = GitRemote(
+			session.remote.name ~ "-@" ~ user,
+			"https://github.com/%s/%s".format(user, name)
+		);
 
-		if (!CommitID(tip).collectException)
+		if (!CommitID(tip).collectException) // tip contains a commit OID (SHA-1)
 		{
 			if (!session.builder.buildSite.config.offline)
 			{
 				// We don't know which branch the commit will be in, so just grab everything.
-				session.builder.buildSite.log("Fetching everything from %s ...".format(forkURL));
-				session.builder.buildSite.gitStore.fetchAllRemoteRefs(forkName, forkURL);
+				session.builder.buildSite.log("Fetching everything from %s ...".format(forkRemote.url));
+				session.builder.buildSite.gitStore.fetchAllRemoteRefs(forkRemote);
 			}
 			if (!base)
-				base = session.builder.buildSite.gitStore.getRef(tip ~ "^").toString();
+				base = session.builder.buildSite.gitStore.getParent(CommitID(tip)).toString();
 			return CommitRange(
 				Nullable!CommitID(CommitID(base)),
 				CommitID(tip),
@@ -191,11 +207,12 @@ private:
 			return CommitRange(
 				Nullable!CommitID.init,
 				session.builder.getRef(
-					forkName,
-					forkURL,
+					forkRemote,
 					"refs/heads/%s".format(tip),
 				),
 			);
 		}
 	}
+
+	public @property Component component() { return session.component; }
 }

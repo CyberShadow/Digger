@@ -4,7 +4,7 @@ import digger.build.components;
 import digger.build.manager;
 
 /// The dmd executable
-final class DMD : Component
+final class DMD : DlangComponent
 {
 	@property override string submoduleName  () { return "dmd"; }
 	protected @property override string[] sourceDependencies() { return []; }

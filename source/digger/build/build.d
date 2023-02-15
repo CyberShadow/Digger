@@ -53,24 +53,24 @@ private:
 
 	CommitID[string] versions;
 
-	package CommitID getVersion(string repositoryName, string repositoryURL)
+	package CommitID getVersion(Component component, string repositoryName)
 	{
 		return versions.require(repositoryName,
-			versionSpec(HistoryWalker(this, repositoryName, repositoryURL))
+			versionSpec(HistoryWalker(this, component, repositoryName))
 		);
 	}
 
 	// --- Repository
 
-	CommitID[string][string] resolvedRefs;
+	CommitID[string /*refName*/][string /*remoteName*/] resolvedRefs;
 
-	package CommitID getRef(string repositoryName, string repositoryURL, string refName)
+	package CommitID getRef(GitRemote remote, string refName)
 	{
 		return resolvedRefs
-			.require(repositoryName, null)
+			.require(remote.name, null)
 			.require(refName, buildSite
 				.gitStore
-				.getRemoteRef(repositoryName, repositoryURL, refName)
+				.getRemoteRef(remote, refName)
 			);
 	}
 

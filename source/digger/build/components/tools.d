@@ -4,7 +4,7 @@ import digger.build.components;
 import digger.build.manager;
 
 /// Tools package with all its components, including rdmd.
-final class Tools : Component
+final class Tools : DlangComponent
 {
 	protected @property override string submoduleName() { return "tools"; }
 	protected @property override string[] sourceDependencies() { return []; }

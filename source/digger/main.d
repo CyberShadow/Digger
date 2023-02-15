@@ -1,4 +1,4 @@
-module digger.digger;
+module digger.main;
 
 import std.array;
 // import std.exception;

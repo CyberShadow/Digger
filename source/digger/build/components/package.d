@@ -1,10 +1,14 @@
 module digger.build.components;
 
 import std.algorithm.searching;
+import std.ascii : isDigit;
+import std.datetime.systime;
 
 import ae.utils.json;
+import ae.utils.time.parse;
 
 import digger.build.build;
+import digger.build.gitstore : GitRemote;
 
 /**
 	Base class for a D component.
@@ -28,13 +32,12 @@ private:
 	/// configuration.
 	public abstract @property string name();
 
-	/// Return the Git repositories needed to build all versions of
-	/// this component.  The return value is a map from an internal
-	/// repository name (used as the remote name) to its Git clone URL.
+	/// Return the Git remote repository names and URLs needed to
+	/// build all versions of this component.
 	// Note: the reason for the "all versions" is that we need to
-	// clone the repository before we can start meaningfully
+	// fetch the repository before we can start meaningfully
 	// referencing versions of it.
-	public abstract @property string[string] repositoryURLs();
+	public abstract @property GitRemote[] gitRemotes();
 
 	/// Resolve a product version (e.g. "master" or "v2.100.0")" to a
 	/// Git ref (e.g. "refs/heads/master").
@@ -44,13 +47,26 @@ private:
 	/// will refer to "refs/heads/stable" in repositories that follow
 	/// the core D development flow, but may mean "refs/heads/master"
 	/// for others.
-	package(digger.build) string resolveProductVersion(string repositoryName, string productVersion)
+	public string resolveProductVersion(string repositoryName, string productVersion)
 	{
 		if (productVersion.startsWith("refs/"))
 			return productVersion; // do what I say
-		if (productVersion.length >= 2 && productVersion[0] == 'v' && productVersion[1].isDigit)
-			return "refs/tags/" ~ productVersion;
 		return "refs/heads/" ~ productVersion;
+	}
+
+	/// Return the name of the branch to follow when rebuilding a
+	/// ref's linear history.
+	public string getBranchName(string repositoryName, string productVersion)
+	{
+		return "master";
+	}
+
+	/// Parse a string into a timestamp.
+	/// Overriding this method allows adding additional time formats,
+	/// e.g. to indicate a product version.
+	public SysTime parseTime(string timeStr)
+	{
+		return builder.buildSite.gitStore.parseTime(timeStr);
 	}
 
 	/// ------
@@ -542,6 +558,45 @@ private:
 // 		auto status = spawnProcess(args, env, std.process.Config.newEnv, dir).wait();
 // 		enforce(status == 0, "Command %s failed with status %d".format(args, status));
 // 	}
+}
+
+/// Base class for components following https://github.org/dlang/ conventions.
+class DlangComponent : Component
+{
+private:
+	public override string resolveProductVersion(string repositoryName, string productVersion)
+	{
+		if (productVersion.length >= 2 && productVersion[0] == 'v' && productVersion[1].isDigit)
+			return "refs/tags/" ~ productVersion;
+		return super.resolveProductVersion(repositoryName, productVersion);
+	}
+
+	public override string getBranchName(string repositoryName, string productVersion)
+	{
+		if (productVersion.length >= 2 && productVersion[0] == 'v' && productVersion[1].isDigit)
+			return "stable";
+		return super.getBranchName(repositoryName, productVersion);
+	}
+
+	public override SysTime parseTime(string timeStr)
+	{
+		if (timeStr.length >= 2 && timeStr[0] == 'v' && timeStr[1].isDigit)
+		{
+			import ae.sys.git : Git;
+
+			// For version numbers, use the time when this version was tagged in the DMD repo.
+			auto dmd = builder.getComponent("dmd");
+			auto remotes = dmd.gitRemotes;
+			assert(remotes.length == 1);
+			auto remote = remotes[0];
+			auto refName = "refs/tags/" ~ timeStr;
+			auto commitID = builder.getRef(remote, refName);
+			auto commit = builder.buildSite.gitStore.getCommit(commitID);
+			return commit.parsedCommitter.date.parseTime!(Git.Authorship.dateFormat);
+		}
+
+		return super.parseTime(timeStr);
+	}
 }
 
 /// Mixin to register Component instances in the global

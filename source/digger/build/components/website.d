@@ -4,7 +4,7 @@ import digger.build.components;
 import digger.build.manager;
 
 /// Website (dlang.org). Only buildable on POSIX.
-final class Website : Component
+final class Website : DlangComponent
 {
 	protected @property override string submoduleName() { return "dlang.org"; }
 	protected @property override string[] sourceDependencies() { return ["druntime", "phobos", "dub"]; }

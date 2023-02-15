@@ -80,6 +80,60 @@ alias strip = std.string.strip;
 // 	d.test();
 // }
 
+VersionSpec parseRev(string rev)
+{
+	return (historyWalker) {
+		// git's approxidate accepts anything, so a disambiguating prefix is required
+
+		string timeStr = null;
+		if (rev.canFind('@') && !rev.canFind("@{"))
+		{
+			auto parts = rev.findSplit("@");
+			auto at = parts[2].strip();
+
+			// If this is a named tag, use the date of the tagged commit.
+			try
+			{
+				auto sha1 = metaRepo.getRef("refs/tags/" ~ at);
+				at = repo.query("log", "-1", "--pretty=format:%cI", sha1);
+			}
+			catch (Exception e) {}
+
+			if (at.startsWith("#")) // For the build-all command - skip this many commits
+				args ~= ["--skip", at[1..$]];
+			else
+				args ~= ["--until", at];
+			rev = parts[0].strip();
+		}
+
+		if (rev.empty)
+			rev = "master";
+
+		try
+			if (metaRepo.getRef("origin/" ~ rev))
+				return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
+		catch (Exception e) {}
+
+		try
+			if (metaRepo.getRef(rev))
+				return repo.query(args ~ ["-n", "1", rev]);
+		catch (Exception e) {}
+
+		if (rev.startsWith("https://github.com"))
+		{
+			auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", "^" ~ escapeRE(rev), "origin/master").splitLines();
+			if (grep.length == 1)
+				return grep[0];
+		}
+
+		auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
+		if (pickaxe.length && pickaxe.length <= 2) // removed <- added
+			return pickaxe[$-1];   // the one where it was added
+
+		throw new Exception("Unknown/ambiguous revision: " ~ rev);
+	};
+}
+
 VersionSpec parseSpec(string spec)
 {
 	return (historyWalker) {
@@ -88,24 +142,28 @@ VersionSpec parseSpec(string spec)
 		if (parts.empty)
 			parts = [null];
 
-		historyWalker = historyWalker.resetToProductVersion(parts.shift());
+		historyWalker = historyWalker.reset(parseRev(parts.shift())(historyWalker));
 
 		foreach (part; parts)
 		{
 			bool revert = part.skipOver("-");
 
-			void apply(string component, string[2] branch, HistoryWalker.MergeMode mode)
+			void apply(string repositoryName, HistoryWalker.CommitRange branch, HistoryWalker.MergeMode mode)
 			{
 				if (revert)
-					d.revert(state, component, branch, mode);
+					historyWalker = historyWalker.revert(repositoryName, branch, mode);
 				else
-					d.merge(state, component, branch, mode);
+					historyWalker = historyWalker.merge(repositoryName, branch, mode);
 			}
 
 			if (part.matchCaptures(re!`^(\w[\w\-\.]*)#(\d+)$`,
-				(string component, int pull)
+				(string repositoryName, int pull)
 				{
-					apply(component, d.getPull(component, pull), DManager.MergeMode.cherryPick);
+					apply(
+						repositoryName,
+						historyWalker.getPull(repositoryName, pull),
+						HistoryWalker.MergeMode.cherryPick
+					);
 				}))
 				continue;
 
@@ -115,8 +173,10 @@ VersionSpec parseSpec(string spec)
 					// Some "do what I mean" logic here: if the user
 					// specified a range, or a single commit, cherry-pick;
 					// otherwise (just a branch name), do a git merge
-					auto branch = d.getBranch(component, user, base, tip);
-					auto mode = branch[0] ? DManager.MergeMode.cherryPick : DManager.MergeMode.merge;
+					auto branch = historyWalker.getBranch(component, user, base, tip);
+					auto mode = branch.base.isNull
+						? HistoryWalker.MergeMode.merge
+						: HistoryWalker.MergeMode.cherryPick;
 					apply(component, branch, mode);
 				}))
 				continue;
@@ -124,7 +184,7 @@ VersionSpec parseSpec(string spec)
 			throw new Exception("Don't know how to apply customization: " ~ spec);
 		}
 
-		return state;
+		return historyWalker.finish;
 	};
 }
 
