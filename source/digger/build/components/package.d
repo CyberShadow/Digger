@@ -3,18 +3,19 @@ module digger.build.components;
 import std.algorithm.searching;
 import std.ascii : isDigit;
 import std.datetime.systime;
+import std.typecons : Nullable;
 
 import ae.utils.json;
 import ae.utils.time.parse;
 
 import digger.build.build;
-import digger.build.gitstore : GitRemote;
+import digger.build.gitstore : GitRemote, CommitID;
 
 /**
-	Base class for a D component.
+	Base class for a buildable component.
 
 	Descendants of this class implement logic to patch, build, test
-	and install D components.
+	and install components.
 
 	Instances may store state about the build process, so the lifetime
 	of classes is generally tied to a Builder instance.
@@ -39,40 +40,10 @@ private:
 	// referencing versions of it.
 	public abstract @property GitRemote[] gitRemotes();
 
-	/// Resolve a product version (e.g. "master" or "v2.100.0")" to a
-	/// Git ref (e.g. "refs/heads/master").
-	/// The product version is some label generally used to refer to a
-	/// branch or tag across several repositories making up a product.
-	/// For example, the product version "stable" when building DMD
-	/// will refer to "refs/heads/stable" in repositories that follow
-	/// the core D development flow, but may mean "refs/heads/master"
-	/// for others.
-	public string resolveProductVersion(string repositoryName, string productVersion)
-	{
-		if (productVersion.startsWith("refs/"))
-			return productVersion; // do what I say
-		return "refs/heads/" ~ productVersion;
-	}
-
-	/// Return the name of the branch to follow when rebuilding a
-	/// ref's linear history.
-	public string getBranchName(string repositoryName, string productVersion)
-	{
-		return "master";
-	}
-
-	/// Parse a string into a timestamp.
-	/// Overriding this method allows adding additional time formats,
-	/// e.g. to indicate a product version.
-	public SysTime parseTime(string timeStr)
-	{
-		return builder.buildSite.gitStore.parseTime(timeStr);
-	}
-
 	/// ------
 
 	/// Parent builder.
-	Builder builder;
+	protected Builder builder;
 
 // 	/// Corresponding subproject repository name.
 // 	@property abstract string submoduleName();
@@ -560,45 +531,6 @@ private:
 // 	}
 }
 
-/// Base class for components following https://github.org/dlang/ conventions.
-class DlangComponent : Component
-{
-private:
-	public override string resolveProductVersion(string repositoryName, string productVersion)
-	{
-		if (productVersion.length >= 2 && productVersion[0] == 'v' && productVersion[1].isDigit)
-			return "refs/tags/" ~ productVersion;
-		return super.resolveProductVersion(repositoryName, productVersion);
-	}
-
-	public override string getBranchName(string repositoryName, string productVersion)
-	{
-		if (productVersion.length >= 2 && productVersion[0] == 'v' && productVersion[1].isDigit)
-			return "stable";
-		return super.getBranchName(repositoryName, productVersion);
-	}
-
-	public override SysTime parseTime(string timeStr)
-	{
-		if (timeStr.length >= 2 && timeStr[0] == 'v' && timeStr[1].isDigit)
-		{
-			import ae.sys.git : Git;
-
-			// For version numbers, use the time when this version was tagged in the DMD repo.
-			auto dmd = builder.getComponent("dmd");
-			auto remotes = dmd.gitRemotes;
-			assert(remotes.length == 1);
-			auto remote = remotes[0];
-			auto refName = "refs/tags/" ~ timeStr;
-			auto commitID = builder.getRef(remote, refName);
-			auto commit = builder.buildSite.gitStore.getCommit(commitID);
-			return commit.parsedCommitter.date.parseTime!(Git.Authorship.dateFormat);
-		}
-
-		return super.parseTime(timeStr);
-	}
-}
-
 /// Mixin to register Component instances in the global
 /// `componentRegistry`.
 mixin template RegisterComponent()
@@ -610,9 +542,91 @@ mixin template RegisterComponent()
 
 	static this()
 	{
-		componentRegistry[this.name] = builder => new typeof(this)(builder);
+		enum name = new typeof(this)(null).name;
+		componentRegistry[name] = builder => new typeof(this)(builder);
 	}
 }
 
 /// Registered components.
 Component delegate(Builder)[string] componentRegistry;
+
+// -----------------------------------------------------------------------------
+
+/**
+   Base class for a "product".
+
+   A product is not much more than a concept used to resolve version
+   numbers.  For example, when Digger is asked to build D version
+   "v2.100.0", it may be obvious how to translate this to a DMD or
+   Phobos tag to build, but it's not clear how to translate that to a
+   Dub or cURL tag or commit.  Other products (e.g. GDC/LDC) may
+   follow their own versioning scheme.  Thus, products contain logic
+   which maps product versions (releases) to the exact versions of the
+   software they contained in that release.
+
+   One build can be associated with only one Product.
+*/
+class Product
+{
+private:
+	public @property string name() const { return null; }
+
+	/// Resolve a product version name (e.g. "master" or "v2.100.0")"
+	/// to a Git commit.
+	/// The product version is some label generally used to refer to a
+	/// branch or tag across several repositories making up a product.
+	/// For example, the product version "v2.100.0" when building DMD
+	/// will refer to "refs/tags/v2.100.0" in repositories that follow
+	/// the core D version conventions, but may mean some point on
+	/// "refs/heads/master" for others.
+	public CommitID resolveProductVersion(GitRemote remote, string productVersion, Nullable!SysTime date)
+	{
+		string refName = {
+			if (productVersion.startsWith("refs/"))
+				return productVersion; // do what I say
+			return "refs/heads/" ~ productVersion;
+		}();
+
+		auto tip = builder.getRef(remote, refName);
+		if (!date.isNull)
+		{
+			auto branchName = getBranchName(remote.name, productVersion);
+			tip = builder.getCommitAt(tip, date.get(), branchName);
+		}
+
+		return tip;
+	}
+
+	/// Return the name of the branch to follow when rebuilding a
+	/// ref's linear history.
+	public string getBranchName(string repositoryName, string productVersion)
+	{
+		return "master";
+	}
+
+	/// Default components.
+	public string[] defaultComponents() { return []; }
+
+	protected Builder builder;
+
+	mixin RegisterProduct;
+}
+
+/// Mixin to register Product instances in the global
+/// `productRegistry`.
+mixin template RegisterProduct()
+{
+	private this(Builder builder)
+	{
+		this.builder = builder;
+	}
+
+	static this()
+	{
+		enum name = new typeof(this)(null).name;
+		productRegistry[name] = builder => new typeof(this)(builder);
+	}
+}
+
+/// Registered products.
+Product delegate(Builder)[string] productRegistry;

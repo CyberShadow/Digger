@@ -1,4 +1,4 @@
-module digger.build.components.druntime;
+module digger.build.components.dmd.druntime;
 
 import digger.build.components;
 import digger.build.manager;

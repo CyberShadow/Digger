@@ -51,7 +51,7 @@ private:
 
 	BuildSite buildSite;
 
-	public this(BuildSite buildSite)
+	package this(BuildSite buildSite)
 	{
 		this.buildSite = buildSite;
 	}
@@ -100,13 +100,13 @@ private:
 
 
 	/// Optional callbacks which shall attempt to resolve a merge conflict.
-	public alias MergeConflictResolver = void delegate(ref Git git);
-	public static MergeConflictResolver[] mergeConflictResolvers; /// ditto
+	package alias MergeConflictResolver = void delegate(ref Git git);
+	package static MergeConflictResolver[] mergeConflictResolvers; /// ditto
 
 	Nullable!Git gitInstance;
 
 	/// Low-level wrapper for the Git repository we manage.
-	public @property ref const(Git) git()
+	package @property ref const(Git) git()
 	{
 		return gitInstance.require({
 			auto git = buildSite.createGit(buildSite.gitStoreDir);
@@ -148,13 +148,13 @@ private:
 		}
 	}
 
-	public Git.Object.ParsedCommit getCommit(CommitID commitID)
+	package Git.Object.ParsedCommit getCommit(CommitID commitID)
 	{
 		needCommit(commitID);
 		return reader.read(commitID).parseCommit();
 	}
 
-	public void exportCommit(CommitID commitID, string targetPath)
+	package void exportCommit(CommitID commitID, string targetPath)
 	{
 		needCommit(commitID);
 		git.exportCommit(commitID, targetPath, reader);
@@ -215,7 +215,7 @@ private:
 	// --- Merge cache
 
 	/// Represents a series of commits as a start and end point in the repository history.
-	public struct CommitRange
+	package struct CommitRange
 	{
 		/// The commit before the first commit in the range.
 		/// May be null in some circumstances.
@@ -225,7 +225,7 @@ private:
 	}
 
 	/// How to merge a branch into another
-	public enum MergeMode
+	package enum MergeMode
 	{
 		merge,      /// git merge (commit with multiple parents) of the target and branch tips
 		cherryPick, /// apply the commits as a patch
@@ -266,7 +266,7 @@ private:
 
 	/// Returns the hash of the merge between the target and branch commits.
 	/// Performs the merge if necessary. Caches the result.
-	public CommitID getMerge(CommitID target, CommitRange branch, MergeMode mode)
+	package CommitID getMerge(CommitID target, CommitRange branch, MergeMode mode)
 	{
 		return getMergeImpl(MergeSpec(target, branch, mode, false));
 	}
@@ -275,7 +275,7 @@ private:
 	/// Performs the revert if necessary. Caches the result.
 	/// mainline is the 1-based mainline index (as per `man git-revert`),
 	/// or 0 if commit is not a merge commit.
-	public CommitID getRevert(CommitID target, CommitRange branch, MergeMode mode)
+	package CommitID getRevert(CommitID target, CommitRange branch, MergeMode mode)
 	{
 		return getMergeImpl(MergeSpec(target, branch, mode, true));
 	}
@@ -400,7 +400,7 @@ private:
 
 	/// Finds and returns the merge parents of the given merge commit.
 	/// Queries the git repository if necessary. Caches the result.
-	public MergeInfo getMergeInfo(CommitID merge)
+	package MergeInfo getMergeInfo(CommitID merge)
 	{
 		auto hit = mergeCache.find!(entry => entry.result == merge && !entry.spec.revert)();
 		if (!hit.empty)
@@ -420,7 +420,7 @@ private:
 	/// head commit, up till the merge with the given branch.
 	/// Then, reapplies all merges in order,
 	/// except for that with the given branch.
-	public CommitID getUnMerge(CommitID head, CommitRange branch, MergeMode mode)
+	package CommitID getUnMerge(CommitID head, CommitRange branch, MergeMode mode)
 	{
 		// This could be optimized using an interactive rebase
 
@@ -462,7 +462,7 @@ private:
 	}
 
 	/// Get a commit's parent.
-	public CommitID getParent(CommitID child, int parentIndex = 1)
+	package CommitID getParent(CommitID child, int parentIndex = 1)
 	{
 		return revParse(format("%s^%d", child, parentIndex));
 	}
@@ -544,8 +544,7 @@ private:
 
 	alias Commit = Git.History.Commit;
 
-	/// Get the linear history starting from `refName` (typically a
-	/// (namespaced) branch or tag).
+	/// Get the linear history starting from `tip`.
 	/// The linear history is built by walking the repository history
 	/// DAG in a way which attempts to reconstruct the publicly
 	/// visible history, i.e. such that all points on the returned
@@ -553,25 +552,16 @@ private:
 	/// repository at some point in time, via the branch `branchName`.
 	/// `branchName` is thus used to decide which parent to follow for
 	/// some merges.
-	package Commit*[] getLinearHistory(string refName, string branchName = null)
+	package Commit*[] getLinearHistory(CommitID tip, string branchName)
 	{
 		import std.typecons : tuple;
 
 		const(Commit)*[][Commit*] commonParentsCache;
 		const(Commit)*[][Commit*[2]] commitsBetweenCache;
 
-		assert(refName.startsWith("refs/"), "Invalid refName: " ~ refName);
-		auto refHash = revParse(refName);
-		auto history = git.getHistory([refName]);
-		if (!branchName)
-		{
-			if (refName.startsWith("refs/heads/"))
-				branchName = refName["refs/heads/".length .. $];
-			else
-				assert(false, "branchName must be specified for non-branch refs");
-		}
+		auto history = git.getPartialHistory([tip.toString()]);
 		Commit*[] linearHistory;
-		Commit* c = history.commits[refHash];
+		Commit* c = history.commits[tip];
 		do
 		{
 			linearHistory ~= c;
@@ -738,8 +728,8 @@ private:
 		return linearHistory;
 	}
 
-	/// Parse a time string using Git's approxidate.
-	package SysTime parseTime(string timeStr)
+	/// Parse a date string using Git's approxidate.
+	public SysTime parseDate(string dateStr)
 	{
 		import ae.sys.cmd : getTempFileName;
 		import ae.sys.file : removeRecurse;
@@ -752,8 +742,17 @@ private:
 		tmpRepo.commandPrefix = git.commandPrefix.replace(git.path, tmpRepoPath).dup;
 		tmpRepo.run("init", "--quiet");
 
-		tmpRepo.run("commit", "--allow-empty", "--allow-empty-message", "--no-edit", "--quiet", "--date=" ~ timeStr);
+		tmpRepo.run("commit", "--allow-empty", "--allow-empty-message", "--no-edit", "--quiet", "--date=" ~ dateStr);
 		return SysTime.fromUnixTime(tmpRepo.query("log", "--format=%at").to!long);
+	}
+
+	/// Returns the date of a Git commit.
+	public SysTime getCommitDate(CommitID commitID)
+	{
+		import ae.utils.time.parse : parseTime;
+
+		auto commit = getCommit(commitID);
+		return commit.parsedCommitter.date.parseTime!(Git.Authorship.dateFormat);
 	}
 
 	// --- Misc

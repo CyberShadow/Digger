@@ -13,6 +13,10 @@ import digger.build.components;
 /// Serializable.
 struct BuildConfig
 {
+	/// The name of the product being built.
+	/// (Corresponds to keys in `productRegistry`.)
+	string productName;
+
 	/// Common configuration defaults for all components.
 	Component.CommonConfig common;
 

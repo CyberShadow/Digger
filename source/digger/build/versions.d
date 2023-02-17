@@ -27,6 +27,8 @@ alias VersionSpec = CommitID delegate(HistoryWalker);
 
 /**
    Holds and allows manipulating a point in a repository's history.
+
+   Note that all manipulations return new instances of HistoryWalker.
 */
 struct HistoryWalker
 {
@@ -67,22 +69,7 @@ private:
 	public HistoryWalker resetToProductVersion(string productVersion, Nullable!SysTime date = Nullable!SysTime.init)
 	{
 		session.builder.buildSite.log("Starting at product version " ~ productVersion);
-		auto refName = session.component.resolveProductVersion(session.remote.name, productVersion);
-		auto commitID = session.builder.getRef(session.remote, refName);
-		if (!date.isNull)
-		{
-			import ae.sys.git : Git;
-			import ae.utils.time.parse;
-
-			auto branchName = session.component.getBranchName(session.remote.name, productVersion);
-			auto history = session.builder.buildSite.gitStore.getLinearHistory(refName, branchName);
-			// Note: we don't use binary search here in order to get
-			// consistent behavior (regardless of history length) just
-			// in case the commit timestamps are not always increasing.
-			foreach_reverse (commit; history)
-				if (commit.parsedCommitter.date.parseTime!(Git.Authorship.dateFormat) <= date.get())
-					return HistoryWalker(session, commit.oid);
-		}
+		auto commitID = session.builder.product.resolveProductVersion(session.remote, productVersion, date);
 		return HistoryWalker(session, commitID);
 	}
 
@@ -214,5 +201,6 @@ private:
 		}
 	}
 
+	public @property Builder builder() { return session.builder; }
 	public @property Component component() { return session.component; }
 }

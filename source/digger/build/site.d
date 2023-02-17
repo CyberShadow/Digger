@@ -199,7 +199,7 @@ private:
 	// ***************************** Repository ******************************
 
 	Nullable!GitStore gitStoreInstance;
-	package @property GitStore gitStore() { return gitStoreInstance.require(new GitStore(this)); }
+	public @property GitStore gitStore() { return gitStoreInstance.require(new GitStore(this)); }
 
 	// // ***************************** Components ******************************
 

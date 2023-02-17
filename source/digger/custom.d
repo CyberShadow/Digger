@@ -3,12 +3,14 @@ module digger.custom;
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.datetime.systime;
 import std.exception;
 import std.file;
 import std.getopt;
 import std.path;
 import std.stdio;
 import std.string;
+import std.typecons : Nullable;
 
 import ae.utils.array;
 import ae.utils.json;
@@ -80,57 +82,42 @@ alias strip = std.string.strip;
 // 	d.test();
 // }
 
-VersionSpec parseRev(string rev)
+VersionSpec parseProductVersion(string productVersionSpec)
 {
 	return (historyWalker) {
 		// git's approxidate accepts anything, so a disambiguating prefix is required
 
-		string timeStr = null;
-		if (rev.canFind('@') && !rev.canFind("@{"))
+		productVersionSpec = productVersionSpec.strip();
+
+		Nullable!SysTime date;
+		if (productVersionSpec.canFind('@') && !productVersionSpec.canFind("@{"))
 		{
-			auto parts = rev.findSplit("@");
+			auto parts = productVersionSpec.findSplit("@");
+			productVersionSpec = parts[0].strip();
 			auto at = parts[2].strip();
 
 			// If this is a named tag, use the date of the tagged commit.
+			// Try to resolve it as a tag (or more generally another
+			// product version spec) first, because Git approxidate
+			// accepts almost anything.
 			try
 			{
-				auto sha1 = metaRepo.getRef("refs/tags/" ~ at);
-				at = repo.query("log", "-1", "--pretty=format:%cI", sha1);
+				auto commitID = parseProductVersion(at)(historyWalker);
+				date = historyWalker.builder.buildSite.gitStore.getCommitDate(commitID);
 			}
-			catch (Exception e) {}
-
-			if (at.startsWith("#")) // For the build-all command - skip this many commits
-				args ~= ["--skip", at[1..$]];
-			else
-				args ~= ["--until", at];
-			rev = parts[0].strip();
+			catch (Exception e)
+			{
+				// if (verbose) log("Parsing time spec %s as product version failed (%s), retrying parsing as timestamp");
+				date = historyWalker.builder.buildSite.gitStore.parseDate(at);
+			}
 		}
 
-		if (rev.empty)
-			rev = "master";
+		if (productVersionSpec.empty)
+			productVersionSpec = "master";
 
-		try
-			if (metaRepo.getRef("origin/" ~ rev))
-				return repo.query(args ~ ["-n", "1", "origin/" ~ rev]);
-		catch (Exception e) {}
+		historyWalker = historyWalker.resetToProductVersion(productVersionSpec, date);
 
-		try
-			if (metaRepo.getRef(rev))
-				return repo.query(args ~ ["-n", "1", rev]);
-		catch (Exception e) {}
-
-		if (rev.startsWith("https://github.com"))
-		{
-			auto grep = repo.query("log", "-n", "2", "--pretty=format:%H", "--grep", "^" ~ escapeRE(rev), "origin/master").splitLines();
-			if (grep.length == 1)
-				return grep[0];
-		}
-
-		auto pickaxe = repo.query("log", "-n", "3", "--pretty=format:%H", "-S" ~ rev, "origin/master").splitLines();
-		if (pickaxe.length && pickaxe.length <= 2) // removed <- added
-			return pickaxe[$-1];   // the one where it was added
-
-		throw new Exception("Unknown/ambiguous revision: " ~ rev);
+		return historyWalker.finish();
 	};
 }
 
@@ -142,7 +129,7 @@ VersionSpec parseSpec(string spec)
 		if (parts.empty)
 			parts = [null];
 
-		historyWalker = historyWalker.reset(parseRev(parts.shift())(historyWalker));
+		historyWalker = historyWalker.reset(parseProductVersion(parts.shift())(historyWalker));
 
 		foreach (part; parts)
 		{

@@ -1,4 +1,4 @@
-module digger.build.components.curl;
+module digger.build.components.dmd.curl;
 
 import digger.build.components;
 import digger.build.manager;

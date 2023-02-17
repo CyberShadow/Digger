@@ -3,8 +3,11 @@ module digger.build.build;
 import std.algorithm.iteration;
 import std.algorithm.searching;
 import std.array;
+import std.datetime.systime;
 import std.exception;
 import std.typecons;
+
+import ae.utils.typecons;
 
 import digger.build.config;
 import digger.build.components;
@@ -38,13 +41,16 @@ private:
 	// 	string[string] vars;
 	// }
 
-	package BuildSite buildSite;
+	BuildSite buildSiteRef;
+	public @property BuildSite buildSite() { return buildSiteRef; }
+
 	package BuildConfig buildConfig;
+
 	VersionSpec versionSpec;
 
 	package this(BuildSite buildSite, BuildConfig buildConfig, VersionSpec versionSpec)
 	{
-		this.buildSite = buildSite;
+		this.buildSiteRef = buildSite;
 		this.buildConfig = buildConfig;
 		this.versionSpec = versionSpec;
 	}
@@ -53,10 +59,10 @@ private:
 
 	CommitID[string] versions;
 
-	package CommitID getVersion(Component component, string repositoryName)
+	package CommitID getVersion(Component component, GitRemote remote)
 	{
-		return versions.require(repositoryName,
-			versionSpec(HistoryWalker(this, component, repositoryName))
+		return versions.require(remote.name,
+			versionSpec(HistoryWalker(this, component, remote))
 		);
 	}
 
@@ -64,6 +70,8 @@ private:
 
 	CommitID[string /*refName*/][string /*remoteName*/] resolvedRefs;
 
+	/// Resolve the ref from a git remote to a CommitID, fetching it
+	/// if necessary and caching the result.
 	package CommitID getRef(GitRemote remote, string refName)
 	{
 		return resolvedRefs
@@ -72,6 +80,34 @@ private:
 				.gitStore
 				.getRemoteRef(remote, refName)
 			);
+	}
+
+	/// 
+	package CommitID getCommitAt(CommitID tip, SysTime date, string branchName)
+	{
+		import ae.sys.git : Git;
+		import ae.utils.time.parse : parseTime;
+
+		auto history = buildSite.gitStore.getLinearHistory(tip, branchName);
+		// Note: we don't use binary search here in order to get
+		// consistent behavior (regardless of history length) just
+		// in case the commit dates are not always increasing.
+		foreach_reverse (commit; history)
+			if (commit.parsedCommitter.date.parseTime!(Git.Authorship.dateFormat) <= date.get())
+				return commit.oid;
+		throw new Exception("Timestamp is before first commit");
+	}
+
+	// --- Product
+
+	Nullable!Product productInstance;
+	public @property Product product()
+	{
+		return productInstance.require(productRegistry
+			.get(buildConfig.productName, null)
+			.enforce("Unknown product: " ~ buildConfig.productName)
+			(this)
+		);
 	}
 
 	// --- Components

@@ -1,4 +1,4 @@
-module digger.build.components.extras;
+module digger.build.components.dmd.extras;
 
 import digger.build.components;
 import digger.build.manager;

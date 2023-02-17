@@ -1,4 +1,4 @@
-module digger.build.components.phobos;
+module digger.build.components.dmd.phobos;
 
 import digger.build.components;
 import digger.build.manager;
